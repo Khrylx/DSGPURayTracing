@@ -3,6 +3,7 @@
 
 #include <stack>
 #include <thread>
+#include <atomic>
 #include <vector>
 #include <algorithm>
 

@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "CMU462/CMU462.h"
-#include "CMU462/vector3d.h"
+#include "CMU462/vector3D.h"
 #include "CMU462/matrix3x3.h"
 
 #include "GL/glew.h"

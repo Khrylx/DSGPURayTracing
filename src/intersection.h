@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "CMU462/vector3d.h"
+#include "CMU462/vector3D.h"
 #include "CMU462/spectrum.h"
 #include "CMU462/misc.h"
 

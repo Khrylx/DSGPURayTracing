@@ -1,7 +1,7 @@
 #ifndef CMU462_STATICSCENE_LIGHT_H
 #define CMU462_STATICSCENE_LIGHT_H
 
-#include "CMU462/vector3d.h"
+#include "CMU462/vector3D.h"
 #include "CMU462/matrix3x3.h"
 #include "CMU462/spectrum.h"
 #include "../sampler.h"

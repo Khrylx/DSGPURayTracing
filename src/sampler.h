@@ -1,8 +1,8 @@
 #ifndef CMU462_SAMPLER_H
 #define CMU462_SAMPLER_H
 
-#include "CMU462/vector2d.h"
-#include "CMU462/vector3d.h"
+#include "CMU462/vector2D.h"
+#include "CMU462/vector3D.h"
 #include "CMU462/misc.h"
 
 namespace CMU462 {

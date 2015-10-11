@@ -1,7 +1,7 @@
 #ifndef CMU462_STATICSCENE_OBJECT_H
 #define CMU462_STATICSCENE_OBJECT_H
 
-#include "../halfedgeMesh.h"
+#include "../halfEdgeMesh.h"
 
 #include "scene.h"
 #include "sphere.h"

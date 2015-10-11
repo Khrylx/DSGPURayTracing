@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "collada/camera_info.h"
-#include "CMU462/Matrix3x3.h"
+#include "CMU462/matrix3x3.h"
 
 #include "math.h"
 #include "ray.h"

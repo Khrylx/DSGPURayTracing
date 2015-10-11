@@ -1,7 +1,7 @@
 #include "sphere_drawing.h"
 
 #include "CMU462/color.h"
-#include "CMU462/vector3d.h"
+#include "CMU462/vector3D.h"
 
 #include "GL/glew.h"
 

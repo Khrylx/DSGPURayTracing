@@ -1,10 +1,11 @@
 #ifndef CMU462_RAY_H
 #define CMU462_RAY_H
 
-#include "CMU462/Matrix4x4.h"
-#include "CMU462/Spectrum.h"
-#include "CMU462/Vector3D.h"
-#include "CMU462/Vector4D.h"
+#include "CMU462/CMU462.h"
+#include "CMU462/vector3D.h"
+#include "CMU462/vector4D.h"
+#include "CMU462/matrix4x4.h"
+#include "CMU462/spectrum.h"
 
 namespace CMU462 {
 
