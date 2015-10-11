@@ -1,0 +1,4 @@
+<map id="CMU462::StaticScene::Intersection" name="CMU462::StaticScene::Intersection">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_primitive.html" title="The abstract base class primitive is the bridge between geometry processing and the shading subsystem..." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_b_r_d_f.html" title="Interface for BRDFs. " alt="" coords="168,5,307,47"/>
+</map>

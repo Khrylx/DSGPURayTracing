@@ -1,0 +1,6 @@
+<map id="CMU462::StaticScene::Primitive" name="CMU462::StaticScene::Primitive">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_aggregate.html" title="Aggregate provides an interface for grouping multiple primitives together. " alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node4" href="$class_c_m_u462_1_1_static_scene_1_1_sphere.html" title="A sphere from a sphere object. " alt="" coords="192,71,331,112"/>
+<area shape="rect" id="node5" href="$class_c_m_u462_1_1_static_scene_1_1_triangle.html" title="A single triangle from a mesh. " alt="" coords="192,136,331,177"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_b_v_h_accel.html" title="Bounding Volume Hierarchy for fast Ray &#45; Primitive intersection. " alt="" coords="379,5,517,47"/>
+</map>

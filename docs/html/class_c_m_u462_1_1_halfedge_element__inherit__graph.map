@@ -1,0 +1,5 @@
+<map id="CMU462::HalfedgeElement" name="CMU462::HalfedgeElement">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_face.html" title="A Face is a single polygon in the mesh. " alt="" coords="5,80,107,107"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_halfedge.html" title="A Halfedge is the basic &quot;glue&quot; between mesh elements, pointing to its associated vertex, edge, and face, as will as its twin and next halfedges. " alt="" coords="131,80,256,107"/>
+<area shape="rect" id="node4" href="$class_c_m_u462_1_1_vertex.html" title="A Vertex encodes one of the mesh vertices. " alt="" coords="280,80,392,107"/>
+</map>

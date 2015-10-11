@@ -1,0 +1,4 @@
+<map id="CMU462::StaticScene::SceneObject" name="CMU462::StaticScene::SceneObject">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_mesh.html" title="A triangle mesh object. " alt="" coords="5,95,144,136"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_sphere_object.html" title="A sphere object. " alt="" coords="168,95,307,136"/>
+</map>
