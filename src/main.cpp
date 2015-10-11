@@ -58,6 +58,7 @@ int main( int argc, char** argv ) {
   // parse scene
   Collada::SceneInfo *sceneInfo = new Collada::SceneInfo();
   if (Collada::ColladaParser::load(sceneFilePath.c_str(), sceneInfo) < 0) {
+    msg("Error loading file: " << sceneFilePath);
     delete sceneInfo;
     exit(0);
   }

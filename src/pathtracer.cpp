@@ -213,7 +213,7 @@ void PathTracer::build_accel() {
   timer.start();
   bvh = new BVHAccel(primitives);
   timer.stop();
-  fprintf(stdout, "BVH build complete! (%.4f sec)\n", timer.duration());
+  fprintf(stdout, "Done! (%.4f sec)\n", timer.duration());
 
   // initial visualization //
   selectionHistory.push(bvh->get_root());
@@ -497,20 +497,20 @@ void PathTracer::worker_thread() {
 
     if (continueRaytracing && workerDoneCount == numWorkerThreads) {
         timer.stop();
-        fprintf(stdout, "[PathTracer] Rendering done! (%.4fs)\n", timer.duration());
+        fprintf(stdout, "[PathTracer] Rendering completed! (%.4fs)\n", timer.duration());
         state = DONE;
     }
 }
 
 void PathTracer::increase_area_light_sample_count() {
     ns_area_light *= 2;
-    fprintf(stdout, "Area light sample count increased to %zu\n", ns_area_light);
+    fprintf(stdout, "[PathTracer] Area light sample count increased to %zu!\n", ns_area_light);
 }
 
 void PathTracer::decrease_area_light_sample_count() {
     if (ns_area_light > 1)
         ns_area_light /= 2;
-    fprintf(stdout, "Area light sample count decreased to %zu\n", ns_area_light);
+    fprintf(stdout, "[PathTracer] Area light sample count decreased to %zu!\n", ns_area_light);
 }
 
 

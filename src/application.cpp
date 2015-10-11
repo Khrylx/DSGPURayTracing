@@ -249,8 +249,6 @@ void Application::load(SceneInfo* sceneInfo) {
     // forcing camera to look at origin because control
     // feels weird otherwise
     c_dir = c_pos; c_dir.normalize();
-    cerr << "c_pos" << c_pos << endl;
-    cerr << "c_dir" << c_dir << endl;
 
     camera.place(Vector3D(0,0,0),
                  PI / 2 - asin(c_dir.y),
@@ -271,7 +269,6 @@ void Application::load(SceneInfo* sceneInfo) {
 
   scene->set_draw_styles(&defaultStyle, &hoverStyle, &selectStyle);
 
-  cout << "Done loading scene. Mesh Ready for Editing!" << endl;
 }
 
 void Application::init_camera(CameraInfo& cameraInfo,
