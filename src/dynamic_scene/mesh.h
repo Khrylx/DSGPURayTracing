@@ -55,6 +55,7 @@ class Mesh : public SceneObject, public MeshView {
 
   void confirm_hover();
   void confirm_select();
+  void invalidate_hover();
   void invalidate_selection();
   SelectionInfo *get_selection_info();
 

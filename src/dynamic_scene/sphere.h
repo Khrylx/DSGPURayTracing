@@ -27,6 +27,7 @@ class Sphere : public SceneObject {
   }
   void confirm_hover() { }
   void confirm_select() { }
+  void invalidate_hover() { }
   void invalidate_selection() { }
   SelectionInfo *get_selection_info() { return nullptr; }
   void drag_selection(float dx, float dy, const Matrix4x4& worldTo3DH) { }

@@ -240,9 +240,12 @@ void Mesh::confirm_select() {
   selectedFeature = hoveredFeature;
 }
 
-void Mesh::invalidate_selection() {
+void Mesh::invalidate_hover() {
   potentialFeature.invalidate();
   hoveredFeature.invalidate();
+}
+
+void Mesh::invalidate_selection() {
   selectedFeature.invalidate();
 }
 

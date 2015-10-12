@@ -78,6 +78,11 @@ class SceneObject {
    * Otherwise the behavior is undefined.
    */
   virtual void confirm_select() = 0;
+  
+  /**
+   * Sets this object as not having any hovered elements.
+   */
+  virtual void invalidate_hover() = 0;
 
   /**
    * Removes any tentative or confirmed selections for this object.

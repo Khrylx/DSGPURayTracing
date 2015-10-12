@@ -32,19 +32,18 @@ void Scene::update_selection(const Vector2D& p, const Matrix4x4& worldTo3DH) {
   int minI = -1;
   for (int i = 0; i < objects.size(); i++) {
     double newW = objects[i]->test_selection(p, worldTo3DH, minW);
-    if ((minI < 0 && newW >= 0.0) ||
-        (minI >= 0 && newW < minW)) {
+    if (newW >= 0.0 && (minI < 0 || newW < minW)) {
       minI = i;
       minW = newW;
     }
   }
   if (minI != -1) {
     for (int i = 0; i < minI; i++) {
-      objects[i]->invalidate_selection();
+      objects[i]->invalidate_hover();
     }
     objects[minI]->confirm_hover();
     for (int i = minI + 1; i < objects.size(); i++) {
-      objects[i]->invalidate_selection();
+      objects[i]->invalidate_hover();
     }
   }
   hoverIdx = minI;
@@ -60,6 +59,9 @@ bool Scene::has_hover() {
 
 void Scene::confirm_selection() {
   if (!has_hover()) return;
+  if (has_selection() && selectionIdx != hoverIdx) {
+    objects[selectionIdx]->invalidate_selection();
+  }
   selectionIdx = hoverIdx;
   objects[selectionIdx]->confirm_select();
 }
