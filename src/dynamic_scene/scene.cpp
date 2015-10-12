@@ -37,7 +37,11 @@ void Scene::update_selection(const Vector2D& p, const Matrix4x4& worldTo3DH) {
       minW = newW;
     }
   }
-  if (minI != -1) {
+  if (minI == -1) {
+    for (SceneObject *obj : objects) {
+      obj->invalidate_hover();
+    }
+  } else {
     for (int i = 0; i < minI; i++) {
       objects[i]->invalidate_hover();
     }
