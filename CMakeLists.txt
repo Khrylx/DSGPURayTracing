@@ -141,6 +141,7 @@ endif(WIN32)
 
 # Required packages
 find_package(OpenGL REQUIRED)
+find_package(Threads REQUIRED)
 find_package(Freetype REQUIRED)
 
 # CMU462

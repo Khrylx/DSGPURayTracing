@@ -73,6 +73,7 @@ target_link_libraries( pathtracer
     glfw ${GLFW_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${FREETYPE_LIBRARIES}
+    ${CMAKE_THREADS_INIT}
 )
 
 #-------------------------------------------------------------------------------
