@@ -43,14 +43,22 @@ class Primitive {
   virtual bool intersect(const Ray& r, Intersection* i) const = 0;
 
   /**
+   * Get BRDF.
+   * Return the BRDF of the surface material of the primitive.
+   * Note that the BRDFs are not stored in each primitive but in the
+   * SceneObject the primitive belongs to.
+   */
+  virtual BRDF* get_brdf() const = 0;
+
+  /**
    * Draw with OpenGL (for visualization)
-   * \param c desired hightlight color
+   * \param c desired highlight color
    */
   virtual void draw(const Color& c) const = 0;
 
   /**
    * Draw outline with OpenGL (for visualization)
-   * \param c desired hightlight color
+   * \param c desired highlight color
    */
   virtual void drawOutline(const Color& c) const = 0;
 

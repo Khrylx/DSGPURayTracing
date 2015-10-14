@@ -1,4 +1,6 @@
 #include "object.h"
+#include "sphere.h"
+#include "triangle.h"
 
 #include <vector>
 #include <iostream>

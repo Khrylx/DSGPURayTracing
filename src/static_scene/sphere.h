@@ -6,17 +6,16 @@
 
 namespace CMU462 { namespace StaticScene {
 
-class SphereObject; // Sphere object forward declaration
-
 /**
  * A sphere from a sphere object.
  * To be consistent with the triangle interface, each sphere primitive is
- * encapsulated in a sphere object. The have exactly the same origion and
+ * encapsulated in a sphere object. The have exactly the same origin and
  * radius. The sphere primitive may refer back to the sphere object for
- * other information such as surface materail.
+ * other information such as surface material.
  */
 class Sphere : public Primitive {
  public:
+
   /**
    * Parameterized Constructor.
    * Construct a sphere with given origin & radius.
@@ -55,8 +54,15 @@ class Sphere : public Primitive {
   bool intersect(const Ray& r, Intersection* i) const;
 
   /**
+   * Get BRDF.
+   * In the case of a sphere, the surface material BRDF is stored in 
+   * its sphere object wrapper. 
+   */
+  BRDF* get_brdf() const { return object->get_brdf(); }
+
+  /**
    * Compute the normal at a point of intersection.
-   * NOTE (sky): This is required for all scene ojects but we only need it
+   * NOTE (sky): This is required for all scene objects but we only need it
    * during shading so it's not made part of IntersectInfo.
    * \param p point of intersection. Note that this assumes a valid point of
    *          intersection and does not check if it's actually on the sphere

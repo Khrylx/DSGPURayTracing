@@ -6,8 +6,6 @@
 
 namespace CMU462 { namespace StaticScene {
 
-class Mesh; // Mesh object forward declaration
-
 /**
  * A single triangle from a mesh.
  * To save space, it holds a pointer back to the data in the original mesh
@@ -55,6 +53,13 @@ class Mesh; // Mesh object forward declaration
               false otherwise
     */
   bool intersect(const Ray& r, Intersection* i) const;
+
+  /**
+   * Get BRDF.
+   * In the case of a triangle, the surface material BRDF is stored in 
+   * the mesh it belongs to. 
+   */
+  BRDF* get_brdf() const { return mesh->get_brdf(); }
 
   /**
    * Draw with OpenGL (for visualizer)

@@ -2,10 +2,7 @@
 #define CMU462_STATICSCENE_OBJECT_H
 
 #include "../halfEdgeMesh.h"
-
 #include "scene.h"
-#include "sphere.h"
-#include "triangle.h"
 
 namespace CMU462 { namespace StaticScene {
 
@@ -74,14 +71,14 @@ class SphereObject : public SceneObject {
   std::vector<Primitive*> get_primitives() const;
 
   /**
-   * Get the BRDF of the surface materail of the sphere.
-   * \return BRDF of the surface materail of the sphere
+   * Get the BRDF of the surface material of the sphere.
+   * \return BRDF of the surface material of the sphere
    */
   BRDF* get_brdf() const;
 
 private:
 
-  BRDF* brdf; ///< BRDF of the sphere objects' surface materail
+  BRDF* brdf; ///< BRDF of the sphere objects' surface material
 
   Vector3D o; ///< origin
   double r;   ///< radius
