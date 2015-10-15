@@ -384,6 +384,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
+    return Spectrum(1,0,0);
+    
   Spectrum L_out;
 
   Vector3D hit_p = r.o + r.d * isect.t;

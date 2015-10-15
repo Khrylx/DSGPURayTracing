@@ -12,8 +12,13 @@ BBox Triangle::get_bbox() const {
 
   // TODO:
   // Compute the bounding box of the triangle.
+    BBox bb;
+    
+    bb.expand(mesh->positions[v1]);
+    bb.expand(mesh->positions[v2]);
+    bb.expand(mesh->positions[v3]);
 
-  return BBox();
+  return bb;
 
 }
 
@@ -22,7 +27,9 @@ bool Triangle::intersect(const Ray& r) const {
   // TODO:
   // Implement ray - triangle intersection.
 
-  return true;
+    
+    
+  return intersect(r,NULL);
 
 }
 
@@ -33,7 +40,50 @@ bool Triangle::intersect(const Ray& r, Intersection *i) const {
   // When an intersection takes place, the Intersection data should
   // be updated correspondingly.
 
-  return false;
+    Vector3D e1 = mesh->positions[v2]-mesh->positions[v1];
+    Vector3D e2 = mesh->positions[v3]-mesh->positions[v1];
+    Vector3D s = r.o - mesh->positions[v1];
+    
+//    Matrix3x3 M;
+//    M.column(0) = e1;
+//    M.column(1) = e2;
+//    M.column(2) = -r.d;
+//    
+//    Vector3D x = M.inv()*s;
+//    double u = x[0];
+//    double v = x[1];
+//    double t = x[2];
+    double f = dot(cross(e1,r.d),e2);
+    if (f == 0) {
+        return false;
+    }
+    
+    double u = dot(cross(s,r.d),e2)/f;
+    double v = dot(cross(e1,r.d),s)/f;
+    double t = dot(cross(e1,-s),e2)/f;
+    
+    //
+    if (!(u >= 0 && v >= 0 && u+v <= 1 && t < r.max_t)) {
+        return false;
+    }
+    
+    //cout << u <<" "<< v << " " << t << endl;
+    r.max_t = t;
+    
+    if (i) {
+        i->brdf = get_brdf();
+        i->t = t;
+        i->primitive = this;
+        Vector3D n = cross(e1,e2);
+        if (dot(r.d,n) > 0) {
+            i->n = -n;
+        }
+        else{
+            i->n = n;
+        }
+    }
+    
+  return true;
   
 }
 

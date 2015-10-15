@@ -48,7 +48,7 @@ bool BVHAccel::intersect(const Ray &ray) const {
   // with a BVH aggregate if and only if it intersects a primitive in
   // the BVH that is not an aggregate.
 
-  return false;
+  return intersect(ray,NULL);
 
 }
 
@@ -61,7 +61,18 @@ bool BVHAccel::intersect(const Ray &ray, Intersection *i) const {
   // You should store the non-aggregate primitive in the intersection data
   // and not the BVH aggregate itself.
 
-  return false;
+    bool intersect = false;
+    for (int j = 0; j < primitives.size(); j++) {
+        if (i) {
+            intersect = intersect || primitives[j]->intersect(ray,i);
+        }
+        else{
+            intersect = intersect || primitives[j]->intersect(ray);
+        }
+        
+    }
+    
+  return intersect;
 
 }
 
