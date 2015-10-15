@@ -31,6 +31,7 @@ class Sphere : public Primitive {
     return BBox(o - Vector3D(r,r,r), o + Vector3D(r,r,r));
   }
 
+    
   /**
    * Ray - Sphere intersection.
    * Check if the given ray intersects with the sphere, no intersection

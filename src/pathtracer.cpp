@@ -384,9 +384,9 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
-    return Spectrum(1,0,0);
+    //return Spectrum(1,0,0);
     
-  Spectrum L_out;
+  Spectrum L_out(0,0,0);
 
   Vector3D hit_p = r.o + r.d * isect.t;
   Vector3D hit_n = isect.n;
@@ -396,7 +396,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   Matrix3x3 o2w;
   make_coord_space(o2w, isect.n);
   Matrix3x3 w2o = o2w.T();
-
+    
+    
   // w_out points towards the source of the ray (e.g.,
   // toward the camera if this is a primary ray)
   Vector3D w_out = w2o * (r.o - hit_p);
@@ -408,8 +409,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // quick debugging, but the hemispherical light gives much more
   // pleasing results.
 
-  InfiniteHemisphereLight light(Spectrum(5.f, 5.f, 5.f));
-  //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, -1.0, 0.0));
+  //InfiniteHemisphereLight light(Spectrum(5.f, 5.f, 5.f));
+  DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, 1.0, 1.0));
 
   Vector3D dir_to_light;
   double dist_to_light;
@@ -431,6 +432,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
 
       // convert direction into coordinate space of the surface, where
       // the surface normal is [0 0 1]
+      //dir_to_light = Vector3D(0,0,1);
       Vector3D w_in = w2o * dir_to_light;
 
       // note that computing dot(n,w_in) is simple
@@ -440,12 +442,20 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       // evaluate surface brdf
       Spectrum f = isect.brdf->f(w_out, w_in);
 
+      
+      light_L.r *= f.r;
+      light_L.g *= f.g;
+      light_L.b *= f.b;
+      //cout << w_in <<endl;
+      L_out += cos_theta/pdf*light_L;
+      
       // TODO:
       // construct a shadow ray and compute whether the intersected surface is
       // in shadow and accumulate reflected radiance
   }
+    //cout << L_out*scale <<endl;
 
-  return L_out;
+  return L_out*scale;
 }
 
 void PathTracer::raytrace_pixel(size_t x, size_t y) {
