@@ -453,12 +453,30 @@ void PathTracer::raytrace_pixel(size_t x, size_t y) {
   // accordingly. The sample rate is given by the number of camera rays
   // per pixel.
 
+    size_t w = frameBuffer.width();
+    size_t h = frameBuffer.height();
+    
   int num_samples = ns_aa;
 
-  Vector2D p = Vector2D(0.5,0.5);
-  Spectrum s = trace_ray(camera->generate_ray(p.x, p.y));
-  frameBuffer.put_color(s.toColor(), x, y);
+//  Vector2D p = Vector2D(0.5,0.5);
+//  Spectrum s = trace_ray(camera->generate_ray(p.x, p.y));
+//  frameBuffer.put_color(s.toColor(), x, y);
 
+    
+    Spectrum s(0,0,0);
+    for (int i = 0; i < num_samples; i++) {
+        Vector2D rp = gridSampler->get_sample();
+        double px = (x+rp.x) / w;
+        double py = (y+rp.y) / h;
+        Ray r = camera->generate_ray(px, py);
+        s += trace_ray(r);
+    }
+    s *= 1.0/num_samples;
+    
+    frameBuffer.put_color(s.toColor(), x, y);
+    
+
+    
 }
 
 void PathTracer::raytrace_tile(int tile_x, int tile_y, int tile_w, int tile_h) {
