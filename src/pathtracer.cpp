@@ -409,8 +409,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // quick debugging, but the hemispherical light gives much more
   // pleasing results.
 
-  //InfiniteHemisphereLight light(Spectrum(5.f, 5.f, 5.f));
-  DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, 1.0, 1.0));
+  InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
+  //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, 0.0, 0.0));
 
   Vector3D dir_to_light;
   double dist_to_light;
@@ -473,7 +473,6 @@ void PathTracer::raytrace_pixel(size_t x, size_t y) {
 //  Vector2D p = Vector2D(0.5,0.5);
 //  Spectrum s = trace_ray(camera->generate_ray(p.x, p.y));
 //  frameBuffer.put_color(s.toColor(), x, y);
-
     
     Spectrum s(0,0,0);
     for (int i = 0; i < num_samples; i++) {
