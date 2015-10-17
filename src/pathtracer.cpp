@@ -410,7 +410,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // pleasing results.
 
   InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
-  //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, 0.0, 0.0));
+  //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(0,-1,0));
 
   Vector3D dir_to_light;
   double dist_to_light;
@@ -429,7 +429,20 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       // (pdf is the probability of randomly selecting the random
       // sample point on the light source -- more on this in part 2)
       Spectrum light_L = light.sample_L(hit_p, &dir_to_light, &dist_to_light, &pdf);
+      // TODO:
+      // construct a shadow ray and compute whether the intersected surface is
+      // in shadow and accumulate reflected radiance
+      
+      // ****************************
+      //  Shadow Ray Implementation!
+      
+      Ray sR(hit_p + EPS_D * dir_to_light, dir_to_light);
 
+      if (bvh->intersect(sR)){
+          continue;
+      }
+      
+      
       // convert direction into coordinate space of the surface, where
       // the surface normal is [0 0 1]
       //dir_to_light = Vector3D(0,0,1);
@@ -441,7 +454,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
 
       // evaluate surface brdf
       Spectrum f = isect.brdf->f(w_out, w_in);
-
+      
       
       light_L.r *= f.r;
       light_L.g *= f.g;
@@ -449,9 +462,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       //cout << w_in <<endl;
       L_out += cos_theta/pdf*light_L;
       
-      // TODO:
-      // construct a shadow ray and compute whether the intersected surface is
-      // in shadow and accumulate reflected radiance
+      
   }
     //cout << L_out*scale <<endl;
 

@@ -10,6 +10,7 @@ DirectionalLight::DirectionalLight(const Spectrum& rad,
                                    const Vector3D& lightDir)
     : radiance(rad) {
   dirToLight = -lightDir.unit();
+    dirToLight.normalize();
 }
 
 Spectrum DirectionalLight::sample_L(const Vector3D& p, Vector3D* wi,

@@ -163,16 +163,16 @@ BVHAccel::BVHAccel(const std::vector<Primitive *> &_primitives,
     buildBVH(primitives, root, 16, max_leaf_size);
 }
 
-    //  destroy BVH nodesv
-    void destroyNode(BVHNode* node){
-        if (node->l) {
-            destroyNode(node->l);
-        }
-        if (node->r) {
-            destroyNode(node->r);
-        }
-        free(node);
+//  destroy BVH nodesv
+void destroyNode(BVHNode* node){
+    if (node->l) {
+        destroyNode(node->l);
     }
+    if (node->r) {
+        destroyNode(node->r);
+    }
+    free(node);
+}
     
 BVHAccel::~BVHAccel() {
 
@@ -207,8 +207,14 @@ bool node_intersect(const BVHNode* node,const vector<Primitive *>& primitives, c
         double tminr = -INF_D;
         double tmaxl = INF_D;
         double tmaxr = INF_D;
-        bool hitl = node->l->bb.intersect(ray, tminl, tmaxl);
-        bool hitr = node->r->bb.intersect(ray, tminr, tmaxr);
+        
+        // improve numerical stability
+        Ray nray = ray;
+        nray.d += EPS_D;
+        nray.d.normalize();
+        
+        bool hitl = node->l->bb.intersect(nray, tminl, tmaxl);
+        bool hitr = node->r->bb.intersect(nray, tminr, tmaxr);
         
         if (hitl && hitr) {
             BVHNode* first = (tminl <= tminr) ? node->l : node->r;
@@ -236,6 +242,7 @@ bool node_intersect(const BVHNode* node,const vector<Primitive *>& primitives, c
 
 // node intersect helper without calculating intersection
 bool node_intersect(const BVHNode* node,const vector<Primitive *>& primitives, const Ray &ray)    {
+    
     if (node->l == NULL && node->r == NULL) {
         for (int j = 0; j < node->range; j++)
         {
@@ -257,8 +264,16 @@ bool node_intersect(const BVHNode* node,const vector<Primitive *>& primitives, c
         double tminr = -INF_D;
         double tmaxl = INF_D;
         double tmaxr = INF_D;
-        bool hitl = node->l->bb.intersect(ray, tminl, tmaxl);
-        bool hitr = node->r->bb.intersect(ray, tminr, tmaxr);
+        //cout << nray.d << endl;
+        //cout << "+++++++++" << endl;
+        
+        // improve numerical stability
+        Ray nray = ray;
+        nray.d += EPS_D;
+        nray.d.normalize();
+        
+        bool hitl = node->l->bb.intersect(nray, tminl, tmaxl);
+        bool hitr = node->r->bb.intersect(nray, tminr, tmaxr);
         
         if (hitl && hitr) {
             BVHNode* first = (tminl <= tminr) ? node->l : node->r;

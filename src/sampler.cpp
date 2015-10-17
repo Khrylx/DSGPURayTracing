@@ -27,7 +27,7 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
     double s = sqrt(1-r1*r1);
     double theta = 2*PI*r2;
     
-  return -Vector3D(s*cos(theta), s*sin(theta), r1);
+  return Vector3D(s*cos(theta), s*sin(theta), r1);
 
 }
 
