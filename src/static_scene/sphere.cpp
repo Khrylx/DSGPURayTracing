@@ -25,7 +25,9 @@ bool Sphere::test(const Ray& r, double& t1, double& t2) const {
     t1 = b - sqrt(delta);
     t2 = b + sqrt(delta);
     
-    double err = (r.d*t1-m).norm2() - r2;
+    if (t1 >= r.max_t || t2 <= r.min_t ) {
+        return false;
+    }
     
   return true;
 
@@ -62,7 +64,7 @@ bool Sphere::intersect(const Ray& r, Intersection *i) const {
     i->primitive = this;
     Vector3D n = r.o + r.d*t1 - o;
     //cout << n <<endl;
-    i->n = -n;
+    i->n = n;
     
   return true;
 

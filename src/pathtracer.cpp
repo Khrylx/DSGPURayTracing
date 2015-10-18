@@ -410,7 +410,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // pleasing results.
 
   InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
-  //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(0,-1,0));
+  //DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,-1));
 
   Vector3D dir_to_light;
   double dist_to_light;

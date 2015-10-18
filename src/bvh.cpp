@@ -95,13 +95,20 @@ void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, siz
     while (i < j) {
         do{
             i++;
+            if (i >= (int)(node->start + node->range)) {
+                break;
+            }
             bb1 = primitives[i]->get_bbox();
         }while((bb1.min[axis] + bb1.max[axis])*0.5 < pLine);
         
         do{
             j--;
+            if (j < (int)node->start) {
+                break;
+            }
             bb2 = primitives[j]->get_bbox();
         }while((bb2.min[axis] + bb2.max[axis])*0.5 > pLine);
+        
         if (i < j) {
             Primitive* tmp = primitives[i];
             primitives[i] = primitives[j];
