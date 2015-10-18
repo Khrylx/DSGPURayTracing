@@ -109,21 +109,6 @@ struct BBox {
   }
 
   /**
-   * Compute the maximum dimension of the bounding box (x, y, or z).
-   * \return 0 if max dimension is x,
-   *         1 if max dimension is y,
-   *         2 if max dimension is z
-   * TODO: replace with enum (or #define)
-   *  - sure but please make sure indexing with the returned value still works
-   */
-  uint8_t max_dimension() const {
-    uint8_t d = 0;
-    if(extent.y > extent.x) d = 1;
-    if(extent.z > extent.y) d = 2;
-    return d;
-  }
-
-  /**
    * Check if bounding box is empty.
    * Bounding box that has no size is considered empty. Note that since
    * bounding box are used for objects with positive volumes, a bounding
