@@ -6,8 +6,6 @@
 #include <iostream>
 #include <stack>
 
-#define MAX_RECURSIVE_DEPTH 5000
-
 using namespace std;
 
 namespace CMU462 { namespace StaticScene {
@@ -18,19 +16,15 @@ struct Bucket{
     Bucket():prim_count(0) {}
 };
 
+    
 // buildBVH helper
-void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, size_t max_leaf_size, int depth)
+void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, size_t max_leaf_size)
 {
-    if (depth > MAX_RECURSIVE_DEPTH) {
-        node->l = NULL;
-        node->r = NULL;
-        return;
-    }
     
     BBox lbb,rbb;
     int lRange,rRange;
     
-    // Keep less local variables to allow more recursion.
+    // Keep less local variables to save stack space.
     {
         double minC[3] = {INF_D, INF_D, INF_D};
         int minBIndex[3];
@@ -151,11 +145,12 @@ void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, siz
     
     
     if (lRange <= max_leaf_size || rRange <= max_leaf_size) {
+        //cout << lRange << ":" << rRange << endl;
         return;
     }
     
-    buildBVH(primitives, node->l, bucketNum, max_leaf_size, depth+1);
-    buildBVH(primitives, node->r, bucketNum, max_leaf_size, depth+1);
+    buildBVH(primitives, node->l, bucketNum, max_leaf_size);
+    buildBVH(primitives, node->r, bucketNum, max_leaf_size);
     
     return;
     
@@ -180,8 +175,7 @@ BVHAccel::BVHAccel(const std::vector<Primitive *> &_primitives,
 
   root = new BVHNode(bb, 0, primitives.size());
 
-    
-    buildBVH(primitives, root, 16, max_leaf_size, 0);
+    buildBVH(primitives, root, 32, max_leaf_size);
 }
 
 //  destroy BVH nodesv
