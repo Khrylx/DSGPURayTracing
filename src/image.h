@@ -5,11 +5,12 @@
 #include "CMU462/spectrum.h"
 
 #include <vector>
+#include <string.h>
 
 namespace CMU462 {
 
 /**
- * Image buffer which stores color space values with RGBA pixel layout using 
+ * Image buffer which stores color space values with RGBA pixel layout using
  * 32 bit unsigned integers (8-bits per color channel).
  */
 struct ImageBuffer {
@@ -138,25 +139,25 @@ struct HDRImageBuffer {
    * \key   key value to map average tone to (higher means brighter)
    * \why   white point (higher means larger dynamic range)
    */
-  void tonemap(ImageBuffer& target, 
+  void tonemap(ImageBuffer& target,
     float gamma, float level, float key, float wht) {
-    
+
     // compute global log average luminance!
     float avg = 0;
     for (size_t i = 0; i < w * h; ++i) {
       // the small delta value below is used to avoids singularity
-      avg += log(0.0000001f + data[i].illum());  
+      avg += log(0.0000001f + data[i].illum());
     }
     avg = exp(avg / (w * h));
 
-    
+
     // apply on pixels
     float one_over_gamma = 1.0f / gamma;
     float exposure = sqrt(pow(2,level));
     for (size_t y = 0; y < h; ++y) {
       for (size_t x = 0; x < w; ++x) {
         Spectrum s = data[x + y * w];
-        float l = s.illum();        
+        float l = s.illum();
         s *= key / avg;
         s *= ((l + 1) / (wht * wht)) / (l + 1);
         float r = pow(s.r * exposure, one_over_gamma);

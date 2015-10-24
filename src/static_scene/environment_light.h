@@ -11,7 +11,7 @@ namespace CMU462 { namespace StaticScene {
 // around your scene, radiating light on the scene in a pattern matching some
 // image. This is commonly used for low-cost renderings of complex backrounds or
 // environments (fancy church, overgrown forest, etc) that would be difficult to
-// model in the scene. 
+// model in the scene.
 class EnvironmentLight : public SceneLight {
  public:
   EnvironmentLight(const HDRImageBuffer* envMap);
@@ -41,7 +41,7 @@ class EnvironmentLight : public SceneLight {
    *   environment map horizontally? What about vertically?).
    */
   Spectrum sample_dir(const Ray& r) const;
- 
+
  private:
   const HDRImageBuffer* envMap;
 }; // class EnvironmentLight
