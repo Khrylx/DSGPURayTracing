@@ -1,0 +1,5 @@
+<map id="CMU462::StaticScene::BRDF" name="CMU462::StaticScene::BRDF">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_diffuse_b_r_d_f.html" title="Diffuse BRDF. " alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_glossy_b_r_d_f.html" title="Glossy BRDF. " alt="" coords="192,71,331,112"/>
+<area shape="rect" id="node4" href="$class_c_m_u462_1_1_static_scene_1_1_refract_b_r_d_f.html" title="Refractive BRDF. " alt="" coords="192,136,331,177"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="CMU462::StaticScene::BVHAccel" name="CMU462::StaticScene::BVHAccel">
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_aggregate.html" title="Aggregate provides an interface for grouping multiple primitives together. " alt="" coords="5,95,144,136"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_primitive.html" title="The abstract base class primitive is the bridge between geometry processing and the shading subsystem..." alt="" coords="5,5,144,47"/>
+</map>

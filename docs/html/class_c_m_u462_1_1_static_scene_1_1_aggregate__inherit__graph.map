@@ -1,0 +1,4 @@
+<map id="CMU462::StaticScene::Aggregate" name="CMU462::StaticScene::Aggregate">
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_static_scene_1_1_b_v_h_accel.html" title="Bounding Volume Hierarchy for fast Ray &#45; Primitive intersection. " alt="" coords="5,184,144,225"/>
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_static_scene_1_1_primitive.html" title="The abstract base class primitive is the bridge between geometry processing and the shading subsystem..." alt="" coords="5,5,144,47"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_c_m_u462_1_1_halfedge_element.html" title="HalfedgeElement is the base type for all mesh elements (halfedges, vertices, edges, and faces). " alt="" coords="5,56,175,83"/>
+<area shape="rect" id="node2" href="$class_c_m_u462_1_1_face.html" title="A Face is a single polygon in the mesh. " alt="" coords="235,5,336,32"/>
+<area shape="rect" id="node3" href="$class_c_m_u462_1_1_halfedge.html" title="A Halfedge is the basic &quot;glue&quot; between mesh elements, pointing to its associated vertex, edge, and face, as will as its twin and next halfedges. " alt="" coords="223,56,348,83"/>
+<area shape="rect" id="node4" href="$class_c_m_u462_1_1_vertex.html" title="A Vertex encodes one of the mesh vertices. " alt="" coords="229,107,341,133"/>
+</map>
