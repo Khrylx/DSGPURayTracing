@@ -413,8 +413,10 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     log_ray_miss(r);
     #endif
 
-    // TODO: If you have an environment map, return the Spectrum this ray
-    //       samples from the environment map. If you don't return black.
+    // TODO: 
+    // If you have an environment map, return the Spectrum this ray
+    // samples from the environment map. If you don't return black.
+    
     return Spectrum(0,0,0);
   }
 
@@ -439,9 +441,9 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   Vector3D w_out = w2o * (r.o - hit_p);
   w_out.normalize();
 
-  // TODO: extend the below code to compute the direct lighting for all the
-  //       lights in the scene, instead of just the dummy light we provided in
-  //       part 1.
+  // TODO: 
+  // extend the below code to compute the direct lighting for all the lights 
+  // in the scene, instead of just the dummy light we provided in part 1.
 
   InfiniteHemisphereLight light(Spectrum(5.f, 5.f, 5.f));
   //DirectionalLight light(Spectrum(5.f, 5.f, 5.f), Vector3D(1.0, -1.0, 0.0));
@@ -480,9 +482,10 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       // in shadow and accumulate reflected radiance
   }
 
-  // TODO: compute an indirect lighting estimate using pathtracing with monte
-  //       carlo. Note that Ray objects have a depth field now; you should use
-  //       this to avoid travelling down one path forever.
+  // TODO: 
+  // compute an indirect lighting estimate using pathtracing with Monte Carlo. 
+  // Note that Ray objects have a depth field now; you should use this to avoid 
+  // traveling down one path forever.
 
   return L_out;
 }
@@ -490,9 +493,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
 Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
 
   // TODO:
-  // Sample the pixel with coordinate (x,y) and update the frame buffer
-  // accordingly. The sample rate is given by the number of camera rays
-  // per pixel.
+  // Sample the pixel with coordinate (x,y) and return the result spectrum. 
+  // The sample rate is given by the number of camera rays per pixel.
 
   int num_samples = ns_aa;
 

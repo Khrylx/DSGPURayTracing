@@ -91,16 +91,14 @@ class BSDF {
    * Reflection helper; reflects wo using a normal vector of (0, 0, 1) and
    * stores the result in wi. Returns reflectance.
    */
-  virtual Spectrum reflect(const Vector3D& wo, Vector3D* wi, const Spectrum& reflectance);
+  virtual void reflect(const Vector3D& wo, Vector3D* wi);
   
   /** 
    * Refraction helper; refracts wo into wi and returns transmittance, unless
    * the angle is too steep and there's total internal reflection, in which case
    * it reflects wo into wi and returns reflectance.
    */
-  virtual Spectrum refract(const Vector3D& wo, Vector3D* wi,
-                           const Spectrum& transmittance, float ior,
-                           const Spectrum& reflectance);
+  virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
 
 }; // class BSDF
 

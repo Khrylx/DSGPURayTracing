@@ -46,7 +46,10 @@ Spectrum MirrorBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 }
 
 Spectrum MirrorBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
-  // TODO: implement
+
+  // TODO: 
+  // Implement MirrorBSDF
+
   return Spectrum();
 }
 
@@ -70,7 +73,10 @@ Spectrum RefractionBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 }
 
 Spectrum RefractionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
-  // TODO: implement
+
+  // TODO: 
+  // Implement RefractionBSDF 
+
   return Spectrum();
 }
 
@@ -81,21 +87,30 @@ Spectrum GlassBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 }
 
 Spectrum GlassBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
-  // TODO: compute fresnel coefficient and either reflect or refract based on
-  //       it.
+
+  // TODO: 
+  // Compute Fresnel coefficient and either reflect or refract based on it.
+
   return Spectrum();
 }
 
-Spectrum BSDF::reflect(const Vector3D& wo, Vector3D* wi, const Spectrum& reflectance) {
-  // TODO: implement.
-  return Spectrum();
+void BSDF::reflect(const Vector3D& wo, Vector3D* wi) {
+
+  // TODO:
+  // Implement reflection of wo about normal (0,0,1) and store result in wi.
+
 }
 
-Spectrum BSDF::refract(const Vector3D& wo, Vector3D* wi,
-                       const Spectrum& transmittance, float ior,
-                       const Spectrum& reflectance) {
-  // TODO: implement.
-  return Spectrum();
+bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
+
+  // TODO:
+  // Use Snell's Law to refract wo surface and store result ray in wi.
+  // Return false if refraction does not occur due to total internal reflection
+  // and true otherwise. When dot(wo,n) is positive, then wo corresponds to a 
+  // ray entering the surface through vacuum.  
+
+  return true;
+
 }
 
 

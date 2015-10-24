@@ -27,7 +27,7 @@
       <extra>
         <technique profile="CMU462">
           <area>
-            <color sid="color">15 15 15</color>
+            <color sid="color">9 9 9</color>
           </area>
         </technique>
       </extra>
@@ -589,10 +589,10 @@
   <library_controllers/>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
-      <node id="Hemi" name="Hemi" type="NODE">
+<!--      <node id="Hemi" name="Hemi" type="NODE">
         <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 5 0 0 0 1</matrix>
         <instance_light url="#Hemi-light"/>
-      </node>
+      </node> -->
       <node id="Area" name="Area" type="NODE">
         <matrix sid="transform">0.6 0 0 0 0 0.8 0 0 0 0 1 1.49 0 0 0 1</matrix>
         <instance_light url="#Area-light"/>
