@@ -8,10 +8,11 @@ LightInfo::LightInfo() {
 
   light_type = LightType::NONE;
 
-  color = Color(1,1,1,1);
+  spectrum = Spectrum(1,1,1);
 
-  position  = Vector3D(0,  0,  0);  // COLLADA defaults
-  direction = Vector3D(0,  0, -1);  // COLLADA defaults
+  position  = Vector3D(0, 0,  0);  // COLLADA default
+  direction = Vector3D(0, 0, -1);  // COLLADA default
+  up = Vector3D(0,1,0);            // CMU462 default
 
   float falloff_deg = 45;
   float falloff_exp = 0.15;
@@ -33,16 +34,21 @@ std::ostream& operator<<(std::ostream& os, const LightInfo& light) {
         os << "type=none";
       case LightType::AMBIENT:
         os << " type=ambient"
-           << " color=" << light.color;
+           << " spectrum=" << light.spectrum;
         break;
       case LightType::DIRECTIONAL:
         os << " type=directional"
-           << " color=" << light.color
+           << " spectrum=" << light.spectrum
+           << " direction=" << light.direction;
+        break;
+      case LightType::AREA:
+        os << " type=area"
+           << " spectrum=" << light.spectrum
            << " direction=" << light.direction;
         break;
       case LightType::POINT:
         os << " type=point"
-           << " color=" << light.color
+           << " spectrum=" << light.spectrum
            << " position="  << light.position
            << " constant_att="  << light.constant_att
            << " linear_att="    << light.linear_att
@@ -50,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, const LightInfo& light) {
         break;
       case LightType::SPOT:
         os << " type=spot"
-           << " color=" << light.color
+           << " spectrum=" << light.spectrum
            << " position="  << light.position
            << " direction=" << light.direction
            << " falloff_deg=" << light.falloff_deg

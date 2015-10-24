@@ -25,21 +25,20 @@ map<string, XMLElement*> ColladaParser::sources; // URI lookup table
 
 // Parser Helpers //
 
-inline Color rgb_from_string ( string color_string ) {
+inline Spectrum spectrum_from_string ( string spectrum_string ) {
 
-  Color c;
+  Spectrum s;
 
-  stringstream ss (color_string);
-  ss >> c.r;
-  ss >> c.g;
-  ss >> c.b;
-  c.a = 1.0;
+  stringstream ss (spectrum_string);
+  ss >> s.r;
+  ss >> s.g;
+  ss >> s.b;
 
-  return c;
+  return s;
 
 }
 
-inline Color rgba_from_string ( string color_string ) {
+inline Color color_from_string ( string color_string ) {
 
   Color c;
 
@@ -115,14 +114,14 @@ XMLElement* ColladaParser::get_technique_common( XMLElement* xml ) {
 }
 
 
-XMLElement* ColladaParser::get_technique_462( XMLElement* xml ) {
+XMLElement* ColladaParser::get_technique_cmu462( XMLElement* xml ) {
 
-  XMLElement* technique = xml->FirstChildElement("technique");
-	while (technique) {
-		string profile = technique->Attribute("profile");
-		if (profile == "CMU462") return technique;
-		technique = technique->NextSiblingElement("technique");
-	}
+  XMLElement* technique = get_element(xml, "extra/technique");
+  while (technique) {
+    string profile = technique->Attribute("profile");
+    if (profile == "CMU462") return technique;
+    technique = technique->NextSiblingElement("technique");
+  }
 
 	return NULL;
 
@@ -163,36 +162,40 @@ int ColladaParser::load( const char* filename, SceneInfo* sceneInfo ) {
   if (XMLElement* e_asset = get_element(root, "asset")) {
     XMLElement* up_axis = get_element(e_asset, "up_axis");
 		if (!up_axis) {
-			stat("Error: No up direciton defined in COLLADA file");
+			stat("Error: No up direction defined in COLLADA file");
 			exit(EXIT_FAILURE);
 		}
 
-		// get up direction and correct non-Y_UP scenes by
-		// setting a non-identity global entry transformation
-		string up_dir = up_axis->GetText();
+		// get up direction and correct non-Y_UP scenes by setting a non-identity 
+    // global entry transformation, assuming right hand coordinate system for 
+    // both input and output
+		
+    string up_dir = up_axis->GetText();
 		transform = Matrix4x4::identity();
 		if (up_dir == "X_UP") {
 
-			// the swap X-Y matrix
+			// swap X-Y and negate Z
 			transform(0,0) =  0; transform(0,1) = 1;
-			transform(1,0) = -1; transform(1,1) = 0;
+			transform(1,0) =  1; transform(1,1) = 0;
+      transform(2,2) = -1;
 
 			// local up direction for lights and cameras
 			up = Vector3D(1,0,0);
 
 		} else if (up_dir == "Z_UP") {
 
-			// the swap Z-Y matrix
+			// swap Z-Y matrix and negate X
 			transform(1,1) =  0; transform(1,2) = 1;
-			transform(2,1) = -1; transform(2,2) = 0;
+			transform(2,1) =  1; transform(2,2) = 0;
+      transform(0,0) = -1;
 
-			// local up direction for lights and cameras
+			// local up direction cameras
 			up = Vector3D(0,0,1);
 
 		} else if (up_dir == "Y_UP") {
 			up = Vector3D(0,1,0); // no need to correct Y_UP as its used internally
 		} else {
-			stat("Erro: invalid up direction in COLLADA file");
+			stat("Error: invalid up direction in COLLADA file");
 			exit(EXIT_FAILURE);
 		}
   }
@@ -371,7 +374,7 @@ void ColladaParser::parse_node( XMLElement* xml ) {
 			if (e_instance_material) {
 
 				if (!e_instance_material->Attribute("target")) {
-					stat("Error: no targe material in instance: " << e_instance_material);
+					stat("Error: no target material in instance: " << e_instance_material);
 					exit(EXIT_FAILURE);
 				}
 
@@ -401,7 +404,7 @@ void ColladaParser::parse_node( XMLElement* xml ) {
 			if (e_instance_material) {
 
 				if (!e_instance_material->Attribute("target")) {
-					stat("Error: no targe material in instance: " << e_instance_material);
+					stat("Error: no target material in instance: " << e_instance_material);
 					exit(EXIT_FAILURE);
 				}
 
@@ -476,57 +479,91 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
   light.name = xml->Attribute("name");
   light.type = Instance::LIGHT;
 
-  // common profile
-  XMLElement* e_common = get_technique_common(xml);
-  if (!e_common) {
-    stat("Error: Common profile not defined in light: " << light.id);
+  XMLElement* technique = NULL;
+  XMLElement* technique_common = get_technique_common(xml);
+  XMLElement* technique_cmu462 = get_technique_cmu462(xml);
+
+  technique = technique_cmu462 ? technique_cmu462 : technique_common;
+  if (!technique) {
+    stat("Error: No supported profile defined in light: " << light.id);
     exit(EXIT_FAILURE);
   }
 
   // light parameters
-  XMLElement* e_light = e_common->FirstChildElement();
+  XMLElement* e_light = technique->FirstChildElement();
   if (e_light) {
 
     // type
     string type = e_light->Name();
 
-    // shared parameters
-    XMLElement* e_color = get_element(e_light, "color");
-    if (e_color) {
-      string color_string = e_color->GetText();
-      light.color = rgb_from_string( color_string );
-    } else {
-      stat("Error: No color definition in light: " << light.id);
-      exit(EXIT_FAILURE);
-    }
-
     // type-specific parameters
     if (type == "ambient") {
       light.light_type = LightType::AMBIENT;
+      XMLElement* e_color = get_element(e_light, "color");
+      if (e_color) {
+        string color_string = e_color->GetText();
+        light.spectrum = spectrum_from_string( color_string );
+      } else {
+        stat("Error: No color definition in ambient light: " << light.id);
+        exit(EXIT_FAILURE);
+      }
     } else if (type == "directional") {
       light.light_type = LightType::DIRECTIONAL;
-			light.direction = -up;
+      XMLElement* e_color = get_element(e_light, "color");
+      if (e_color) {
+        string color_string = e_color->GetText();
+        light.spectrum = spectrum_from_string( color_string );
+      } else {
+        stat("Error: No color definition in directional light: " << light.id);
+        exit(EXIT_FAILURE);
+      }
+    } else if (type == "area") {
+      light.light_type = LightType::AREA;
+      XMLElement* e_color = get_element(e_light, "color");
+      if (e_color) {
+        string color_string = e_color->GetText();
+        light.spectrum = spectrum_from_string( color_string );
+      } else {
+        stat("Error: No color definition in area light: " << light.id);
+        exit(EXIT_FAILURE);
+      }
     } else if (type == "point") {
       light.light_type = LightType::POINT;
+      XMLElement* e_color = get_element(e_light, "color");
       XMLElement* e_constant_att = get_element(e_light, "constant_attenuation");
-      if (e_constant_att) light.constant_att = atof(e_constant_att->GetText());
       XMLElement* e_linear_att = get_element(e_light, "linear_attenuation");
-      if (e_linear_att) light.constant_att = atof(e_linear_att->GetText());
       XMLElement* e_quadratic_att = get_element(e_light, "quadratic_attenuation");
-      if (e_quadratic_att) light.constant_att = atof(e_quadratic_att->GetText());
+      if (e_color && e_constant_att && e_linear_att && e_quadratic_att) {
+        string color_string = e_color->GetText();
+        light.spectrum = spectrum_from_string( color_string );
+        light.constant_att = atof(e_constant_att->GetText());
+        light.constant_att = atof(e_linear_att->GetText());
+        light.constant_att = atof(e_quadratic_att->GetText());
+      } else {
+        stat("Error: incomplete definition of point light: " << light.id);
+        exit(EXIT_FAILURE);        
+      }
     } else if (type == "spot") {
       light.light_type = LightType::SPOT;
-			light.direction = -up;
+      XMLElement* e_color = get_element(e_light, "color");
 			XMLElement* e_falloff_deg = e_light->FirstChildElement("falloff_angle");
-      if (e_falloff_deg) light.constant_att = atof(e_falloff_deg->GetText());
       XMLElement* e_falloff_exp = e_light->FirstChildElement("falloff_exponent");
-      if (e_falloff_exp) light.constant_att = atof(e_falloff_exp->GetText());
       XMLElement* e_constant_att = get_element(e_light, "constant_attenuation");
-      if (e_constant_att) light.constant_att = atof(e_constant_att->GetText());
       XMLElement* e_linear_att = get_element(e_light, "linear_attenuation");
-      if (e_linear_att) light.constant_att = atof(e_linear_att->GetText());
       XMLElement* e_quadratic_att = get_element(e_light, "quadratic_attenuation");
-      if (e_quadratic_att) light.constant_att = atof(e_quadratic_att->GetText());
+      if (e_color && e_falloff_deg && e_falloff_exp && 
+          e_constant_att && e_linear_att && e_quadratic_att) {
+        string color_string = e_color->GetText();
+        light.spectrum = spectrum_from_string( color_string );
+        light.constant_att = atof(e_falloff_deg->GetText());
+        light.constant_att = atof(e_falloff_exp->GetText());
+        light.constant_att = atof(e_constant_att->GetText());
+        light.constant_att = atof(e_linear_att->GetText());
+        light.constant_att = atof(e_quadratic_att->GetText());
+      } else {
+        stat("Error: incomplete definition of spot light: " << light.id);
+        exit(EXIT_FAILURE);                
+      } 
     } else {
       stat("Error: Light type " << type << " in light: " << light.id << "is not supported");
       exit(EXIT_FAILURE);
@@ -545,13 +582,7 @@ void ColladaParser::parse_sphere(XMLElement* xml, SphereInfo& sphere) {
   sphere.name = xml->Attribute("name");
   sphere.type = Instance::SPHERE;
 
-	XMLElement* e_extra = xml->FirstChildElement("extra");
-  if (!e_extra) {
-    stat("Error: no extra element data defined in geometry: " << sphere.id);
-    exit(EXIT_FAILURE);
-  }
-
-	XMLElement* e_technique = get_technique_462(e_extra);
+	XMLElement* e_technique = get_technique_cmu462(xml);
 	if (!e_technique) {
 		stat("Error: no 462 profile technique in geometry: " << sphere.id);
     exit(EXIT_FAILURE);
@@ -829,38 +860,68 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
 	XMLElement* e_effect = get_element(xml, "instance_effect");
   if (e_effect) {
 
-    // common
-    XMLElement* e_technique = get_technique_common(e_effect);
-    if (!e_technique) {
-      stat("Error: no technique defined for common profile in material: " << material.id);
-      exit(EXIT_FAILURE);
+    // if the material does not have additional specification in the 462 
+    // profile. The diffuse color will be used to create a diffuse BSDF, 
+    // Other information from the common profile are ignored
+
+    XMLElement* tech_common = get_technique_common(e_effect); // common profile
+    XMLElement* tech_cmu462 = get_technique_cmu462(e_effect); // cmu462 profile
+
+    if (tech_cmu462) {
+      XMLElement *e_bsdf = tech_cmu462->FirstChildElement();
+      while (e_bsdf) {
+        string type = e_bsdf->Name();
+        if (type == "mirror") {
+          XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
+          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
+          BSDF* bsdf = new MirrorBSDF(reflectance);
+          material.bsdf = bsdf;
+        /*
+        if (type == "glossy") {
+          XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
+          XMLElement *e_roughness = get_element(e_bsdf, "roughness");
+          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
+          float roughness = atof(e_roughness->GetText());
+          BSDF* bsdf = new GlossyBSDF(reflectance, roughness);
+          material.bsdf = bsdf;*/
+        } else if (type == "refraction") {
+          XMLElement *e_transmittance  = get_element(e_bsdf, "transmittance");
+          XMLElement *e_roughness = get_element(e_bsdf, "roughness");
+          XMLElement *e_ior = get_element(e_bsdf, "ior");
+          Spectrum transmittance = spectrum_from_string(string(e_transmittance->GetText()));
+          float roughness = atof(e_roughness->GetText());
+          float ior = atof(e_ior->GetText());
+          BSDF* bsdf = new RefractionBSDF(transmittance, roughness, ior);
+          material.bsdf = bsdf;
+        } else if (type == "glass") {
+          XMLElement *e_transmittance  = get_element(e_bsdf, "transmittance");
+          XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
+          XMLElement *e_roughness = get_element(e_bsdf, "roughness");
+          XMLElement *e_ior = get_element(e_bsdf, "ior");
+          Spectrum transmittance = spectrum_from_string(string(e_transmittance->GetText()));
+          Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
+          float roughness = atof(e_roughness->GetText());
+          float ior = atof(e_ior->GetText());
+          BSDF* bsdf = new GlassBSDF(transmittance, reflectance, roughness, ior);
+          material.bsdf = bsdf;
+        }
+
+        e_bsdf = e_bsdf->NextSiblingElement();
+      }
+    } else if (tech_common) {
+      XMLElement* e_diffuse = get_element(tech_common, "phong/diffuse/color");
+      if (e_diffuse) {
+        Spectrum albedo = spectrum_from_string(string(e_diffuse->GetText()));
+        material.bsdf = new DiffuseBSDF(albedo);
+      } else {
+        material.bsdf = new DiffuseBSDF(Spectrum(.5f,.5f,.5f));
+      }
+    } else {
+      BSDF* bsdf = new DiffuseBSDF(Spectrum(.5f,.5f,.5f));
+      material.bsdf = bsdf;
     }
-
-    // phong
-    XMLElement* e_phong = e_technique->FirstChildElement("phong");
-    if (!e_phong) {
-      stat("Error: no phong shading is defined for material: " << material.id);
-      exit(EXIT_FAILURE);
-    }
-
-    Color none = Color(0,0,0,0);
-
-    XMLElement* e_Ce = get_element(e_phong, "emission/color");
-    XMLElement* e_Ca = get_element(e_phong, "ambient/color");
-    XMLElement* e_Cd = get_element(e_phong, "diffuse/color");
-    XMLElement* e_Cs = get_element(e_phong, "specular/color");
-    XMLElement* e_Ns = get_element(e_phong, "shininess/float");
-    XMLElement* e_Ni = get_element(e_phong, "index_of_refraction/float");
-
-    material.Ce = e_Ce ? rgba_from_string(string(e_Ce->GetText())) : none;
-    material.Ca = e_Ca ? rgba_from_string(string(e_Ca->GetText())) : none;
-    material.Cd = e_Cd ? rgba_from_string(string(e_Cd->GetText())) : none;
-    material.Cs = e_Cs ? rgba_from_string(string(e_Cs->GetText())) : none;
-    material.Ns = e_Ns ? atof(e_Ns->GetText()) : 0.0f;
-    material.Ni = e_Ni ? atof(e_Ni->GetText()) : 1.0f;
-
   } else {
-    stat("Error: target effects not found for material: " << material.id);
+    stat("Error: no target effects found for material: " << material.id);
     exit(EXIT_FAILURE);
   }
 

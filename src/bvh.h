@@ -12,7 +12,7 @@ namespace CMU462 { namespace StaticScene {
 /**
  * A node in the BVH accelerator aggregate.
  * The accelerator uses a "flat tree" structure where all the primitives are
- * stored in one vector. A node in the datastructure stores only the starting
+ * stored in one vector. A node in the data structure stores only the starting
  * index and the number of primitives in the node and uses this information to
  * index into the primitive vector for actual data. In this implementation all
  * primitives (index + range) are stored on leaf nodes. A leaf node has no child
@@ -26,7 +26,7 @@ struct BVHNode {
 
   inline bool isLeaf() const { return l == NULL && r == NULL; }
 
-  BBox bb;        ///< bouding box of the node
+  BBox bb;        ///< bounding box of the node
   size_t start;   ///< start index into the primitive list
   size_t range;   ///< range of index into the primitive list
   BVHNode* l;     ///< left child node
@@ -94,12 +94,12 @@ class BVHAccel : public Aggregate {
   bool intersect(const Ray& r, Intersection* i) const;
 
   /**
-   * Get BRDF of the surface material
+   * Get BSDF of the surface material
    * Note that this does not make sense for the BVHAccel aggregate
    * because it does not have a surface material. Therefore this
    * should always return a null pointer.
    */
-  BRDF* get_brdf() const { return NULL; }
+  BSDF* get_bsdf() const { return NULL; }
 
   /**
    * Get entry point (root) - used in visualizer

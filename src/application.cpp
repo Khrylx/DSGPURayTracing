@@ -1,7 +1,9 @@
 #include "application.h"
 
 #include "dynamic_scene/ambient_light.h"
+#include "dynamic_scene/environment_light.h"
 #include "dynamic_scene/directional_light.h"
+#include "dynamic_scene/area_light.h"
 #include "dynamic_scene/point_light.h"
 #include "dynamic_scene/spot_light.h"
 #include "dynamic_scene/sphere.h"
@@ -19,13 +21,14 @@ namespace CMU462 {
 Application::Application(AppConfig config) {
 
   pathtracer = new PathTracer (
-    config.pathtracer_max_ray_depth,
     config.pathtracer_ns_aa,
+    config.pathtracer_max_ray_depth,
     config.pathtracer_ns_area_light,
     config.pathtracer_ns_diff,
     config.pathtracer_ns_glsy,
     config.pathtracer_ns_refr,
-    config.pathtracer_num_threads
+    config.pathtracer_num_threads,
+    config.pathtracer_envmap
   );
 
 }
@@ -50,7 +53,8 @@ void Application::init() {
   rightDown  = false;
   middleDown = false;
 
-  showHUD = true;
+  show_coordinates = true;
+  show_hud = true;
 
   // Lighting needs to be explicitly enabled.
   glEnable(GL_LIGHTING);
@@ -65,7 +69,7 @@ void Application::init() {
 
   // Initialize styles (colors, line widths, etc.) that will be used
   // to draw different types of mesh elements in various situations.
-  initializeStyle();
+  initialize_style();
 
   mode = EDIT_MODE;
   scene = nullptr;
@@ -84,43 +88,57 @@ void Application::init() {
   camera.configure(cameraInfo, screenW, screenH);
 }
 
-void Application::initializeStyle() {
+void Application::initialize_style() {
   // Colors.
-  defaultStyle.halfedgeColor = Color( 0.5, 0.5, 0.5 );
-    hoverStyle.halfedgeColor = Color( 0.9, 0.9, 0.9 );
-   selectStyle.halfedgeColor = Color( 1.0, 1.0, 1.0 );
+  defaultStyle.halfedgeColor = Color( 0.3, 0.3, 0.3, 1.0 );
+    hoverStyle.halfedgeColor = Color( 0.6, 0.6, 0.6, 1.0 );
+   selectStyle.halfedgeColor = Color( 1.0, 1.0, 1.0, 1.0 );
 
-  defaultStyle.faceColor = Color( 0.5, 0.50, 0.90 );
-    hoverStyle.faceColor = Color( 0.9, 0.75, 0.75 );
-   selectStyle.faceColor = Color( 1.0, 1.00, 1.00 );
+  defaultStyle.faceColor = Color( 0.3, 0.3, 0.3, 1.0 );
+    hoverStyle.faceColor = Color( 0.6, 0.6, 0.6, 1.0 );
+   selectStyle.faceColor = Color( 1.0, 1.0, 1.0, 1.0 );
 
-  defaultStyle.edgeColor = Color( 0.5, 0.5, 0.50 );
-    hoverStyle.edgeColor = Color( 0.9, 0.0, 0.75 );
-   selectStyle.edgeColor = Color( 1.0, 1.0, 1.00 );
+  defaultStyle.edgeColor = Color( 0.3, 0.3, 0.3, 1.0 );
+    hoverStyle.edgeColor = Color( 0.6, 0.6, 0.6, 1.0 );
+   selectStyle.edgeColor = Color( 1.0, 1.0, 1.0, 1.0 );
 
-  defaultStyle.vertexColor = Color( 0.0, 0.0, 0.00 );
-    hoverStyle.vertexColor = Color( 0.8, 0.0, 0.75 );
-   selectStyle.vertexColor = Color( 1.0, 1.0, 1.00 );
+  defaultStyle.vertexColor = Color( 0.3, 0.3, 0.3, 1.0 );
+    hoverStyle.vertexColor = Color( 0.6, 0.6, 0.6, 1.0 );
+   selectStyle.vertexColor = Color( 1.0, 1.0, 1.0, 1.0 );
 
   // Primitive sizes.
   defaultStyle.strokeWidth = 1.0;
-    hoverStyle.strokeWidth = 4.0;
-   selectStyle.strokeWidth = 8.0;
+    hoverStyle.strokeWidth = 2.0;
+   selectStyle.strokeWidth = 2.0;
 
-  defaultStyle.vertexRadius = 2.0;
-    hoverStyle.vertexRadius = 10.0;
-   selectStyle.vertexRadius = 20.0;
+  defaultStyle.vertexRadius = 4.0;
+    hoverStyle.vertexRadius = 8.0;
+   selectStyle.vertexRadius = 8.0;
+}
+
+void Application::update_style() {
+
+  float view_distance = (camera.position() - camera.view_point()).norm();
+  float scale_factor = canonical_view_distance / view_distance;
+
+    hoverStyle.strokeWidth = 2.0 * scale_factor;
+   selectStyle.strokeWidth = 2.0 * scale_factor;
+
+    hoverStyle.vertexRadius = 8.0 * scale_factor;
+   selectStyle.vertexRadius = 8.0 * scale_factor;
 }
 
 void Application::render() {
   update_gl_camera();
   switch (mode) {
     case EDIT_MODE:
+      if (show_coordinates) draw_coordinates();
       scene->render_in_opengl();
-      if (showHUD) drawHUD();
+      if (show_hud) draw_hud();
       break;
-    case RENDER_MODE:
     case VISUALIZE_MODE:
+      if (show_coordinates) draw_coordinates();
+    case RENDER_MODE:
       pathtracer->update_screen();
       break;
   }
@@ -150,7 +168,6 @@ void Application::update_gl_camera() {
             u.x, u.y, u.z);
 }
 
-// Guranteed to be called at the start.
 void Application::resize(size_t w, size_t h) {
   screenW = w;
   screenH = h;
@@ -193,7 +210,7 @@ void Application::load(SceneInfo* sceneInfo) {
   vector<DynamicScene::SceneLight *> lights;
   vector<DynamicScene::SceneObject *> objects;
 
-  // save camera position to update comera control later
+  // save camera position to update camera control later
   CameraInfo *c;
   Vector3D c_pos = Vector3D();
   Vector3D c_dir = Vector3D();
@@ -213,11 +230,8 @@ void Application::load(SceneInfo* sceneInfo) {
         break;
       case Collada::Instance::LIGHT:
       {
-        DynamicScene::SceneLight *l =
-          init_light(static_cast<LightInfo&>(*instance), transform);
-        if (l != nullptr) {
-          lights.push_back(l);
-        }
+        lights.push_back(
+          init_light(static_cast<LightInfo&>(*instance), transform));
         break;
       }
       case Collada::Instance::SPHERE:
@@ -246,27 +260,24 @@ void Application::load(SceneInfo* sceneInfo) {
     double min_view_distance = canonical_view_distance / 10.0;
     double max_view_distance = canonical_view_distance * 20.0;
 
-    // forcing camera to look at origin because control
-    // feels weird otherwise
-    c_dir = c_pos; c_dir.normalize();
+    canonicalCamera.place(Vector3D(0,0,0),
+                          PI / 2 - asin(c_dir.y),
+                          atan2(c_dir.x, c_dir.z),
+                          view_distance,
+                          min_view_distance,
+                          max_view_distance);
 
     camera.place(Vector3D(0,0,0),
-                 PI / 2 - asin(c_dir.y),
-                 atan2(c_dir.x, c_dir.z),
-                 view_distance,
-                 min_view_distance,
-                 max_view_distance);
+                PI / 2 - asin(c_dir.y),
+                atan2(c_dir.x, c_dir.z),
+                view_distance,
+                min_view_distance,
+                max_view_distance);
 
-    canonicalCamera.place(bbox.min + bbox.extent / 2,
-                        PI / 2, 0, view_distance,
-                        min_view_distance, max_view_distance);
     set_scroll_rate();
   }
-
-  for (int i = 0; i < lights.size(); i++) {
-    lights[i]->opengl_init_light(GL_LIGHT0 + 1 + i); //+1 for default light.
-  }
-
+  
+  // set default draw styles for meshEdit -
   scene->set_draw_styles(&defaultStyle, &hoverStyle, &selectStyle);
 
 }
@@ -283,18 +294,20 @@ void Application::reset_camera() {
 }
 
 DynamicScene::SceneLight *Application::init_light(LightInfo& light,
-                                       const Matrix4x4& transform) {
+                                        const Matrix4x4& transform) {
   switch(light.light_type) {
     case Collada::LightType::NONE:
       break;
     case Collada::LightType::AMBIENT:
-      return new DynamicScene::AmbientLight(light.color);
+      return new DynamicScene::AmbientLight(light);
     case Collada::LightType::DIRECTIONAL:
-      return new DynamicScene::DirectionalLight(light.color, transform);
+      return new DynamicScene::DirectionalLight(light, transform);
+    case Collada::LightType::AREA:
+      return new DynamicScene::AreaLight(light, transform);
     case Collada::LightType::POINT:
-      return new DynamicScene::PointLight(light.color, transform);
+      return new DynamicScene::PointLight(light, transform);
     case Collada::LightType::SPOT:
-      return new DynamicScene::SpotLight(light.color, transform);
+      return new DynamicScene::SpotLight(light, transform);
     default:
       break;
   }
@@ -342,6 +355,9 @@ void Application::cursor_event(float x, float y) {
 }
 
 void Application::scroll_event(float offset_x, float offset_y) {
+
+  update_style();
+
   switch(mode) {
     case EDIT_MODE:
     case VISUALIZE_MODE:
@@ -396,17 +412,21 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             pathtracer->start_visualizing();
             mode = VISUALIZE_MODE;
             break;
+        case 's': case 'S':
+            pathtracer->save_image();
+            break;
         case '+': case '=':
             pathtracer->stop();
-            pathtracer->clear();
             pathtracer->increase_area_light_sample_count();
             pathtracer->start_raytracing();
             break;
         case '-': case '_':
             pathtracer->stop();
-            pathtracer->clear();
             pathtracer->decrease_area_light_sample_count();
             pathtracer->start_raytracing();
+            break;
+        case '[': case ']':
+            pathtracer->key_press(key);
             break;
         }
       }
@@ -447,7 +467,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             reset_camera();
             break;
           case 'h': case 'H':
-            showHUD = !showHUD;
+            show_hud = !show_hud;
             break;
           case 'u': case 'U':
             scene->upsample_selected_mesh();
@@ -550,7 +570,6 @@ void Application::mouse_moved(float x, float y) {
   scene->update_selection(p, get_world_to_3DH());
 }
 
-
 void Application::to_edit_mode() {
   if (mode == EDIT_MODE) return;
   pathtracer->stop();
@@ -567,7 +586,6 @@ void Application::set_up_pathtracer() {
 
 }
 
-
 Matrix4x4 Application::get_world_to_3DH() {
   Matrix4x4 P, M;
   glGetDoublev(GL_PROJECTION_MATRIX, &P(0, 0));
@@ -575,32 +593,75 @@ Matrix4x4 Application::get_world_to_3DH() {
   return P * M;
 }
 
-
 inline void Application::draw_string(float x, float y,
   string str, size_t size, const Color& c) {
-  int line_index = textManager.add_line((x * 2 / screenW) - 1.0,
-                                        (- y * 2 / screenH) + 1.0,
+  int line_index = textManager.add_line(( x * 2 / screenW) - 1.0,
+                                        (-y * 2 / screenH) + 1.0,
                                         str, size, c);
   messages.push_back(line_index);
 }
 
-void Application::drawHUD() {
+void Application::draw_coordinates() { 
+
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_LIGHTING);
+
+  glBegin(GL_LINES);
+  glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
+  glVertex3i(0,0,0); 
+  glVertex3i(1,0,0);
+   
+  glColor4f(0.0f, 1.0f, 0.0f, 0.5f);
+  glVertex3i(0,0,0); 
+  glVertex3i(0,1,0); 
+
+  glColor4f(0.0f, 0.0f, 1.0f, 0.5f);
+  glVertex3i(0,0,0); 
+  glVertex3i(0,0,1); 
+
+  glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
+  for (int x = 0; x <= 8; ++x) {
+    glVertex3i(x - 4, 0, -4);
+    glVertex3i(x - 4, 0,  4);
+  }
+  for (int z = 0; z <= 8; ++z) {
+    glVertex3i(-4, 0, z - 4);
+    glVertex3i( 4, 0, z - 4);
+  }
+  glEnd();
+
+  glEnable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
+
+}
+
+void Application::draw_hud() {
   textManager.clear();
   messages.clear();
 
   const size_t size = 16;
-  const float x0 = use_hdpi ? screenW - 350 * 2 : screenW - 350;
+  const float x0 = use_hdpi ? screenW - 300 * 2 : screenW - 300;
   const float y0 = use_hdpi ? 128 : 64;
   const int inc  = use_hdpi ? 48  : 24;
   float y = y0 + inc - size;
 
   // No selection --> no messages.
   if (!scene->has_selection()) {
-    draw_string(x0, y, "No mesh feature is selected.", size, text_color);
+    draw_string(x0, y, "No mesh feature is selected", size, text_color);
+    y += inc;
   } else {
     DynamicScene::SelectionInfo *selectionInfo = scene->get_selection_info();
     for (const string& s : selectionInfo->info) {
-      draw_string(x0, y, s, size, text_color);
+      size_t split = s.find_first_of(":");
+      if (split != string::npos) {
+        split++;
+        string s1 = s.substr(0,split);
+        string s2 = s.substr(split);
+        draw_string(x0, y, s1, size, text_color);
+        draw_string(x0 + (use_hdpi ? 150 : 75 ), y, s2, size, text_color);
+      } else {
+        draw_string(x0, y, s, size, text_color);        
+      }
       y += inc;
     }
   }

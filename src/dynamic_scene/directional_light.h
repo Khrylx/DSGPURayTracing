@@ -2,38 +2,31 @@
 #define CMU462_DYNAMICSCENE_DIRECTIONALLIGHT_H
 
 #include "scene.h"
+#include "../static_scene/light.h"
 
 namespace CMU462 { namespace DynamicScene {
 
 class DirectionalLight : public SceneLight {
  public:
-  DirectionalLight(const Color& color, const Matrix4x4& transform) {
-    this->color = color;
-    this->transform = transform;
-  }
 
-  void opengl_init_light(GLenum lightIndex) const {
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMultMatrixd(&transform(0, 0));
-
-    glLightfv(lightIndex, GL_DIFFUSE, &color.r);
-    const GLfloat arg2[] = {1.0, 1.0, 1.0, 0.0};
-    glLightfv(lightIndex, GL_POSITION, arg2);
-    const GLfloat arg3[] = {0.0, 0.0, -1.0}; // default direction
-    glLightfv(lightIndex, GL_SPOT_DIRECTION, arg3);
-    glEnable(lightIndex);
-
-    glPopMatrix();
+  DirectionalLight(const Collada::LightInfo& light_info, 
+                   const Matrix4x4& transform) {
+    this->spectrum = light_info.spectrum;
+    this->direction = -(transform * Vector4D(light_info.direction, 1)).to3D();
+    this->direction.normalize();
   }
 
   StaticScene::SceneLight *get_static_light() const {
-    return nullptr;
+    StaticScene::DirectionalLight* l = 
+      new StaticScene::DirectionalLight(spectrum, direction);
+    return l;
   }
 
  private:
-  Color color;
-  Matrix4x4 transform; // local to world
+
+  Spectrum spectrum;
+  Vector3D direction;
+
 };
 
 } // namespace DynamicScene

@@ -21,10 +21,10 @@ class SceneObject {
   virtual std::vector<Primitive*> get_primitives() const = 0;
 
   /**
-   * Get the surface BRDF of the object's surface.
-   * \return the BRDF of the objects's surface
+   * Get the surface BSDF of the object's surface.
+   * \return the BSDF of the objects's surface
    */
-  virtual BRDF* get_brdf() const = 0;
+  virtual BSDF* get_bsdf() const = 0;
 
 };
 
@@ -34,15 +34,10 @@ class SceneObject {
  */
 class SceneLight {
  public:
+  virtual Spectrum sample_L(const Vector3D& p, Vector3D* wi,
+                            float* distToLight, float* pdf) const = 0;
+  virtual bool is_delta_light() const = 0;
 
-  /**
-   * From a given point, returns a vector to a point on the light, as well as
-   * the distance
-   */
-  virtual Vector3D sample(const Vector3D& p, double *distPtr) = 0;
-
-
-  // More to follow (get_power_at_distance, etc).
 };
 
 
@@ -61,6 +56,23 @@ struct Scene {
 
   // for sake of consistency of the scene object Interface
   std::vector<SceneLight*> lights;
+
+  // TODO (sky) :
+  // Adding object with emission BSDFs as mesh lights and sphere lights so 
+  // that light sampling configurations also applies to mesh lights. 
+//  for (SceneObject *obj : objects) {
+//    if (obj->get_material().emit != Spectrum()) {
+//      
+//      // mesh light
+//      if (dynamic_cast<Mesh*>(obj)) {
+//        staticLights.push_back()
+//      }
+//      
+//      // sphere light
+//      if (dynamic_cast<Sphere*>(obj)) {
+//
+//      }
+//  }
 
 };
 

@@ -17,12 +17,19 @@
 
 #include "static_scene/scene.h"
 using CMU462::StaticScene::Scene;
+
+#include "static_scene/environment_light.h"
+using CMU462::StaticScene::EnvironmentLight;
+
 using CMU462::StaticScene::BVHNode;
 using CMU462::StaticScene::BVHAccel;
 
 namespace CMU462 {
 
 struct WorkItem {
+
+  // Default constructor.
+  WorkItem() : WorkItem(0, 0, 0, 0) { }
 
   WorkItem(int x, int y, int w, int h)
       : tile_x(x), tile_y(y), tile_w(w), tile_h(h) {}
@@ -50,10 +57,11 @@ class PathTracer {
    * Default constructor.
    * Creates a new pathtracer instance.
    */
-  PathTracer(size_t max_ray_depth = 4,
-             size_t ns_aa = 1, size_t ns_area_light = 1,
+  PathTracer(size_t ns_aa = 1, 
+             size_t max_ray_depth = 4, size_t ns_area_light = 1,
              size_t ns_diff = 1, size_t ns_glsy = 1, size_t ns_refr = 1,
-             size_t num_threads=1);
+             size_t num_threads = 1,
+             HDRImageBuffer* envmap = NULL);
 
   /**
    * Destructor.
@@ -131,6 +139,11 @@ class PathTracer {
    */
   void decrease_area_light_sample_count();
 
+  /**
+   * Save rendered result to png file.
+   */
+  void save_image();
+
  private:
 
   /**
@@ -156,7 +169,7 @@ class PathTracer {
   /**
    * Trace a camera ray given by the pixel coordinate.
    */
-  void raytrace_pixel(size_t x, size_t y);
+  Spectrum raytrace_pixel(size_t x, size_t y);
 
   /**
    * Raytrace a tile of the scene and update the frame buffer. Is run
@@ -202,11 +215,19 @@ class PathTracer {
   size_t ns_glsy;       ///< number of samples - glossy surfaces
   size_t ns_refr;       ///< number of samples - refractive surfaces
 
+  // Integration state //
+
+  vector<int> tile_samples; ///< current sample rate for tile
+  size_t num_tiles_w;       ///< number of tiles along width of the image
+  size_t num_tiles_h;       ///< number of tiles along height of the image
+
   // Components //
 
   BVHAccel* bvh;                 ///< BVH accelerator aggregate
+  EnvironmentLight *envLight;    ///< environment map
   Sampler2D* gridSampler;        ///< samples unit grid
-  Sampler3D* hemisphereSampler;  ///< samples uint hemisphere
+  Sampler3D* hemisphereSampler;  ///< samples unit hemisphere
+  HDRImageBuffer sampleBuffer;   ///< sample buffer
   ImageBuffer frameBuffer;       ///< frame buffer
   Timer timer;                   ///< performance test timer
 
@@ -219,6 +240,13 @@ class PathTracer {
   std::vector<std::thread*> workerThreads;  ///< pool of worker threads
   std::atomic<int> workerDoneCount;         ///< worker threads management
   WorkQueue<WorkItem> workQueue;            ///< queue of work for the workers
+
+  // Tonemapping Controls //
+
+  float tm_gamma;                           ///< gamma
+  float tm_level;                           ///< exposure level
+  float tm_key;                             ///< key value
+  float tm_wht;                             ///< white point
 
   // Visualizer Controls //
 

@@ -31,7 +31,6 @@ class Sphere : public Primitive {
     return BBox(o - Vector3D(r,r,r), o + Vector3D(r,r,r));
   }
 
-    
   /**
    * Ray - Sphere intersection.
    * Check if the given ray intersects with the sphere, no intersection
@@ -55,11 +54,11 @@ class Sphere : public Primitive {
   bool intersect(const Ray& r, Intersection* i) const;
 
   /**
-   * Get BRDF.
-   * In the case of a sphere, the surface material BRDF is stored in 
+   * Get BSDF.
+   * In the case of a sphere, the surface material BSDF is stored in 
    * its sphere object wrapper. 
    */
-  BRDF* get_brdf() const { return object->get_brdf(); }
+  BSDF* get_bsdf() const { return object->get_bsdf(); }
 
   /**
    * Compute the normal at a point of intersection.

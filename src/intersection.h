@@ -7,7 +7,7 @@
 #include "CMU462/spectrum.h"
 #include "CMU462/misc.h"
 
-#include "static_scene/brdf.h"
+#include "bsdf.h"
 
 namespace CMU462 { namespace StaticScene {
 
@@ -19,7 +19,7 @@ class Primitive;
  */
 struct Intersection {
 
-  Intersection() : t (INF_D), primitive(NULL), brdf(NULL) { }
+  Intersection() : t (INF_D), primitive(NULL), bsdf(NULL) { }
 
   double t;    ///< time of intersection
 
@@ -27,7 +27,7 @@ struct Intersection {
 
   Vector3D n;  ///< normal at point of intersection
 
-  BRDF* brdf; ///< BRDF of the surface at point of intersection
+  BSDF* bsdf; ///< BSDF of the surface at point of intersection
 
   // More to follow.
 };

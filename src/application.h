@@ -29,6 +29,7 @@
 // PathTracer
 #include "static_scene/scene.h"
 #include "pathtracer.h"
+#include "image.h"
 
 // Shared modules
 #include "camera.h"
@@ -41,8 +42,8 @@ struct AppConfig {
 
   AppConfig () {
 
-    pathtracer_max_ray_depth = 4;
     pathtracer_ns_aa = 1;
+    pathtracer_max_ray_depth = 1;
     pathtracer_ns_area_light = 4;
 
     pathtracer_ns_diff = 1;
@@ -50,15 +51,19 @@ struct AppConfig {
     pathtracer_ns_refr = 1;
 
     pathtracer_num_threads = 1;
+    pathtracer_envmap = NULL;
+
   }
 
-  size_t pathtracer_max_ray_depth;
   size_t pathtracer_ns_aa;
+  size_t pathtracer_max_ray_depth;
   size_t pathtracer_ns_area_light;
   size_t pathtracer_ns_diff;
   size_t pathtracer_ns_glsy;
   size_t pathtracer_ns_refr;
   size_t pathtracer_num_threads;
+  HDRImageBuffer* pathtracer_envmap;
+
 };
 
 class Application : public Renderer {
@@ -118,13 +123,19 @@ class Application : public Renderer {
   */
   void set_projection_matrix();
 
-  /*
-    Fills the DrawStyle structs.
-  */
-  void initializeStyle();
-  /*
-    Reads and combines the current modelview and projection matrices.
-  */
+  /**
+   * Fills the DrawStyle structs.
+   */
+  void initialize_style();
+
+  /**
+   * Update draw styles properly given the current view distance.
+   */
+  void update_style();
+
+  /**
+   * Reads and combines the current modelview and projection matrices.
+   */
   Matrix4x4 get_world_to_3DH();
 
   // Initialization functions to get the opengl cooking with oil.
@@ -173,9 +184,13 @@ class Application : public Renderer {
   Color text_color;
   vector<int> messages;
 
+  // Coordinate System //
+  bool show_coordinates;
+  void draw_coordinates();
+
   // HUD //
-  bool showHUD;
-  void drawHUD();
+  bool show_hud;
+  void draw_hud();
   inline void draw_string(float x, float y,
     string str, size_t size, const Color& c);
 

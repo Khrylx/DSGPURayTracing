@@ -93,7 +93,7 @@ class SceneObject {
    * Returns info about the current selection (null if this object doesn't have
    * a selection), for use in drawHUD.
    */
-  virtual SelectionInfo *get_selection_info() = 0;
+  virtual void get_selection_info(SelectionInfo *selectionInfo) = 0;
 
   /**
    * If this object holds the selected element, drag it by (dx, dy). If this
@@ -126,15 +126,8 @@ class SceneObject {
  */
 class SceneLight {
  public:
-  virtual void opengl_init_light(GLenum lightIndex) const = 0;
-
   virtual StaticScene::SceneLight *get_static_light() const = 0;
-
-  // More to follow.
 };
-
-using std::cout;
-using std::endl;
 
 /**
  * The scene that meshEdit generates and works with.
@@ -202,6 +195,8 @@ class Scene {
 
   /**
    * Returns information about the given selection, or nullptr if there is none.
+   * Note that this object is still owned by the Scene, so it is invalidated on
+   * selection updates, scene changes, and scene destruction.
    */
   SelectionInfo *get_selection_info();
 
@@ -220,6 +215,7 @@ class Scene {
   StaticScene::Scene *get_static_scene();
 
  private:
+  SelectionInfo selectionInfo;
   std::vector<SceneObject *> objects;
   std::vector<SceneLight *> lights;
   int selectionIdx, hoverIdx;

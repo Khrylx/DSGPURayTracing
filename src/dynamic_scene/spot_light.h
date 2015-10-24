@@ -2,36 +2,34 @@
 #define CMU462_DYNAMICSCENE_SPOTLIGHT_H
 
 #include "scene.h"
+#include "../static_scene/light.h"
 
 namespace CMU462 { namespace DynamicScene {
 
 class SpotLight : public SceneLight {
  public:
-  SpotLight(const Color& color, const Matrix4x4& transform) {
-    this->color = color;
-    this->transform = transform;
-  }
 
-  void opengl_init_light(GLenum lightIndex) const {
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMultMatrixd(&transform(0, 0));
+  SpotLight(const Collada::LightInfo& light_info, 
+           const Matrix4x4& transform) {
 
-    glLightfv(lightIndex, GL_DIFFUSE, &color.r);
-    const GLfloat arg1[] = {0.0, 0.0, 0.0, 1.0};
-    glLightfv(lightIndex, GL_POSITION, arg1);
-    glEnable(lightIndex);
-
-    glPopMatrix();
+    this->spectrum = light_info.spectrum;
+    this->position = (transform * Vector4D(light_info.position, 1)).to3D();
+    this->direction = (transform * Vector4D(light_info.direction, 1)).to3D() - position;
+    this->direction.normalize();
   }
 
   StaticScene::SceneLight *get_static_light() const {
-    return nullptr;
+    StaticScene::SpotLight* l = 
+      new StaticScene::SpotLight(spectrum, position, direction, PI * .5f);
+    return l;
   }
 
  private:
-  Color color;
-  Matrix4x4 transform;
+
+  Spectrum spectrum;
+  Vector3D direction;
+  Vector3D position;
+
 };
 
 } // namespace DynamicScene

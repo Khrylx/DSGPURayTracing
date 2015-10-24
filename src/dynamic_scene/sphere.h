@@ -2,7 +2,6 @@
 #define CMU462_DYNAMICSCENE_SPHERE_H
 
 #include "scene.h"
-#include "material.h"
 
 #include "../collada/sphere_info.h"
 
@@ -29,17 +28,20 @@ class Sphere : public SceneObject {
   void confirm_select() { }
   void invalidate_hover() { }
   void invalidate_selection() { }
-  SelectionInfo *get_selection_info() { return nullptr; }
+  void get_selection_info(SelectionInfo *selectionInfo) { }
   void drag_selection(float dx, float dy, const Matrix4x4& worldTo3DH) { }
   MeshView *get_mesh_view() { return nullptr; }
 
+  BSDF* get_bsdf();
   StaticScene::SceneObject *get_static_object();
 
  private:
-  Vector3D p;
+
   double r;
+  Vector3D p;
+  BSDF* bsdf;
   DrawStyle *style;
-  Material *material;
+
 };
 
 } // namespace DynamicScene

@@ -55,11 +55,11 @@ namespace CMU462 { namespace StaticScene {
   bool intersect(const Ray& r, Intersection* i) const;
 
   /**
-   * Get BRDF.
-   * In the case of a triangle, the surface material BRDF is stored in 
+   * Get BSDF.
+   * In the case of a triangle, the surface material BSDF is stored in 
    * the mesh it belongs to. 
    */
-  BRDF* get_brdf() const { return mesh->get_brdf(); }
+  BSDF* get_bsdf() const { return mesh->get_bsdf(); }
 
   /**
    * Draw with OpenGL (for visualizer)

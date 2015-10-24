@@ -10,22 +10,28 @@ namespace CMU462 { namespace DynamicScene {
  */
 class DrawStyle {
  public:
+
+  void style_reset() const {
+    glLineWidth(1);
+    glPointSize(1);
+  }
+
   void style_face() const {
-    glColor3f(faceColor.r, faceColor.g, faceColor.b);
+    glColor4fv(&faceColor.r);
   }
 
   void style_edge() const {
-    glColor3f(edgeColor.r, edgeColor.g, edgeColor.b);
+    glColor4fv(&edgeColor.r);
     glLineWidth(strokeWidth);
   }
 
   void style_halfedge() const {
-    glColor3f(halfedgeColor.r, halfedgeColor.g, halfedgeColor.b);
+    glColor4fv(&halfedgeColor.r);
     glLineWidth(strokeWidth);
   }
 
   void style_vertex() const {
-    glColor3f(vertexColor.r, vertexColor.g, vertexColor.b);
+    glColor4fv(&vertexColor.r);
     glPointSize(vertexRadius);
   }
 

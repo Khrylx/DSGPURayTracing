@@ -1,7 +1,7 @@
 #ifndef CMU462_COLLADA_LIGHTINFO_H
 #define CMU462_COLLADA_LIGHTINFO_H
 
-#include "CMU462/color.h"
+#include "CMU462/spectrum.h"
 
 #include "collada_info.h"
 
@@ -13,6 +13,7 @@ namespace LightType {
     NONE,
     AMBIENT,
     DIRECTIONAL,
+    AREA,
     POINT,
     SPOT
   };
@@ -20,21 +21,23 @@ namespace LightType {
 
 class LightInfo : public Instance {
  public:
-  LightType::T light_type; ///< type 
-
-  Color color;          ///< color 
-
-  Vector3D position;    ///< position
-  Vector3D direction;   ///< direction
-
-  float falloff_deg;    ///< degree of fall off angle
-  float falloff_exp;    ///< fall out exponent
-
-  float constant_att;   ///< constant attentuation factor  
-  float linear_att;     ///< linear attentuation factor
-  float quadratic_att;  ///< quadratic attentuation factor
-
+  
   LightInfo();
+
+  LightType::T light_type;  ///< type 
+
+  Spectrum spectrum;        ///< spectrum 
+
+  Vector3D position;        ///< position
+  Vector3D direction;       ///< direction
+  Vector3D up;              ///< up
+
+  float falloff_deg;        ///< degree of fall off angle
+  float falloff_exp;        ///< fall out exponent
+
+  float constant_att;       ///< constant attenuation factor  
+  float linear_att;         ///< linear attenuation factor
+  float quadratic_att;      ///< quadratic attenuation factor
 
 }; // struct Light
 

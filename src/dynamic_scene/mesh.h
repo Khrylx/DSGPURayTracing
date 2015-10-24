@@ -2,12 +2,10 @@
 #define CMU462_DYNAMICSCENE_MESH_H
 
 #include "scene.h"
-#include "material.h"
 
 #include "../collada/polymesh_info.h"
 #include "../halfEdgeMesh.h"
 #include "../meshEdit.h"
-#include "../ray.h"
 
 namespace CMU462 { namespace DynamicScene {
 
@@ -57,13 +55,14 @@ class Mesh : public SceneObject, public MeshView {
   void confirm_select();
   void invalidate_hover();
   void invalidate_selection();
-  SelectionInfo *get_selection_info();
+  void get_selection_info(SelectionInfo *selectionInfo);
 
   void drag_selection(float dx, float dy, const Matrix4x4& worldTo3DH);
 
-  StaticScene::SceneObject *get_static_object();
-
   MeshView *get_mesh_view();
+
+  BSDF *get_bsdf();
+  StaticScene::SceneObject *get_static_object();
 
   // MeshView methods
   void collapse_selected_edge();
@@ -104,13 +103,16 @@ class Mesh : public SceneObject, public MeshView {
    */
   void choose_hovered_subfeature();
 
+  // selection draw styles
   MeshFeature potentialFeature, hoveredFeature, selectedFeature;
 	DrawStyle *defaultStyle, *hoveredStyle, *selectedStyle;
 
-  Material *material;
-
+  // halfEdge mesh
   HalfedgeMesh mesh;
   MeshResampler resampler;
+
+  // material
+  BSDF* bsdf;
 };
 
 } // namespace DynamicScene

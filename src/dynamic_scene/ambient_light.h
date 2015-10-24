@@ -2,27 +2,25 @@
 #define CMU462_DYNAMICSCENE_AMBIENTLIGHT_H
 
 #include "scene.h"
+#include "../static_scene/light.h"
 
 namespace CMU462 { namespace DynamicScene {
 
 class AmbientLight : public SceneLight {
  public:
-  AmbientLight(const Color& color) {
-    this->color = color;
-  }
 
-  void opengl_init_light(GLenum lightIndex) const {
-    glMatrixMode(GL_MODELVIEW);
-    glLightfv(lightIndex, GL_AMBIENT, &color.r);
-    glEnable(lightIndex);
+  AmbientLight(const Collada::LightInfo& light_info) {
+    this->spectrum = light_info.spectrum;
   }
 
   StaticScene::SceneLight *get_static_light() const {
-    return nullptr;
+    StaticScene::InfiniteHemisphereLight* l = 
+      new StaticScene::InfiniteHemisphereLight(spectrum);
+    return l;
   }
 
  private:
-  Color color;
+  Spectrum spectrum;
 };
 
 } // namespace DynamicScene

@@ -30,13 +30,13 @@ class Aggregate : public Primitive {
   std::vector<Primitive*> primitives; ///< primitives enclosed in the aggregate
 
   /**
-   * Get BRDF.
+   * Get BSDF.
    * An aggregate should not have a surface material as it is not an actual
    * primitive that we would want to render but an accelerator that we use to 
    * speed up ray - primitive intersections. Therefore get_brdf should always
    * return the null pointer for aggregates. 
    */
-  BRDF* get_brdf() const { return NULL; }
+  BSDF* get_bsdf() const { return NULL; }
 
 };
 

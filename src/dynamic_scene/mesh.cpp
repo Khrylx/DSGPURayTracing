@@ -14,35 +14,34 @@ static const double low_threshold  = .1;
 static const double mid_threshold  = .2;
 static const double high_threshold = 1.0 - low_threshold;
 
-
 Mesh::Mesh(Collada::PolymeshInfo& polyMesh, const Matrix4x4& transform) {
 
 	// Build halfedge mesh from polygon soup
   vector< vector<size_t> > polygons;
-  for (Collada::PolyListIter p = polyMesh.polygons.begin();
-       p != polyMesh.polygons.end(); p++) {
-     polygons.push_back(p->vertex_indices);
+  for (const Collada::Polygon& p : polyMesh.polygons) {
+    polygons.push_back(p.vertex_indices);
   }
   vector<Vector3D> vertices = polyMesh.vertices; // DELIBERATE COPY.
   for (int i = 0; i < vertices.size(); i++) {
     vertices[i] = (transform * Vector4D(vertices[i], 1)).projectTo3D();
   }
 
-  mesh.build(polygons, vertices);
-
+  mesh.build(polygons, vertices);  
   if (polyMesh.material) {
-    material = new Material(*polyMesh.material);
+    bsdf = polyMesh.material->bsdf;
   } else {
-    material = new Material();
+    bsdf = new DiffuseBSDF(Spectrum(0.5f,0.5f,0.5f));
   }
 }
 
-
-/**************
- * RENDER FNS *
- **************/
-
 void Mesh::render_in_opengl() const {
+
+  // TODO: fix drawing with BSDF
+  // DiffuseBSDF* diffuse = dynamic_cast<DiffuseBSDF*>(bsdf);
+  // if (diffuse) {
+  //   glBindTexture(GL_TEXTURE_2D, 0);
+  //   glMaterialfv(GL_FRONT, GL_DIFFUSE, &diffuse->albedo.r);
+  // }
 
 	// Enable lighting for faces
   glEnable(GL_LIGHTING);
@@ -60,7 +59,6 @@ void Mesh::render_in_opengl() const {
 
 void Mesh::draw_faces() const {
 
-  material->set_material_properties();
   for (FaceCIter f = mesh.facesBegin(); f != mesh.facesEnd(); f++) {
 
     // Prevent z fighting (faces bleeding into edges and points).
@@ -106,6 +104,7 @@ void Mesh::draw_edges() const {
       defaultStyle->style_edge();
     }
   }
+  defaultStyle->style_reset();
 }
 
 void Mesh::draw_feature_if_needed(const MeshFeature *feature) const {
@@ -129,6 +128,7 @@ void Mesh::draw_vertex(const Vertex *v) const {
   glBegin(GL_POINTS);
   glVertex3d(v->position.x, v->position.y, v->position.z);
   glEnd();
+  get_draw_style(v)->style_reset();
 }
 
 void Mesh::draw_halfedge_arrow(const Halfedge *h) const {
@@ -158,6 +158,8 @@ void Mesh::draw_halfedge_arrow(const Halfedge *h) const {
   glVertex3dv(&b.x);
   glVertex3dv(&c.x);
   glEnd();
+
+  get_draw_style(h)->style_reset();
 }
 
 DrawStyle *Mesh::get_draw_style(const HalfedgeElement *element) const {
@@ -173,11 +175,6 @@ void Mesh::set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
   this->selectedStyle = selectedStyle;
 }
 
-
-/************
- * MISC FNS *
- ************/
-
 BBox Mesh::get_bbox() {
   BBox bbox;
   for (VertexIter it = mesh.verticesBegin(); it != mesh.verticesEnd(); it++) {
@@ -185,11 +182,6 @@ BBox Mesh::get_bbox() {
   }
   return bbox;
 }
-
-
-/*****************
- * SELECTION FNS *
- *****************/
 
 double Mesh::test_selection(const Vector2D& p,
                             const Matrix4x4& worldTo3DH, double minW) {
@@ -249,98 +241,95 @@ void Mesh::invalidate_selection() {
   selectedFeature.invalidate();
 }
 
-SelectionInfo *Mesh::get_selection_info() {
+void Mesh::get_selection_info(SelectionInfo *selectionInfo) {
   if (!selectedFeature.isValid()) {
-    return nullptr;
+    return;
   }
-  SelectionInfo *selectionInfo = new SelectionInfo();
 
   Vertex *v = selectedFeature.element->getVertex();
   if (v != nullptr) {
-    ostringstream m1, m2, m3, m4, m5, m6, m7, m8;
-    m1 << "VERTEX DATA";
-    m2 << "address      = " << v;
+    ostringstream m1, m2, m3, m4, m5, m6;
+    m1 << "VERTEX";
+    m2 << "Address: " << v;
+    m3 << "Halfedge: " << elementAddress(v->halfedge());
+    m4 << "Degree: " << v->degree();
+    m5 << "Position: " << v->position;
+    m6 << "Boundary: " << (v->isBoundary() ? "YES" : "NO");
 
-    // -- Nicely format position data.
-    const Vector3D & pos = v->position;
-    m3 << scientific;
-    m3.precision(4);
-    m3 << "position:  x = " << pos.x;
-    m4 << scientific;
-    m4.precision(4);
-    m4 << "           y = " << pos.y;
-    m5 << scientific;
-    m5.precision(4);
-    m5 << "           z = " << pos.z;
-
-    m6 << "halfedge()   = " << elementAddress(v -> halfedge());
-    m7 << "isBoundary() = " << v -> isBoundary();
-    m8 << "degree()     = " << v->degree();
     selectionInfo->info.reserve(8);
     selectionInfo->info.push_back(m1.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m2.str());
     selectionInfo->info.push_back(m3.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m4.str());
     selectionInfo->info.push_back(m5.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m6.str());
-    selectionInfo->info.push_back(m7.str());
-    selectionInfo->info.push_back(m8.str());
-    return selectionInfo;
+    return;
   }
 
   Halfedge* h = selectedFeature.element->getHalfedge();
   if (h != nullptr) {
     ostringstream m1, m2, m3, m4, m5, m6, m7, m8;
-    m1 << "HALFEDGE DATA";
-    m2 << "address      = " << h;
-    m3 << "twin()       = " << elementAddress(h->twin());
-    m4 << "next()       = " << elementAddress(h->next());
-    m5 << "vertex()     = " << elementAddress(h->vertex());
-    m6 << "edge()       = " << elementAddress(h->edge());
-    m7 << "face()       = " << elementAddress(h->face());
-    m8 << "isBoundary() = " << h->isBoundary() << endl;
+    m1 << "HALFEDGE";
+    m2 << "Address: "  << h;
+    m3 << "Twin: "     << elementAddress(h->twin());
+    m4 << "Next: "     << elementAddress(h->next());
+    m5 << "Vertex: "   << elementAddress(h->vertex());
+    m6 << "Edge: "     << elementAddress(h->edge());
+    m7 << "Face: "     << elementAddress(h->face());
+    m8 << "Boundary: " << (h->isBoundary() ? "YES" : "NO");
     selectionInfo->info.reserve(8);
     selectionInfo->info.push_back(m1.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m2.str());
     selectionInfo->info.push_back(m3.str());
     selectionInfo->info.push_back(m4.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m5.str());
     selectionInfo->info.push_back(m6.str());
     selectionInfo->info.push_back(m7.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m8.str());
-    return selectionInfo;
+    return;
   }
 
   Edge* e = selectedFeature.element->getEdge();
   if (e != nullptr) {
     ostringstream m1, m2, m3, m4;
-    m1 << "EDGE DATA";
-    m2 << "address      = " << e;
-    m3 << "halfedge()   = " << elementAddress(e->halfedge());
-    m4 << "isBoundary() = " << e->isBoundary() << endl;
+    m1 << "EDGE";
+    m2 << "Address: "  << e;
+    m3 << "Halfedge: " << elementAddress(e->halfedge());
+    m4 << "Boundary: " << (e->isBoundary() ? "YES" : "NO");
     selectionInfo->info.reserve(4);
     selectionInfo->info.push_back(m1.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m2.str());
     selectionInfo->info.push_back(m3.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m4.str());
-    return selectionInfo;
+    return;
   }
 
   Face* f = selectedFeature.element->getFace();
   if (f != nullptr) {
     ostringstream m1, m2, m3, m4, m5;
-    m1 << "FACE DATA";
-    m2 << "address      = " << f << endl;
-    m3 << "halfedge()   = " << elementAddress( f->halfedge() ) << endl;
-    m4 << "degree()     = " << f->degree() << endl;
-    m5 << "isBoundary() = " << f->isBoundary() << endl;
+    m1 << "FACE";
+    m2 << "Address: "  << f;
+    m3 << "Halfedge: " << elementAddress( f->halfedge() );
+    m4 << "Degree: "   << f->degree();
+    m5 << "Boundary: " << (f->isBoundary() ? "YES" : "NO");
     selectionInfo->info.reserve(8);
     selectionInfo->info.push_back(m1.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m2.str());
     selectionInfo->info.push_back(m3.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m4.str());
+    selectionInfo->info.push_back(string());
     selectionInfo->info.push_back(m5.str());
-    return selectionInfo;
+    return;
   }
 
   assert(false);
@@ -508,12 +497,16 @@ void Mesh::choose_hovered_subfeature() {
   }
 }
 
-MeshView *Mesh::get_mesh_view() {
+MeshView* Mesh::get_mesh_view() {
   return this;
 }
 
+BSDF* Mesh::get_bsdf() {
+  return bsdf;
+}
+
 StaticScene::SceneObject *Mesh::get_static_object() {
-  return new StaticScene::Mesh(mesh);
+  return new StaticScene::Mesh(mesh, bsdf);
 }
 
 

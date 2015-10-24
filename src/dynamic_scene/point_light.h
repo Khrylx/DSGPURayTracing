@@ -2,8 +2,8 @@
 #define CMU462_DYNAMICSCENE_POINTLIGHT_H
 
 #include "scene.h"
+#include "../static_scene/light.h"
 
-#include <iostream>
 using std::cout;
 using std::endl;
 
@@ -11,31 +11,25 @@ namespace CMU462 { namespace DynamicScene {
 
 class PointLight : public SceneLight {
  public:
-  PointLight(const Color& color, const Matrix4x4& transform) {
-    this->color = color;
-    this->transform = transform;
-  }
 
-  void opengl_init_light(GLenum lightIndex) const {
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMultMatrixd(&transform(0, 0));
+  PointLight(const Collada::LightInfo& light_info, 
+             const Matrix4x4& transform) {    
 
-    glLightfv(lightIndex, GL_DIFFUSE, &color.r);
-    const GLfloat arg1[] = {0.0, 0.0, 0.0, 1.0};
-    glLightfv(lightIndex, GL_POSITION, arg1);
-    glEnable(lightIndex);
-
-    glPopMatrix();
+    this->spectrum = light_info.spectrum;
+    this->position = (transform * Vector4D(light_info.position, 1)).to3D();
   }
 
   StaticScene::SceneLight *get_static_light() const {
-    return nullptr;
+    StaticScene::PointLight *l = 
+      new StaticScene::PointLight(spectrum, position);
+    return l;
   }
 
  private:
-  Color color;
-  Matrix4x4 transform;
+
+  Spectrum spectrum;
+  Vector3D position;
+
 };
 
 } // namespace DynamicScene

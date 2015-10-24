@@ -3,19 +3,14 @@
 
 #include "CMU462/color.h"
 #include "collada_info.h"
+#include "../bsdf.h"
 
 namespace CMU462 { namespace Collada {
 
 struct MaterialInfo : public Instance {
 
-  Color Ce;    ///< Color - emission
-  Color Ca;    ///< Color - ambient
-  Color Cd;    ///< Color - diffuse
-  Color Cs;    ///< Color - specular
-
-  float Ns;    ///< Numerical - shininess
-  float Ni;    ///< Numerical - refractive index
-
+  BSDF* bsdf;
+  
   // Texture* tex; ///< texture
 
 }; // struct Material

@@ -17,10 +17,10 @@ set(APPLICATION_SOURCE
     dynamic_scene/sphere.cpp
 
     # Static scene
-    static_scene/brdf.cpp
     static_scene/sphere.cpp
     static_scene/triangle.cpp
     static_scene/object.cpp
+    static_scene/environment_light.cpp
     static_scene/light.cpp
 
     # MeshEdit
@@ -30,6 +30,7 @@ set(APPLICATION_SOURCE
     # PathTracer
     bvh.cpp
     bbox.cpp
+    bsdf.cpp
     camera.cpp
     sampler.cpp
     pathtracer.cpp

@@ -65,6 +65,19 @@ class UniformHemisphereSampler3D : public Sampler3D {
 }; // class UniformHemisphereSampler3D
 
 /**
+ * A Sampler3D implementation with cosine-weighted distribution on unit
+ * hemisphere.
+ */
+class CosineWeightedHemisphereSampler3D : public Sampler3D {
+ public:
+
+  Vector3D get_sample() const;
+  // Also returns the pdf at the sample point for use in importance sampling.
+  Vector3D get_sample(float* pdf) const;
+
+}; // class UniformHemisphereSampler3D
+
+/**
  * TODO (extra credit) :
  * Jittered sampler implementations
  */

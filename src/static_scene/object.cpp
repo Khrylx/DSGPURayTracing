@@ -13,7 +13,7 @@ namespace CMU462 { namespace StaticScene {
 
 // Mesh object //
 
-Mesh::Mesh(const HalfedgeMesh& mesh) {
+Mesh::Mesh(const HalfedgeMesh& mesh, BSDF* bsdf) {
 
   unordered_map<const Vertex *, int> vertexLabels;
   vector<const Vertex *> verts;
@@ -40,8 +40,7 @@ Mesh::Mesh(const HalfedgeMesh& mesh) {
     indices.push_back(vertexLabels[&*h->next()->next()->vertex()]);
   }
 
-  // FIXME (sky): Use the actual material's BRDF
-  brdf = new DiffuseBRDF(Spectrum(1,1,1));
+  this->bsdf = bsdf;
 
 }
 
@@ -58,19 +57,18 @@ vector<Primitive*> Mesh::get_primitives() const {
   return primitives;
 }
 
-BRDF* Mesh::get_brdf() const {
-  return brdf;
+BSDF* Mesh::get_bsdf() const {
+  return bsdf;
 }
 
 // Sphere object //
 
-SphereObject::SphereObject(const Vector3D& o, double r) {
+SphereObject::SphereObject(const Vector3D& o, double r, BSDF* bsdf) {
 
   this->o = o;
   this->r = r;
-
-  // FIXME (sky): Use the actual material's BRDF
-  brdf = new DiffuseBRDF(Spectrum(1,1,1));
+  this->bsdf = bsdf;
+  
 }
 
 std::vector<Primitive*> SphereObject::get_primitives() const {
@@ -79,8 +77,8 @@ std::vector<Primitive*> SphereObject::get_primitives() const {
   return primitives;
 }
 
-BRDF* SphereObject::get_brdf() const {
-  return brdf;
+BSDF* SphereObject::get_bsdf() const {
+  return bsdf;
 }
 
 

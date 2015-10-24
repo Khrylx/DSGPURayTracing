@@ -17,6 +17,7 @@ set(CMU462_SOURCE
     osdfont.c
     viewer.cpp
     base64.cpp
+    lodepng.cpp
     tinyxml2.cpp
 )
 

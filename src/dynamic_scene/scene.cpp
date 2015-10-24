@@ -83,7 +83,9 @@ void Scene::drag_selection(float dx, float dy, const Matrix4x4& worldTo3DH) {
 
 SelectionInfo *Scene::get_selection_info() {
   if (!has_selection()) return nullptr;
-  return objects[selectionIdx]->get_selection_info();
+  selectionInfo.info.clear();
+  objects[selectionIdx]->get_selection_info(&selectionInfo);
+  return &selectionInfo;
 }
 
 void Scene::collapse_selected_edge() {
