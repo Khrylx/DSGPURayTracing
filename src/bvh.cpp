@@ -279,8 +279,6 @@ bool node_intersect(const BVHNode* node,const vector<Primitive *>& primitives, c
         double tminr = -INF_D;
         double tmaxl = INF_D;
         double tmaxr = INF_D;
-        //cout << nray.d << endl;
-        //cout << "+++++++++" << endl;
         
         // improve numerical stability
         Ray nray = ray;

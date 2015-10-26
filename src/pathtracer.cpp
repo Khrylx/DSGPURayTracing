@@ -61,7 +61,7 @@ PathTracer::PathTracer(size_t ns_aa,
   tm_level = 1.0f;
   tm_key = 0.18;
   tm_wht = 5.0f;
-
+  
 }
 
 PathTracer::~PathTracer() {
@@ -360,40 +360,45 @@ void PathTracer::visualize_accel() const {
 }
 
 void PathTracer::key_press(int key) {
-
+  
   BVHNode *current = selectionHistory.top();
-  switch (key) {
-  case ']':
-      ns_aa *=2;
-      printf("Samples per pixel changed to %lu\n", ns_aa);
-      //tm_key = clamp(tm_key + 0.02f, 0.0f, 1.0f);
-      break;
-  case '[':
-      //tm_key = clamp(tm_key - 0.02f, 0.0f, 1.0f);
-      ns_aa /=2;
-      if (ns_aa < 1) ns_aa = 1;
-      printf("Samples per pixel changed to %lu\n", ns_aa);
-      break;
-  case KEYBOARD_UP:
-      if (current != bvh->get_root()) {
-          selectionHistory.pop();
-      }
-      break;
-  case KEYBOARD_LEFT:
-      if (current->l) {
-          selectionHistory.push(current->l);
-      }
-      break;
-  case KEYBOARD_RIGHT:
-      if (current->l) {
-          selectionHistory.push(current->r);
-      }
-      break;
-  case 'a':
-  case 'A':
-      show_rays = !show_rays;
+  switch (state) {
+    case DONE:
+      switch (key) {
+        case ']': 
+          tm_key = clamp(tm_key + 0.02f, 0.0f, 1.0f);
+          break;
+        case '[': 
+          tm_key = clamp(tm_key - 0.02f, 0.0f, 1.0f);
+          break;
+        default:
+          return;
+    } break; 
+    case VISUALIZE:
+      switch (key) {
+        case KEYBOARD_UP:
+          if (current != bvh->get_root()) {
+            selectionHistory.pop();
+          }
+          break;
+        case KEYBOARD_LEFT:
+          if (current->l) {
+            selectionHistory.push(current->l);
+          }
+          break;
+        case KEYBOARD_RIGHT:
+          if (current->l) {
+            selectionHistory.push(current->r);
+          }
+          break;
+      case 'a':
+      case 'A':
+          show_rays = !show_rays;
+        default:
+          return;
+    } break;
   default:
-      return;
+    return;
   }
 }
 
@@ -408,10 +413,10 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     log_ray_miss(r);
     #endif
 
-    // TODO:
+    // TODO: 
     // If you have an environment map, return the Spectrum this ray
     // samples from the environment map. If you don't return black.
-
+    
     return Spectrum(0,0,0);
   }
 
@@ -438,12 +443,12 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   Vector3D w_out = w2o * (r.o - hit_p);
   w_out.normalize();
 
-  // TODO:
-  // extend the below code to compute the direct lighting for all the lights
+  // TODO: 
+  // extend the below code to compute the direct lighting for all the lights 
   // in the scene, instead of just the dummy light we provided in part 1.
 
-  InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
-  //DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,-1));
+  //InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
+  DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,-1));
 
   Vector3D dir_to_light;
   float dist_to_light;
@@ -505,7 +510,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
 Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
 
   // TODO:
-  // Sample the pixel with coordinate (x,y) and return the result spectrum.
+  // Sample the pixel with coordinate (x,y) and return the result spectrum. 
   // The sample rate is given by the number of camera rays per pixel.
 
     size_t w = frameBuffer.w;
