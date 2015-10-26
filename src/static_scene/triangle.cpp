@@ -41,9 +41,12 @@ bool Triangle::intersect(const Ray& r) const {
     double t = dot(cross(e1,-s),e2)/f;
     
     //
+    Vector3D n = (1-u-v)*mesh->normals[v1]+ u*mesh->normals[v2]+ v*mesh->normals[v3];
+    
     if (u >= 0 && v >= 0 && u+v <= 1 && t > r.min_t && t < r.max_t) {
         return true;
     }
+    
     
     return false;
 
@@ -78,7 +81,6 @@ bool Triangle::intersect(const Ray& r, Intersection *i) const {
     double v = dot(cross(e1,r.d),s)/f;
     double t = dot(cross(e1,-s),e2)/f;
     
-    //
     if (!(u >= 0 && v >= 0 && u+v <= 1 && t > r.min_t && t < r.max_t && t < i->t)) {
         return false;
     }
@@ -92,6 +94,7 @@ bool Triangle::intersect(const Ray& r, Intersection *i) const {
     i->primitive = this;
     Vector3D n = (1-u-v)*mesh->normals[v1]+ u*mesh->normals[v2]+ v*mesh->normals[v3];
     i->n = n;
+    
     
   return true;
   

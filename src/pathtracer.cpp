@@ -448,7 +448,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // in the scene, instead of just the dummy light we provided in part 1.
 
   //InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
-  DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,-1));
+  DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,0));
 
   Vector3D dir_to_light;
   float dist_to_light;
@@ -474,11 +474,18 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       // ****************************
       //  Shadow Ray Implementation!
       
-      Ray sR(hit_p + EPS_D * dir_to_light, dir_to_light);
-
+      double EPS_N = 1e-3;
+      
+      // *** NOTE: Why move along the normal here? this is to cope with the situation where
+      // *** the light direction is parellel to the surface, by moving out a little bit,
+      // *** we can effectively avoid self-intersection.
+      
+      Ray sR(hit_p + EPS_N * isect.n + EPS_D * dir_to_light , dir_to_light);
+      
       if (bvh->intersect(sR)){
           continue;
       }
+      
       
       
       // convert direction into coordinate space of the surface, where
