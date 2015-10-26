@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.74.0 commit date:2015-03-31, commit time:13:39, hash:000dfc0</authoring_tool>
     </contributor>
-    <created>2015-10-20T15:04:08</created>
-    <modified>2015-10-20T15:04:08</modified>
+    <created>2015-10-25T21:51:57</created>
+    <modified>2015-10-25T21:51:57</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -103,7 +103,7 @@
   </library_lights>
   <library_images/>
   <library_effects>
-    <effect id="None_001-effect">
+    <effect id="None-effect">
       <profile_COMMON>
         <technique sid="common">
           <phong>
@@ -117,7 +117,7 @@
               <color sid="diffuse">0.64 0.64 0.64 1</color>
             </diffuse>
             <specular>
-              <color sid="specular">0.00625 0.00625 0.00625 1</color>
+              <color sid="specular">0.003125 0.003125 0.003125 1</color>
             </specular>
             <shininess>
               <float sid="shininess">1</float>
@@ -131,44 +131,11 @@
     </effect>
   </library_effects>
   <library_materials>
-    <material id="None_001-material" name="None_001">
-      <instance_effect url="#None_001-effect"/>
+    <material id="None-material" name="None">
+      <instance_effect url="#None-effect"/>
     </material>
   </library_materials>
   <library_geometries>
-    <geometry id="Plane_000-mesh" name="Plane.000">
-      <mesh>
-        <source id="Plane_000-mesh-positions">
-          <float_array id="Plane_000-mesh-positions-array" count="27">1 0 1 1 0 -1 -1 0 1 -1 0 -1 1 0 0 -1 0 0 0 0 -1 0 0 0 0 0 1</float_array>
-          <technique_common>
-            <accessor source="#Plane_000-mesh-positions-array" count="9" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <source id="Plane_000-mesh-normals">
-          <float_array id="Plane_000-mesh-normals-array" count="24">0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0</float_array>
-          <technique_common>
-            <accessor source="#Plane_000-mesh-normals-array" count="8" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <vertices id="Plane_000-mesh-vertices">
-          <input semantic="POSITION" source="#Plane_000-mesh-positions"/>
-        </vertices>
-        <polylist count="8">
-          <input semantic="VERTEX" source="#Plane_000-mesh-vertices" offset="0"/>
-          <input semantic="NORMAL" source="#Plane_000-mesh-normals" offset="1"/>
-          <vcount>3 3 3 3 3 3 3 3 </vcount>
-          <p>1 0 6 0 7 0 0 1 4 1 8 1 8 2 7 2 2 2 8 3 4 3 7 3 4 4 1 4 7 4 7 5 5 5 2 5 7 6 6 6 5 6 6 7 3 7 5 7</p>
-        </polylist>
-      </mesh>
-    </geometry>
     <geometry id="Plane_008-mesh" name="Plane.008">
       <mesh>
         <source id="Plane_008-mesh-positions">
@@ -194,7 +161,7 @@
         <vertices id="Plane_008-mesh-vertices">
           <input semantic="POSITION" source="#Plane_008-mesh-positions"/>
         </vertices>
-        <polylist material="None_001-material" count="1">
+        <polylist material="None-material" count="1">
           <input semantic="VERTEX" source="#Plane_008-mesh-vertices" offset="0"/>
           <input semantic="NORMAL" source="#Plane_008-mesh-normals" offset="1"/>
           <vcount>3 </vcount>
@@ -211,19 +178,15 @@
         <instance_light url="#Lamp-light"/>
       </node>
       <node id="Camera" name="Camera" type="NODE">
-        <matrix sid="transform">-1 -1.4243e-14 -8.74228e-8 0 -8.74228e-8 1.62921e-7 1 5 0 1 -1.62921e-7 0 0 0 0 1</matrix>
+        <matrix sid="transform">-1 -2.72797e-14 -1.50996e-7 0 -1.50996e-7 1.62921e-7 1 5 -2.6794e-15 1 -1.62921e-7 0 0 0 0 1</matrix>
         <instance_camera url="#Camera-camera"/>
       </node>
-      <node id="Plane" name="Plane" type="NODE">
-        <matrix sid="transform">0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1</matrix>
-        <instance_geometry url="#Plane_000-mesh"/>
-      </node>
-      <node id="Plane_003" name="Plane_003" type="NODE">
+      <node id="trig" name="trig" type="NODE">
         <matrix sid="transform">0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 1</matrix>
         <instance_geometry url="#Plane_008-mesh">
           <bind_material>
             <technique_common>
-              <instance_material symbol="None_001-material" target="#None_001-material"/>
+              <instance_material symbol="None-material" target="#None-material"/>
             </technique_common>
           </bind_material>
         </instance_geometry>
