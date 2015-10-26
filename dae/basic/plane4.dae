@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.74.0 commit date:2015-03-31, commit time:13:39, hash:000dfc0</authoring_tool>
     </contributor>
-    <created>2015-10-20T15:20:27</created>
-    <modified>2015-10-20T15:20:27</modified>
+    <created>2015-10-25T21:58:46</created>
+    <modified>2015-10-25T21:58:46</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -103,39 +103,6 @@
   </library_lights>
   <library_images/>
   <library_geometries>
-    <geometry id="Plane_000-mesh" name="Plane.000">
-      <mesh>
-        <source id="Plane_000-mesh-positions">
-          <float_array id="Plane_000-mesh-positions-array" count="27">1 0 1 1 0 -1 -1 0 1 -1 0 -1 1 0 0 -1 0 0 0 0 -1 0 0 0 0 0 1</float_array>
-          <technique_common>
-            <accessor source="#Plane_000-mesh-positions-array" count="9" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <source id="Plane_000-mesh-normals">
-          <float_array id="Plane_000-mesh-normals-array" count="24">0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 0</float_array>
-          <technique_common>
-            <accessor source="#Plane_000-mesh-normals-array" count="8" stride="3">
-              <param name="X" type="float"/>
-              <param name="Y" type="float"/>
-              <param name="Z" type="float"/>
-            </accessor>
-          </technique_common>
-        </source>
-        <vertices id="Plane_000-mesh-vertices">
-          <input semantic="POSITION" source="#Plane_000-mesh-positions"/>
-        </vertices>
-        <polylist count="8">
-          <input semantic="VERTEX" source="#Plane_000-mesh-vertices" offset="0"/>
-          <input semantic="NORMAL" source="#Plane_000-mesh-normals" offset="1"/>
-          <vcount>3 3 3 3 3 3 3 3 </vcount>
-          <p>1 0 6 0 7 0 0 1 4 1 8 1 8 2 7 2 2 2 8 3 4 3 7 3 4 4 1 4 7 4 7 5 5 5 2 5 7 6 6 6 5 6 6 7 3 7 5 7</p>
-        </polylist>
-      </mesh>
-    </geometry>
     <geometry id="Plane_002-mesh" name="Plane.002">
       <mesh>
         <source id="Plane_002-mesh-positions">
@@ -178,14 +145,10 @@
         <instance_light url="#Lamp-light"/>
       </node>
       <node id="Camera" name="Camera" type="NODE">
-        <matrix sid="transform">-1 -2.72797e-14 -1.50996e-7 0 -1.50996e-7 1.62921e-7 1 5 -2.6794e-15 1 -1.62921e-7 0 0 0 0 1</matrix>
+        <matrix sid="transform">-1 -2.69452e-14 -1.50996e-7 0 -1.50996e-7 1.62921e-7 1 5 -2.34488e-15 1 -1.62921e-7 0 0 0 0 1</matrix>
         <instance_camera url="#Camera-camera"/>
       </node>
-      <node id="Plane" name="Plane" type="NODE">
-        <matrix sid="transform">0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1</matrix>
-        <instance_geometry url="#Plane_000-mesh"/>
-      </node>
-      <node id="Plane_001" name="Plane_001" type="NODE">
+      <node id="plane" name="plane" type="NODE">
         <matrix sid="transform">0.5 0 0 0 0 0 0 0 0 0 0.5 0 0 0 0 1</matrix>
         <instance_geometry url="#Plane_002-mesh"/>
       </node>
