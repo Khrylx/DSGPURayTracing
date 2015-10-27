@@ -420,7 +420,9 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
-  Spectrum L_out;
+  // TODO : Instead of initializing this value to a constant color, use the direct/indirect lighting 
+  //        components calculated in the code below.
+  Spectrum L_out = Spectrum(5.f, 5.f, 5.f);
 
   Vector3D hit_p = r.o + r.d * isect.t;
   Vector3D hit_n = isect.n;
