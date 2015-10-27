@@ -70,7 +70,7 @@ bool BVHAccel::intersect(const Ray &ray, Intersection *i) const {
     if(primitives[p]->intersect(ray, i)) hit = true;
   }
 
-  return true;
+  return hit;
 
 }
 
