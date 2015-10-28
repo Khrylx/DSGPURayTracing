@@ -448,70 +448,109 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // in the scene, instead of just the dummy light we provided in part 1.
 
   //InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
-  DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,0));
+  //DirectionalLight light(Spectrum(4.f, 4.f, 4.f), Vector3D(0,-1,0));
 
   Vector3D dir_to_light;
   float dist_to_light;
   float pdf;
 
-  // no need to take multiple samples from a directional source
-  int num_light_samples = light.is_delta_light() ? 1 : ns_area_light;
+   
+    for (SceneLight* light : scene->lights){
+        
+        Spectrum L(0,0,0);
+        
+        // no need to take multiple samples from a directional source
+        int num_light_samples = light->is_delta_light() ? 1 : ns_area_light;
+        
+        // integrate light over the hemisphere about the normal
+        double scale = 1.0 / num_light_samples;
 
-  // integrate light over the hemisphere about the normal
-  double scale = 1.0 / num_light_samples;
-  for (int i=0; i<num_light_samples; i++) {
+        for (int i=0; i<num_light_samples; i++) {
+            
+            // returns a vector 'dir_to_light' that is a direction from
+            // point hit_p to the point on the light source.  It also returns
+            // the distance from point x to this point on the light source.
+            // (pdf is the probability of randomly selecting the random
+            // sample point on the light source -- more on this in part 2)
+            Spectrum light_L = light->sample_L(hit_p, &dir_to_light, &dist_to_light, &pdf);
+            // TODO:
+            // construct a shadow ray and compute whether the intersected surface is
+            // in shadow and accumulate reflected radiance
+            
+            // ****************************
+            //  Shadow Ray Implementation!
+            
+            // *** NOTE: Why move along the normal here? this is to cope with the situation where
+            // *** the light direction is parellel to the surface, by moving out a little bit,
+            // *** we can effectively avoid self-intersection.
+            double eps = light->is_delta_light()? EPS_N:0;
+            
+            Ray sR(hit_p + eps * isect.n + EPS_D * dir_to_light , dir_to_light);
+            sR.max_t = dist_to_light;
+            
+            if (bvh->intersect(sR)){
+                continue;
+            }
+            
+            
+            // convert direction into coordinate space of the surface, where
+            // the surface normal is [0 0 1]
+            //dir_to_light = Vector3D(0,0,1);
+            Vector3D w_in = w2o * dir_to_light;
+            
+            // note that computing dot(n,w_in) is simple
+            // in surface coordinates since the normal is [0 0 1]
+            double cos_theta = std::max(0.0, w_in[2]);
+            
+            // evaluate surface brdf
+            Spectrum f = isect.bsdf->f(w_out, w_in);
+            
+            
+            light_L.r *= f.r;
+            light_L.g *= f.g;
+            light_L.b *= f.b;
+            //cout << w_in <<endl;
+            L += cos_theta/pdf*light_L;
+        }
+        L_out += L*scale;
+    }
+    
+    // *************** Indirect Lighting ***************
+    
+    if (r.depth >= max_ray_depth) {
+        return L_out;
+    }
+    
+    // Generate random directions
+    double r1 = rand()/(double)RAND_MAX;
+    double r2 = rand()/(double)RAND_MAX;
+    double s = sqrt(1-r1*r1);
+    double theta = 2*PI*r2;
+    pdf = 0.5/PI;
+    
+    Vector3D w_in(s*cos(theta), s*sin(theta), r1);
+    
+    Vector3D v = o2w * w_in;
+    Spectrum f = isect.bsdf->f(w_out, w_in);
+    
+    // Russian Roulette
+    double terminateProbability = std::max(1 - f.illum(),0.f);
+    if (rand() / (double) RAND_MAX < terminateProbability) {
+        return L_out;
+    }
+    
+    double cos_theta = fabs(w_in[2]);
+    
+    
+    Ray refR(hit_p+ EPS_D * v, v);
+    refR.depth = r.depth+1;
+    
+    Spectrum indirL = trace_ray(refR);
+    indirL.r *= f.r;
+    indirL.g *= f.g;
+    indirL.b *= f.b;
 
-      // returns a vector 'dir_to_light' that is a direction from
-      // point hit_p to the point on the light source.  It also returns
-      // the distance from point x to this point on the light source.
-      // (pdf is the probability of randomly selecting the random
-      // sample point on the light source -- more on this in part 2)
-      Spectrum light_L = light.sample_L(hit_p, &dir_to_light, &dist_to_light, &pdf);
-      // TODO:
-      // construct a shadow ray and compute whether the intersected surface is
-      // in shadow and accumulate reflected radiance
-      
-      // ****************************
-      //  Shadow Ray Implementation!
-      
-      double EPS_N = 1e-3;
-      
-      // *** NOTE: Why move along the normal here? this is to cope with the situation where
-      // *** the light direction is parellel to the surface, by moving out a little bit,
-      // *** we can effectively avoid self-intersection.
-      
-      Ray sR(hit_p + EPS_N * isect.n + EPS_D * dir_to_light , dir_to_light);
-      
-      if (bvh->intersect(sR)){
-          continue;
-      }
-      
-      
-      
-      // convert direction into coordinate space of the surface, where
-      // the surface normal is [0 0 1]
-      //dir_to_light = Vector3D(0,0,1);
-      Vector3D w_in = w2o * dir_to_light;
-
-      // note that computing dot(n,w_in) is simple
-      // in surface coordinates since the normal is [0 0 1]
-      double cos_theta = std::max(0.0, w_in[2]);
-
-      // evaluate surface brdf
-      Spectrum f = isect.bsdf->f(w_out, w_in);
-      
-      
-      light_L.r *= f.r;
-      light_L.g *= f.g;
-      light_L.b *= f.b;
-      //cout << w_in <<endl;
-      L_out += cos_theta/pdf*light_L;
-      
-      
-  }
-    //cout << L_out*scale <<endl;
-
-  return L_out*scale;
+    return L_out + cos_theta / (pdf*(1-terminateProbability)) * indirL;
 }
 
 Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {

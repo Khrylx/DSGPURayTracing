@@ -93,6 +93,9 @@ bool Triangle::intersect(const Ray& r, Intersection *i) const {
     i->t = t;
     i->primitive = this;
     Vector3D n = (1-u-v)*mesh->normals[v1]+ u*mesh->normals[v2]+ v*mesh->normals[v3];
+    if (dot(r.d,n) > 0) {
+        n = -n;
+    }
     i->n = n;
     
     

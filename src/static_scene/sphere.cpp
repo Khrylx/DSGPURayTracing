@@ -65,6 +65,7 @@ bool Sphere::intersect(const Ray& r, Intersection *i) const {
     Vector3D n = r.o + r.d*t1 - o;
     //cout << n <<endl;
     i->n = n;
+    r.max_t = t1;
     
   return true;
 
