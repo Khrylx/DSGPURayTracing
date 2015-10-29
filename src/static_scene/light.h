@@ -95,6 +95,7 @@ class AreaLight : public SceneLight {
   Vector3D dim_x;
   Vector3D dim_y;
   UniformGridSampler2D sampler;
+  float area;
 
 }; // class AreaLight
 

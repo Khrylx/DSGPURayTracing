@@ -75,17 +75,20 @@ AreaLight::AreaLight(const Spectrum& rad,
                      const Vector3D& pos,   const Vector3D& dir, 
                      const Vector3D& dim_x, const Vector3D& dim_y)
   : radiance(rad), position(pos), direction(dir),
-    dim_x(dim_x), dim_y(dim_y) { }
+    dim_x(dim_x), dim_y(dim_y), area(dim_x.norm() * dim_y.norm()) { }
 
 Spectrum AreaLight::sample_L(const Vector3D& p, Vector3D* wi, 
                              float* distToLight, float* pdf) const {
 
   Vector2D sample = sampler.get_sample() - Vector2D(0.5f, 0.5f);
   Vector3D d = position + sample.x * dim_x + sample.y * dim_y - p;
-  *wi = d.unit();
-  *distToLight = d.norm();
-  *pdf = 1.0f / (dim_x.norm() * dim_y.norm());
-  return dot(d, direction) < 0 ? radiance : Spectrum();
+  float cosTheta = dot(d, direction);
+  float sqDist = d.norm2();
+  float dist = sqrt(sqDist);
+  *wi = d / dist;
+  *distToLight = dist;
+  *pdf = sqDist / (area * fabs(cosTheta));
+  return cosTheta < 0 ? radiance : Spectrum();
 };
 
 // Sphere Light //
