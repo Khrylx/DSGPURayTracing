@@ -81,14 +81,13 @@
           </phong>
         </technique>
       </profile_COMMON>
-      <!--<extra>
+      <extra>
         <technique profile="CMU462">
           <mirror>
             <reflectance>1 1 1</reflectance>
           </mirror>
         </technique>
       </extra>
-      -->
     </effect>
     <effect id="glass-effect">
       <profile_COMMON>
@@ -115,7 +114,7 @@
           </phong>
         </technique>
       </profile_COMMON>
-      <!--<extra>
+      <extra>
         <technique profile="CMU462">
           <glass>
             <reflectance>1 1 1</reflectance>
@@ -125,7 +124,6 @@
           </glass>
         </technique>
       </extra>
-      -->
     </effect>
     <effect id="ceiling-effect">
       <profile_COMMON>

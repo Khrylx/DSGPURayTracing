@@ -453,7 +453,6 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   Vector3D dir_to_light;
   float dist_to_light;
   float pdf;
-
    
     for (SceneLight* light : scene->lights){
         
@@ -497,6 +496,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
             // the surface normal is [0 0 1]
             //dir_to_light = Vector3D(0,0,1);
             Vector3D w_in = w2o * dir_to_light;
+            w_in.normalize();
             
             // note that computing dot(n,w_in) is simple
             // in surface coordinates since the normal is [0 0 1]
@@ -521,17 +521,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
         return L_out;
     }
     
-    // Generate random directions
-    double r1 = rand()/(double)RAND_MAX;
-    double r2 = rand()/(double)RAND_MAX;
-    double s = sqrt(1-r1*r1);
-    double theta = 2*PI*r2;
-    pdf = 0.5/PI;
-    
-    Vector3D w_in(s*cos(theta), s*sin(theta), r1);
-    
-    Vector3D v = o2w * w_in;
-    Spectrum f = isect.bsdf->f(w_out, w_in);
+    Vector3D w_in;
+    Spectrum f = isect.bsdf->sample_f(w_out, &w_in, &pdf);
     
     // Russian Roulette
     double terminateProbability = std::max(1 - f.illum(),0.f);
@@ -539,6 +530,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
         return L_out;
     }
     
+    Vector3D v = o2w * w_in;
+    v.normalize();
     double cos_theta = fabs(w_in[2]);
     
     

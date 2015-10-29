@@ -36,13 +36,25 @@ Spectrum DiffuseBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 }
 
 Spectrum DiffuseBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
-  return Spectrum();
+    // Generate random directions
+    
+    UniformHemisphereSampler3D sampler;
+    *wi = sampler.get_sample();
+    *pdf = 0.5/PI;
+    
+  return albedo * (1.0 / PI);
 }
 
 // Mirror BSDF //
 
 Spectrum MirrorBSDF::f(const Vector3D& wo, const Vector3D& wi) {
-  return Spectrum();
+    double eps = 1e-3;
+    
+    if (fabs(wo[2] - wi[2]) < eps && fabs(wo[0] + wi[0]) < eps && fabs(wo[1] + wi[1]) < eps ) {
+        return Spectrum(1,1,1)* (1/std::max(wi[2],1e-8));
+    }
+    
+    return Spectrum();
 }
 
 Spectrum MirrorBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
@@ -50,7 +62,10 @@ Spectrum MirrorBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
   // TODO: 
   // Implement MirrorBSDF
 
-  return Spectrum();
+    reflect(wo, wi);
+    *pdf = 1;
+    
+    return Spectrum(1,1,1) * (1/std::max(wo[2],1e-8));
 }
 
 // Glossy BSDF //
@@ -83,22 +98,55 @@ Spectrum RefractionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) 
 // Glass BSDF //
 
 Spectrum GlassBSDF::f(const Vector3D& wo, const Vector3D& wi) {
-  return Spectrum();
+    
+    return Spectrum();
 }
 
 Spectrum GlassBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
 
   // TODO: 
   // Compute Fresnel coefficient and either reflect or refract based on it.
+    
+    *pdf = 1;
 
-  return Spectrum();
+    // Get the initial refract direction.
+    bool res = refract(wo, wi, ior);
+    if (!res) {
+        return Spectrum(1,1,1) * (1/std::max(std::fabs((*wi)[2]),1e-8));
+    }
+    
+    
+    // Calculating Fr
+    double ni = ior;
+    double no = 1;
+    double cos_i = std::fabs((*wi)[2]);
+    double cos_o = std::fabs(wo[2]);
+    if (wo[2] < 0) {
+        swap(ni,no);
+    }
+    
+    double r1 = (no*cos_i - ni*cos_o)/(no*cos_i + ni*cos_o);
+    double r2 = (ni*cos_i - no*cos_o)/(ni*cos_i + no*cos_o);
+    double Fr = 0.5*(r1*r1 + r2*r2);
+
+    if (rand() / (double)RAND_MAX <= Fr) {    // If we choose reflection
+        reflect(wo, wi);
+        // Here we don't need to multiply Fr because we already using randomized strategy to achieve it.
+        return Spectrum(1,1,1) * (1/std::max(std::fabs((*wi)[2]),1e-8));
+    }
+    else{                       // If we choose refraction
+        double ratio = no/ni;
+        // Here we don't need to multiply (1-Fr) because we already using randomized strategy to achieve it.
+        return Spectrum(1,1,1) * ratio*ratio * (1/std::max(std::fabs((*wi)[2]),1e-8));
+    }
+    
 }
 
 void BSDF::reflect(const Vector3D& wo, Vector3D* wi) {
 
   // TODO:
   // Implement reflection of wo about normal (0,0,1) and store result in wi.
-
+    *wi = Vector3D(-wo[0],-wo[1],wo[2]);
 }
 
 bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
@@ -109,8 +157,22 @@ bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
   // and true otherwise. When dot(wo,n) is positive, then wo corresponds to a 
   // ray entering the surface through vacuum.  
 
-  return true;
+    int sign = 1;
+    float ratio = ior;
+    if (wo[2] > 0) {
+        sign = -1;
+        ratio = 1/ratio;
+    }
+    
+    float cos2_wi = 1 - ratio*ratio*(1 - wo[2]*wo[2]);
+    if (cos2_wi < 0) {
+        *wi = Vector3D(-wo[0],-wo[1],wo[2]);
+        return false;
+    }
 
+    *wi = Vector3D(-wo[0]*ratio,-wo[1]*ratio,sign * sqrt(cos2_wi)).unit();
+    
+    return true;
 }
 
 
