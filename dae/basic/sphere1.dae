@@ -190,13 +190,6 @@
           </phong>
         </technique>
       </profile_COMMON>
-      <extra>
-        <technique profile="CMU462">
-          <mirror>
-            <reflectance>1 1 1</reflectance>
-          </mirror>
-        </technique>
-      </extra>
     </effect>
   </library_effects>
   <library_materials>
