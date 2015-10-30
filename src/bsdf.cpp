@@ -38,9 +38,7 @@ Spectrum DiffuseBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 Spectrum DiffuseBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
     // Generate random directions
     
-    UniformHemisphereSampler3D sampler;
-    *wi = sampler.get_sample();
-    *pdf = 0.5/PI;
+    *wi = sampler.get_sample(pdf);
     
   return albedo * (1.0 / PI);
 }

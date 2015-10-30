@@ -11,10 +11,10 @@ EnvironmentLight::EnvironmentLight(const HDRImageBuffer* envMap)
 
 Vector3D getUniformSphereSample3D()
 {
-    Matrix3x3 sampleToWorld;
-    sampleToWorld[0] = Vector3D(1,  0,  0);
-    sampleToWorld[1] = Vector3D(0,  0, -1);
-    sampleToWorld[2] = Vector3D(0,  1,  0);
+    //Matrix3x3 sampleToWorld;
+    //sampleToWorld[0] = Vector3D(1,  0,  0);
+    //sampleToWorld[1] = Vector3D(0,  0, -1);
+    //sampleToWorld[2] = Vector3D(0,  1,  0);
     
     double r1 = rand()/(double)RAND_MAX;
     double r2 = rand()/(double)RAND_MAX;
@@ -22,8 +22,8 @@ Vector3D getUniformSphereSample3D()
     double sin_theta = sqrt(1-cos_theta*cos_theta);
     double phi = 2*PI*r2;
     
-    return sampleToWorld * Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
-
+    //return sampleToWorld * Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
+    return Vector3D(sin_theta*cos(phi), cos_theta, -sin_theta*sin(phi));
 }
     
 Spectrum EnvironmentLight::sample_L(const Vector3D& p, Vector3D* wi,

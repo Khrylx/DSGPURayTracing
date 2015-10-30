@@ -30,6 +30,28 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
   return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), r1);
 
 }
+    
+    
+    Vector3D CosineWeightedHemisphereSampler3D::get_sample() const{
+        double r1 = rand()/(double)RAND_MAX;
+        double r2 = rand()/(double)RAND_MAX;
+        double theta = acos(1 - 2*r1) / 2;
+        double phi = 2*PI*r2;
+        double sin_theta = sin(theta);
+        
+        return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos(theta));
+    }
 
-
+    Vector3D CosineWeightedHemisphereSampler3D::get_sample(float* pdf) const {
+        double r1 = rand()/(double)RAND_MAX;
+        double r2 = rand()/(double)RAND_MAX;
+        double theta = acos(1 - 2*r1) / 2;
+        double phi = 2*PI*r2;
+        double sin_theta = sin(theta);
+        double cos_theta = cos(theta);
+        *pdf = 1 / (2*PI*cos_theta);
+        
+        return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
+        
+    }
 } // namespace CMU462

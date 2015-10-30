@@ -17,7 +17,8 @@ struct Ray {
   Vector3D d;  ///< direction
   mutable double min_t; ///< treat the ray as a segment (ray "begin" at max_t)
   mutable double max_t; ///< treat the ray as a segment (ray "ends" at max_t)
-
+  mutable double throughput;
+    
   Vector3D inv_d;  ///< component wise inverse
   int sign[3];     ///< fast ray-bbox intersection
 
@@ -29,7 +30,7 @@ struct Ray {
    * \param depth depth of the ray
    */
     Ray(const Vector3D& o, const Vector3D& d, int depth = 0)
-        : o(o), d(d), min_t(0.0), max_t(INF_D), depth(depth) {
+        : o(o), d(d), min_t(0.0), max_t(INF_D), depth(depth), throughput(1.f) {
     inv_d = Vector3D(1 / d.x, 1 / d.y, 1 / d.z);
     sign[0] = (inv_d.x < 0);
     sign[1] = (inv_d.y < 0);
@@ -45,7 +46,7 @@ struct Ray {
    * \param depth depth of the ray
    */
     Ray(const Vector3D& o, const Vector3D& d, double max_t, int depth = 0)
-        : o(o), d(d), min_t(0.0), max_t(max_t), depth(depth) {
+        : o(o), d(d), min_t(0.0), max_t(max_t), depth(depth), throughput(1.f) {
     inv_d = Vector3D(1 / d.x, 1 / d.y, 1 / d.z);
     sign[0] = (inv_d.x < 0);
     sign[1] = (inv_d.y < 0);

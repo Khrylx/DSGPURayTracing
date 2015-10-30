@@ -420,6 +420,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
+  //  Spectrum L_out;
   Spectrum L_out = isect.bsdf->get_emission(); // Le
 
   // TODO :
@@ -525,6 +526,9 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     Spectrum f = isect.bsdf->sample_f(w_out, &w_in, &pdf);
     
     // Russian Roulette
+    //double throughput = r.throughput*f.illum()*fabs(w_in[2]);
+    double cos_theta = fabs(w_in[2]);
+
     double terminateProbability = std::max(1 - f.illum(),0.f);
     if (rand() / (double) RAND_MAX < terminateProbability) {
         return L_out;
@@ -532,11 +536,11 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     
     Vector3D v = o2w * w_in;
     v.normalize();
-    double cos_theta = fabs(w_in[2]);
     
     
     Ray refR(hit_p+ EPS_D * v, v);
     refR.depth = r.depth+1;
+    //refR.throughput = throughput;
     
     Spectrum indirL = trace_ray(refR);
     indirL.r *= f.r;
