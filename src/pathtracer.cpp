@@ -427,7 +427,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   // indirect lighting components calculated in the code below. The starter
   // code overwrites L_out by (.5,.5,.5) so that you can test your geometry
   // queries before you implement path tracing.
-  L_out = Spectrum(5.f, 5.f, 5.f);
+  // L_out = Spectrum(5.f, 5.f, 5.f);
 
   Vector3D hit_p = r.o + r.d * isect.t;
   Vector3D hit_n = isect.n;
