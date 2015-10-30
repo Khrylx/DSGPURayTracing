@@ -59,7 +59,7 @@ Spectrum MirrorBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 
 Spectrum MirrorBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
 
-  // TODO: 
+  // TODO:
   // Implement MirrorBSDF
 
     reflect(wo, wi);
@@ -89,8 +89,8 @@ Spectrum RefractionBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 
 Spectrum RefractionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
 
-  // TODO: 
-  // Implement RefractionBSDF 
+  // TODO:
+  // Implement RefractionBSDF
 
     *pdf = 1;
     
@@ -119,7 +119,7 @@ Spectrum GlassBSDF::f(const Vector3D& wo, const Vector3D& wi) {
 
 Spectrum GlassBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
 
-  // TODO: 
+  // TODO:
   // Compute Fresnel coefficient and either reflect or refract based on it.
     
     *pdf = 1;
@@ -169,8 +169,8 @@ bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
   // TODO:
   // Use Snell's Law to refract wo surface and store result ray in wi.
   // Return false if refraction does not occur due to total internal reflection
-  // and true otherwise. When dot(wo,n) is positive, then wo corresponds to a 
-  // ray entering the surface through vacuum.  
+  // and true otherwise. When dot(wo,n) is positive, then wo corresponds to a
+  // ray entering the surface through vacuum.
 
     int sign = 1;
     float ratio = ior;
@@ -190,5 +190,15 @@ bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
     return true;
 }
 
+// Emission BSDF //
+
+Spectrum EmissionBSDF::f(const Vector3D& wo, const Vector3D& wi) {
+  return radiance * (1.0 / PI);
+}
+
+Spectrum EmissionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
+  *wi  = sampler.get_sample(pdf);
+  return radiance * (1.0 / PI);
+}
 
 } // namespace CMU462

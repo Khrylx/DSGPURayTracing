@@ -20,14 +20,17 @@
     </light>
     <light id="Area-light" name="Light">
       <technique_common>
-        <directional>
-          <color sid="color">15 15 15</color>
-        </directional>
+        <point>
+          <color sid="color">5 5 5 </color>
+          <constant_attenuation>1</constant_attenuation>
+          <linear_attenuation>0</linear_attenuation>
+          <quadratic_attenuation>0.001599967</quadratic_attenuation>
+        </point>
       </technique_common>
       <extra>
         <technique profile="CMU462">
           <area>
-            <color sid="color">9 9 9</color>
+            <color sid="color">5 5 5</color>
           </area>
         </technique>
       </extra>
@@ -176,6 +179,13 @@
           </phong>
         </technique>
       </profile_COMMON>
+      <extra>
+        <technique profile="CMU462">
+          <emission>
+            <radiance>5 5 5</radiance>
+          </emission>
+        </technique>
+      </extra>
     </effect>
     <effect id="floor-effect">
       <profile_COMMON>

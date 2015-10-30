@@ -166,10 +166,10 @@ int ColladaParser::load( const char* filename, SceneInfo* sceneInfo ) {
 			exit(EXIT_FAILURE);
 		}
 
-		// get up direction and correct non-Y_UP scenes by setting a non-identity 
-    // global entry transformation, assuming right hand coordinate system for 
+		// get up direction and correct non-Y_UP scenes by setting a non-identity
+    // global entry transformation, assuming right hand coordinate system for
     // both input and output
-		
+
     string up_dir = up_axis->GetText();
 		transform = Matrix4x4::identity();
 		if (up_dir == "X_UP") {
@@ -541,7 +541,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         light.constant_att = atof(e_quadratic_att->GetText());
       } else {
         stat("Error: incomplete definition of point light: " << light.id);
-        exit(EXIT_FAILURE);        
+        exit(EXIT_FAILURE);
       }
     } else if (type == "spot") {
       light.light_type = LightType::SPOT;
@@ -551,7 +551,7 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
       XMLElement* e_constant_att = get_element(e_light, "constant_attenuation");
       XMLElement* e_linear_att = get_element(e_light, "linear_attenuation");
       XMLElement* e_quadratic_att = get_element(e_light, "quadratic_attenuation");
-      if (e_color && e_falloff_deg && e_falloff_exp && 
+      if (e_color && e_falloff_deg && e_falloff_exp &&
           e_constant_att && e_linear_att && e_quadratic_att) {
         string color_string = e_color->GetText();
         light.spectrum = spectrum_from_string( color_string );
@@ -562,8 +562,8 @@ void ColladaParser::parse_light( XMLElement* xml, LightInfo& light ) {
         light.constant_att = atof(e_quadratic_att->GetText());
       } else {
         stat("Error: incomplete definition of spot light: " << light.id);
-        exit(EXIT_FAILURE);                
-      } 
+        exit(EXIT_FAILURE);
+      }
     } else {
       stat("Error: Light type " << type << " in light: " << light.id << "is not supported");
       exit(EXIT_FAILURE);
@@ -860,8 +860,8 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
 	XMLElement* e_effect = get_element(xml, "instance_effect");
   if (e_effect) {
 
-    // if the material does not have additional specification in the 462 
-    // profile. The diffuse color will be used to create a diffuse BSDF, 
+    // if the material does not have additional specification in the 462
+    // profile. The diffuse color will be used to create a diffuse BSDF,
     // Other information from the common profile are ignored
 
     XMLElement* tech_common = get_technique_common(e_effect); // common profile
@@ -871,7 +871,12 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
       XMLElement *e_bsdf = tech_cmu462->FirstChildElement();
       while (e_bsdf) {
         string type = e_bsdf->Name();
-        if (type == "mirror") {
+        if (type == "emission") {
+          XMLElement *e_radiance  = get_element(e_bsdf, "radiance");
+          Spectrum radiance = spectrum_from_string(string(e_radiance->GetText()));
+          BSDF* bsdf = new EmissionBSDF(radiance);
+          material.bsdf = bsdf;
+        } else if (type == "mirror") {
           XMLElement *e_reflectance  = get_element(e_bsdf, "reflectance");
           Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
           BSDF* bsdf = new MirrorBSDF(reflectance);
@@ -883,7 +888,8 @@ void ColladaParser::parse_material ( XMLElement* xml, MaterialInfo& material ) {
           Spectrum reflectance = spectrum_from_string(string(e_reflectance->GetText()));
           float roughness = atof(e_roughness->GetText());
           BSDF* bsdf = new GlossyBSDF(reflectance, roughness);
-          material.bsdf = bsdf;*/
+          material.bsdf = bsdf;
+        */
         } else if (type == "refraction") {
           XMLElement *e_transmittance  = get_element(e_bsdf, "transmittance");
           XMLElement *e_roughness = get_element(e_bsdf, "roughness");
