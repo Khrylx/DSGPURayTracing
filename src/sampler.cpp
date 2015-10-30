@@ -17,10 +17,17 @@ Vector2D UniformGridSampler2D::get_sample() const {
 
 Vector3D UniformHemisphereSampler3D::get_sample() const {
 
-  // TODO:
-  // Implement uniform 3D hemisphere sampler
+  double Xi1 = (double)(std::rand()) / RAND_MAX;
+  double Xi2 = (double)(std::rand()) / RAND_MAX;
 
-  return Vector3D(0, 0, 1);
+  double theta = acos(Xi1);
+  double phi = 2.0 * PI * Xi2;
+
+  double xs = sinf(theta) * cosf(phi);
+  double ys = sinf(theta) * sinf(phi);
+  double zs = cosf(theta);
+
+  return Vector3D(xs, ys, zs);
 
 }
 
