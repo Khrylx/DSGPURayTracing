@@ -360,45 +360,40 @@ void PathTracer::visualize_accel() const {
 }
 
 void PathTracer::key_press(int key) {
-  
+
   BVHNode *current = selectionHistory.top();
-  switch (state) {
-    case DONE:
-      switch (key) {
-        case ']': 
-          tm_key = clamp(tm_key + 0.02f, 0.0f, 1.0f);
-          break;
-        case '[': 
-          tm_key = clamp(tm_key - 0.02f, 0.0f, 1.0f);
-          break;
-        default:
-          return;
-    } break; 
-    case VISUALIZE:
-      switch (key) {
-        case KEYBOARD_UP:
-          if (current != bvh->get_root()) {
-            selectionHistory.pop();
-          }
-          break;
-        case KEYBOARD_LEFT:
-          if (current->l) {
-            selectionHistory.push(current->l);
-          }
-          break;
-        case KEYBOARD_RIGHT:
-          if (current->l) {
-            selectionHistory.push(current->r);
-          }
-          break;
-      case 'a':
-      case 'A':
-          show_rays = !show_rays;
-        default:
-          return;
-    } break;
+  switch (key) {
+  case ']':
+      ns_aa *=2;
+      printf("Samples per pixel changed to %lu\n", ns_aa);
+      //tm_key = clamp(tm_key + 0.02f, 0.0f, 1.0f);
+      break;
+  case '[':
+      //tm_key = clamp(tm_key - 0.02f, 0.0f, 1.0f);
+      ns_aa /=2;
+      if (ns_aa < 1) ns_aa = 1;
+      printf("Samples per pixel changed to %lu\n", ns_aa);
+      break;
+  case KEYBOARD_UP:
+      if (current != bvh->get_root()) {
+          selectionHistory.pop();
+      }
+      break;
+  case KEYBOARD_LEFT:
+      if (current->l) {
+          selectionHistory.push(current->l);
+      }
+      break;
+  case KEYBOARD_RIGHT:
+      if (current->l) {
+          selectionHistory.push(current->r);
+      }
+      break;
+  case 'a':
+  case 'A':
+      show_rays = !show_rays;
   default:
-    return;
+      return;
   }
 }
 
@@ -425,9 +420,14 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
-    //return Spectrum(1,0,0);
-    
-  Spectrum L_out(0,0,0);
+  Spectrum L_out = isect.bsdf->get_emission(); // Le
+
+  // TODO :
+  // Instead of initializing this value to a constant color, use the direct,
+  // indirect lighting components calculated in the code below. The starter
+  // code overwrites L_out by (.5,.5,.5) so that you can test your geometry
+  // queries before you implement path tracing.
+  L_out = Spectrum(5.f, 5.f, 5.f);
 
   Vector3D hit_p = r.o + r.d * isect.t;
   Vector3D hit_n = isect.n;
@@ -443,8 +443,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   Vector3D w_out = w2o * (r.o - hit_p);
   w_out.normalize();
 
-  // TODO: 
-  // extend the below code to compute the direct lighting for all the lights 
+  // TODO:
+  // Extend the below code to compute the direct lighting for all the lights
   // in the scene, instead of just the dummy light we provided in part 1.
 
   //InfiniteHemisphereLight light(Spectrum(1.f, 1.f, 1.f));
