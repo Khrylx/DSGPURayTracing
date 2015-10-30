@@ -215,14 +215,14 @@
         <matrix sid="transform">-0.7071068 0.3535534 -0.6123725 -3 -0.7071068 -0.3535534 0.6123725 3 -2.77166e-8 0.8660254 0.5 2 0 0 0 1</matrix>
         <instance_camera url="#Camera-camera"/>
       </node>
-      <node id="Hemi" name="Hemi" type="NODE">
+  <!--    <node id="Hemi" name="Hemi" type="NODE">
         <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 5 0 0 0 1</matrix>
         <instance_light url="#Hemi-light"/>
       </node>
       <node id="Area_001" name="Area_001" type="NODE">
         <matrix sid="transform">0.7071068 0.5 0.5 1 -0.7071068 0.5 0.5 1 0 -0.7071068 0.7071068 1.5 0 0 0 1</matrix>
         <instance_light url="#Area_001-light"/>
-      </node>
+      </node> -->
       <node id="Sphere" name="Sphere" type="NODE">
         <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
         <instance_geometry url="#Sphere-data">

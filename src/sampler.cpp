@@ -24,10 +24,10 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
   // Implement uniform 3D hemisphere sampler
     double r1 = rand()/(double)RAND_MAX;
     double r2 = rand()/(double)RAND_MAX;
-    double s = sqrt(1-r1*r1);
-    double theta = 2*PI*r2;
+    double sin_theta = sqrt(1-r1*r1);
+    double phi = 2*PI*r2;
     
-  return Vector3D(s*cos(theta), s*sin(theta), r1);
+  return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), r1);
 
 }
 

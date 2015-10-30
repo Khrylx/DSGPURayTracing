@@ -51,7 +51,7 @@ Spectrum MirrorBSDF::f(const Vector3D& wo, const Vector3D& wi) {
     double eps = 1e-3;
     
     if (fabs(wo[2] - wi[2]) < eps && fabs(wo[0] + wi[0]) < eps && fabs(wo[1] + wi[1]) < eps ) {
-        return Spectrum(1,1,1)* (1/std::max(wi[2],1e-8));
+        return reflectance * (1/std::max(wi[2],1e-8));
     }
     
     return Spectrum();
@@ -65,7 +65,7 @@ Spectrum MirrorBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
     reflect(wo, wi);
     *pdf = 1;
     
-    return Spectrum(1,1,1) * (1/std::max(wo[2],1e-8));
+    return reflectance * (1/std::max(wo[2],1e-8));
 }
 
 // Glossy BSDF //
@@ -97,7 +97,7 @@ Spectrum RefractionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) 
     // Get the initial refract direction.
     bool res = refract(wo, wi, ior);
     if (!res) {
-        return Spectrum(1,1,1) * (1/std::max(std::fabs((*wi)[2]),1e-8));
+        return Spectrum();
     }
     
     double ni = ior;
@@ -147,7 +147,7 @@ Spectrum GlassBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
     if (rand() / (double)RAND_MAX <= Fr) {    // If we choose reflection
         reflect(wo, wi);
         // Here we don't need to multiply Fr because we already using randomized strategy to achieve it.
-        return transmittance * (1/std::max(std::fabs((*wi)[2]),1e-8));
+        return reflectance * (1/std::max(std::fabs((*wi)[2]),1e-8));
     }
     else{                       // If we choose refraction
         double ratio = no/ni;
