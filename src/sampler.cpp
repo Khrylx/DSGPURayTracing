@@ -49,7 +49,7 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
         double phi = 2*PI*r2;
         double sin_theta = sin(theta);
         double cos_theta = cos(theta);
-        *pdf = 1 / (2*PI*cos_theta);
+        *pdf = cos_theta / PI;
         
         return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
         
