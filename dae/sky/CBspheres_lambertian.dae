@@ -20,14 +20,17 @@
     </light>
     <light id="Area-light" name="Light">
       <technique_common>
-        <directional>
-          <color sid="color">15 15 15</color>
-        </directional>
+        <point>
+          <color sid="color">5 5 5 </color>
+          <constant_attenuation>1</constant_attenuation>
+          <linear_attenuation>0</linear_attenuation>
+          <quadratic_attenuation>0.001599967</quadratic_attenuation>
+        </point>
       </technique_common>
       <extra>
         <technique profile="CMU462">
           <area>
-            <color sid="color">9 9 9</color>
+            <color sid="color">5 5 5</color>
           </area>
         </technique>
       </extra>
@@ -45,18 +48,11 @@
           </perspective>
         </technique_common>
       </optics>
-      <extra>
-        <technique profile="blender">
-          <YF_dofdist>0</YF_dofdist>
-          <shiftx>0</shiftx>
-          <shifty>0</shifty>
-        </technique>
-      </extra>
     </camera>
   </library_cameras>
   <library_images/>
   <library_effects>
-    <effect id="chrome-effect">
+    <effect id="lambertian-effect">
       <profile_COMMON>
         <technique sid="common">
           <phong>
@@ -81,14 +77,6 @@
           </phong>
         </technique>
       </profile_COMMON>
-      <!--<extra>
-        <technique profile="CMU462">
-          <mirror>
-            <reflectance>1 1 1</reflectance>
-          </mirror>
-        </technique>
-      </extra>
-      -->
     </effect>
     <effect id="glass-effect">
       <profile_COMMON>
@@ -115,17 +103,6 @@
           </phong>
         </technique>
       </profile_COMMON>
-      <!--<extra>
-        <technique profile="CMU462">
-          <glass>
-            <reflectance>1 1 1</reflectance>
-            <transmittance>1 1 1</transmittance>
-            <roughness>0</roughness>
-            <ior>1.45</ior>
-          </glass>
-        </technique>
-      </extra>
-      -->
     </effect>
     <effect id="ceiling-effect">
       <profile_COMMON>
@@ -178,6 +155,13 @@
           </phong>
         </technique>
       </profile_COMMON>
+      <extra>
+        <technique profile="CMU462">
+          <emission>
+            <radiance>5 5 5</radiance>
+          </emission>
+        </technique>
+      </extra>
     </effect>
     <effect id="floor-effect">
       <profile_COMMON>
@@ -285,8 +269,8 @@
     </effect>
   </library_effects>
   <library_materials>
-    <material id="chrome" name="chrome">
-      <instance_effect url="#chrome-effect"/>
+    <material id="lambertian" name="lambertian">
+      <instance_effect url="#lambertian-effect"/>
     </material>
     <material id="refract" name="refract">
       <instance_effect url="#glass-effect"/>
@@ -591,10 +575,6 @@
   <library_controllers/>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
-<!--      <node id="Hemi" name="Hemi" type="NODE">
-        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 5 0 0 0 1</matrix>
-        <instance_light url="#Hemi-light"/>
-      </node> -->
       <node id="Area" name="Area" type="NODE">
         <matrix sid="transform">0.6 0 0 0 0 0.8 0 0 0 0 1 1.49 0 0 0 1</matrix>
         <instance_light url="#Area-light"/>
@@ -614,7 +594,7 @@
         <instance_geometry url="#Sphere1-data">
           <bind_material>
             <technique_common>
-              <instance_material symbol="chrome" target="#chrome"/>
+              <instance_material symbol="lambertian" target="#lambertian"/>
             </technique_common>
           </bind_material>
         </instance_geometry>

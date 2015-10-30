@@ -56,9 +56,9 @@ class BSDF {
 
   /**
    * Evaluate BSDF.
-   * Given incident light direction wi and outgoing light direction wo. Note 
-   * that both wi and wo are defined in the local coordinate system at the 
-   * point of intersection. 
+   * Given incident light direction wi and outgoing light direction wo. Note
+   * that both wi and wo are defined in the local coordinate system at the
+   * point of intersection.
    * \param wo outgoing light direction in local space of point of intersection
    * \param wi incident light direction in local space of point of intersection
    * \return reflectance in the given incident/outgoing directions
@@ -67,8 +67,8 @@ class BSDF {
 
   /**
    * Evaluate BSDF.
-   * Given the outgoing light direction wo, compute the incident light 
-   * direction and store it in wi. Store the pdf of the outgoing light in pdf. 
+   * Given the outgoing light direction wo, compute the incident light
+   * direction and store it in wi. Store the pdf of the outgoing light in pdf.
    * Again, note that wo and wi should both be defined in the local coordinate
    * system at the point of intersection.
    * \param wo outgoing light direction in local space of point of intersection
@@ -76,52 +76,58 @@ class BSDF {
    * \param pdf address to store the pdf of the output incident direction
    * \return reflectance in the output incident and given outgoing directions
    */
-  virtual Spectrum sample_f (const Vector3D& w0, Vector3D* wi, float* pdf) = 0;
+  virtual Spectrum sample_f (const Vector3D& wo, Vector3D* wi, float* pdf) = 0;
 
   /**
-   * If the BSDF is described by a delta distribution. Materials that are 
-   * perfectly specular (water, glass, mirror) only scatter light from a single
-   * incident angle to a single outgoing angle. These BSDFs are best described
-   * with alpha distributions that are zero except for the single direction 
-   * where light is scattered.
+   * Get the emission value of the surface material. For non-emitting surfaces
+   * this would be a zero energy spectrum.
+   * \return emission spectrum of the surface material
+   */
+  virtual Spectrum get_emission () const = 0;
+
+  /**
+   * If the BSDF is a delta distribution. Materials that are perfectly specular,
+   * (e.g. water, glass, mirror) only scatter light from a single incident angle
+   * to a single outgoing angle. These BSDFs are best described with alpha
+   * distributions that are zero except for the single direction where light is
+   * scattered.
    */
   virtual bool is_delta() const = 0;
 
-  /** 
-   * Reflection helper; reflects wo using a normal vector of (0, 0, 1) and
-   * stores the result in wi. Returns reflectance.
+  /**
+   * Reflection helper
    */
   virtual void reflect(const Vector3D& wo, Vector3D* wi);
-  
-  /** 
-   * Refraction helper; refracts wo into wi and returns transmittance, unless
-   * the angle is too steep and there's total internal reflection, in which case
-   * it reflects wo into wi and returns reflectance.
+
+  /**
+   * Refraction helper
    */
   virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
 
 }; // class BSDF
 
 /**
- * BSDF for a diffuse surface.
+ * Diffuse BSDF.
  */
 class DiffuseBSDF : public BSDF {
  public:
- 
+
   DiffuseBSDF(const Spectrum& a) : albedo(a) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return false; }
-  
-  Spectrum albedo;
 
 private:
+
+  Spectrum albedo;
+  CosineWeightedHemisphereSampler3D sampler;
 
 }; // class DiffuseBSDF
 
 /**
- * BSDF for a mirror (no refraction, no diffuse reflection).
+ * Mirror BSDF
  */
 class MirrorBSDF : public BSDF {
  public:
@@ -130,6 +136,7 @@ class MirrorBSDF : public BSDF {
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
 private:
@@ -137,20 +144,21 @@ private:
   float roughness;
   Spectrum reflectance;
 
-}; // class GlossyBSDF*/
+}; // class MirrorBSDF*/
 
 /**
- * Glossy BSDF coming soon!
+ * Glossy BSDF.
  */
 /*
 class GlossyBSDF : public BSDF {
  public:
 
-  GlossyBSDF(const Spectrum& reflectance, float roughness) 
+  GlossyBSDF(const Spectrum& reflectance, float roughness)
     : reflectance(reflectance), roughness(roughness) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return false; }
 
 private:
@@ -161,17 +169,17 @@ private:
 }; // class GlossyBSDF*/
 
 /**
- * BSDF for a purely refractive material (no reflections except for total
- * internal reflection).
+ * Refraction BSDF.
  */
 class RefractionBSDF : public BSDF {
  public:
 
-  RefractionBSDF(const Spectrum& transmittance, float roughness, float ior) 
+  RefractionBSDF(const Spectrum& transmittance, float roughness, float ior)
     : transmittance(transmittance), roughness(roughness), ior(ior) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
  private:
@@ -183,18 +191,19 @@ class RefractionBSDF : public BSDF {
 }; // class RefractionBSDF
 
 /**
- * BSDF for glass (both reflective and transparent).
+ * Glass BSDF.
  */
 class GlassBSDF : public BSDF {
  public:
 
-  GlassBSDF(const Spectrum& transmittance, const Spectrum& reflectance, 
-            float roughness, float ior) : 
-    transmittance(transmittance), reflectance(reflectance), 
+  GlassBSDF(const Spectrum& transmittance, const Spectrum& reflectance,
+            float roughness, float ior) :
+    transmittance(transmittance), reflectance(reflectance),
     roughness(roughness), ior(ior) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
  private:
@@ -206,6 +215,25 @@ class GlassBSDF : public BSDF {
 
 }; // class GlassBSDF
 
+/**
+ * Emission BSDF.
+ */
+class EmissionBSDF : public BSDF {
+ public:
+
+  EmissionBSDF(const Spectrum& radiance) : radiance(radiance) { }
+
+  Spectrum f(const Vector3D& wo, const Vector3D& wi);
+  Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
+  Spectrum get_emission() const { return radiance * (1.0 / PI); }
+  bool is_delta() const { return false; }
+
+ private:
+
+  Spectrum radiance;
+  CosineWeightedHemisphereSampler3D sampler;
+
+}; // class EmissionBSDF
 
 }  // namespace CMU462
 

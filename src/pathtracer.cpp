@@ -420,9 +420,14 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   log_ray_hit(r, isect.t);
   #endif
 
-  // TODO : Instead of initializing this value to a constant color, use the direct/indirect lighting 
-  //        components calculated in the code below.
-  Spectrum L_out = Spectrum(5.f, 5.f, 5.f);
+  Spectrum L_out = isect.bsdf->get_emission(); // Le
+
+  // TODO :
+  // Instead of initializing this value to a constant color, use the direct,
+  // indirect lighting components calculated in the code below. The starter
+  // code overwrites L_out by (.5,.5,.5) so that you can test your geometry
+  // queries before you implement path tracing.
+  L_out = Spectrum(5.f, 5.f, 5.f);
 
   Vector3D hit_p = r.o + r.d * isect.t;
   Vector3D hit_n = isect.n;
@@ -439,7 +444,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   w_out.normalize();
 
   // TODO:
-  // extend the below code to compute the direct lighting for all the lights
+  // Extend the below code to compute the direct lighting for all the lights
   // in the scene, instead of just the dummy light we provided in part 1.
 
   InfiniteHemisphereLight light(Spectrum(5.f, 5.f, 5.f));
@@ -475,12 +480,12 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
       Spectrum f = isect.bsdf->f(w_out, w_in);
 
       // TODO:
-      // construct a shadow ray and compute whether the intersected surface is
+      // Construct a shadow ray and compute whether the intersected surface is
       // in shadow and accumulate reflected radiance
   }
 
   // TODO:
-  // compute an indirect lighting estimate using pathtracing with Monte Carlo.
+  // Compute an indirect lighting estimate using pathtracing with Monte Carlo.
   // Note that Ray objects have a depth field now; you should use this to avoid
   // traveling down one path forever.
 
