@@ -40,9 +40,9 @@ class EnvironmentLight : public SceneLight {
    * - Handling the edge cases correctly (what happens if you wrap around the
    *   environment map horizontally? What about vertically?).
    */
-  Spectrum sample_dir(float theta, float phi) const;
+  Spectrum sample_dir(const Ray& r) const;
 
-  void importanceSampling(Vector3D *wi ,float* pdf, float& theta, float& phi) const;
+  void importanceSampling(Vector3D *wi ,float* pdf) const;
     
  private:
   const HDRImageBuffer* envMap;
