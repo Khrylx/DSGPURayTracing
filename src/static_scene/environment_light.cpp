@@ -79,6 +79,9 @@ void EnvironmentLight::importanceSampling(Vector3D *wi, float *pdf) const
     int t,q;
     
     // Calculate theta
+    
+    // Normalize r1 because pTheta.back() may not be 1 for precision reason.
+    r1 *= pTheta.back();
     // Find the first element geq the random float.
     std::vector<float>::const_iterator itr = std::lower_bound(pTheta.begin(), pTheta.end(), r1);
     // calculate index
@@ -87,27 +90,22 @@ void EnvironmentLight::importanceSampling(Vector3D *wi, float *pdf) const
     float prev = t > 0? *(itr-1) : 0;
     // calculate theta by interpolation
     y = t + (r1 - prev)/(*itr - prev);
-    theta = y / h * PI;
-    // choose t to be the nearest integer theta
-    if (round(y) > t) {
-        t++;
-    }
+    theta = std::min(y / h, 1.f) * PI;
     
+    
+    r2 *= pPhiGivenTheta[t].back();
     // Calculate phi, almost the same as theta
     itr = std::lower_bound(pPhiGivenTheta[t].begin(), pPhiGivenTheta[t].end(), r2);
     q = itr - pPhiGivenTheta[t].begin();
     prev = q > 0? *(itr-1) : 0;
-    float a = (r2 - prev)/(*itr - prev);
-    x = q + a;
-    phi = x / w * 2*PI;
-    
-    prev = q > 0? pPhiGivenTheta[t][q-1] : 0;
+    x = q + (r2 - prev)/(*itr - prev);
+    phi = std::min(x / w, 1.f) * 2*PI;
     
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
     
     // calculate pixelwise pdf
-    *pdf = (a*pThetaPhi[t][q-1] + (1-a)*pThetaPhi[t][q]);
+    *pdf = pThetaPhi[t][q];
     
     // calculate ray-wise pdf , a pixel represent a solid angle subtending sin_theta * d_theta * d_phi area
     *pdf /= (sin_theta * (2*PI / w) * (PI / h));
@@ -125,7 +123,7 @@ Spectrum EnvironmentLight::sample_L(const Vector3D& p, Vector3D* wi,
     //*wi = getUniformSphereSample3D();
     //*pdf = 1.0 / (4.0 * M_PI);
     
-    // Importance Sampling
+    //Importance Sampling
     importanceSampling(wi,pdf);
     
     *distToLight = INF_D;
@@ -139,7 +137,7 @@ Spectrum EnvironmentLight::sample_dir(const Ray& r) const {
     
     double theta = acos(r.d[1]);
     double sin_theta = sqrt(1 - r.d[1]*r.d[1]);
-    double phi = sin_theta == 0 ? PI : acos(r.d[0] / sin_theta);
+    double phi = sin_theta == 0 ? PI : acos(clamp(r.d[0] / sin_theta,-1.0,1.0));
     if (r.d[2] > 0) {
         phi = 2*PI - phi;
     }
@@ -154,6 +152,8 @@ Spectrum EnvironmentLight::sample_dir(const Ray& r) const {
     
     float a,b;
     int px1, px2, py1, py2;
+    
+    // Handling all corner cases by wrapping around
     if (tu < 0) {
         a = tu+1;
         px1 = w-1;
