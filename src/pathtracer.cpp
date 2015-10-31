@@ -530,7 +530,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     double cos_theta = fabs(w_in[2]);
 
     double terminateProbability = std::max(1 - f.illum(),0.f);
-    if (rand() / (double) RAND_MAX < terminateProbability) {
+    if (std::rand() / (double) RAND_MAX < terminateProbability) {
         return L_out;
     }
     

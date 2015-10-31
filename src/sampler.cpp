@@ -11,8 +11,7 @@ Vector2D UniformGridSampler2D::get_sample() const {
 
     
     
-    
-  return Vector2D(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
+    return Vector2D(std::rand()/(double)RAND_MAX,std::rand()/(double)RAND_MAX);
 
 }
 
@@ -22,8 +21,8 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
 
   // TODO:
   // Implement uniform 3D hemisphere sampler
-    double r1 = rand()/(double)RAND_MAX;
-    double r2 = rand()/(double)RAND_MAX;
+    double r1 = std::rand()/(double)RAND_MAX;
+    double r2 = std::rand()/(double)RAND_MAX;
     double sin_theta = sqrt(1-r1*r1);
     double phi = 2*PI*r2;
     
@@ -33,8 +32,8 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
     
     
     Vector3D CosineWeightedHemisphereSampler3D::get_sample() const{
-        double r1 = rand()/(double)RAND_MAX;
-        double r2 = rand()/(double)RAND_MAX;
+        double r1 = std::rand()/(double)RAND_MAX;
+        double r2 = std::rand()/(double)RAND_MAX;
         double theta = acos(1 - 2*r1) / 2;
         double phi = 2*PI*r2;
         double sin_theta = sin(theta);
@@ -43,8 +42,8 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
     }
 
     Vector3D CosineWeightedHemisphereSampler3D::get_sample(float* pdf) const {
-        double r1 = rand()/(double)RAND_MAX;
-        double r2 = rand()/(double)RAND_MAX;
+        double r1 = std::rand()/(double)RAND_MAX;
+        double r2 = std::rand()/(double)RAND_MAX;
         double theta = acos(1 - 2*r1) / 2;
         double phi = 2*PI*r2;
         double sin_theta = sin(theta);

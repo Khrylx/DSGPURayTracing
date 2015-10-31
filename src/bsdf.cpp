@@ -142,7 +142,7 @@ Spectrum GlassBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
     double r2 = (ni*cos_i - no*cos_o)/(ni*cos_i + no*cos_o);
     double Fr = 0.5*(r1*r1 + r2*r2);
 
-    if (rand() / (double)RAND_MAX <= Fr) {    // If we choose reflection
+    if (std::rand() / (double)RAND_MAX <= Fr) {    // If we choose reflection
         reflect(wo, wi);
         // Here we don't need to multiply Fr because we already using randomized strategy to achieve it.
         return reflectance * (1/std::max(std::fabs((*wi)[2]),1e-8));
