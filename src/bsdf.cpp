@@ -116,12 +116,12 @@ bool BSDF::refract(const Vector3D& wo, Vector3D* wi, float ior) {
 // Emission BSDF //
 
 Spectrum EmissionBSDF::f(const Vector3D& wo, const Vector3D& wi) {
-  return radiance * (1.0 / PI);
+  return Spectrum();
 }
 
 Spectrum EmissionBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
   *wi  = sampler.get_sample(pdf);
-  return radiance * (1.0 / PI);
+  return Spectrum();
 }
 
 } // namespace CMU462
