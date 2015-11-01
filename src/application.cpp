@@ -250,25 +250,25 @@ void Application::load(SceneInfo* sceneInfo) {
 
   scene = new DynamicScene::Scene(objects, lights);
 
-  // update camera controls
   const BBox& bbox = scene->get_bbox();
   if (!bbox.empty()) {
 
-    canonical_view_distance = bbox.extent.norm();
+    Vector3D target = bbox.centroid();
+    canonical_view_distance = bbox.extent.norm() / 2 * 1.5;
 
     double view_distance = canonical_view_distance * 2;
     double min_view_distance = canonical_view_distance / 10.0;
     double max_view_distance = canonical_view_distance * 20.0;
 
-    canonicalCamera.place(Vector3D(0,0,0),
-                          PI / 2 - asin(c_dir.y),
+    canonicalCamera.place(target,
+                          acos(c_dir.y),
                           atan2(c_dir.x, c_dir.z),
                           view_distance,
                           min_view_distance,
                           max_view_distance);
 
-    camera.place(Vector3D(0,0,0),
-                PI / 2 - asin(c_dir.y),
+    camera.place(target,
+                acos(c_dir.y),
                 atan2(c_dir.x, c_dir.z),
                 view_distance,
                 min_view_distance,
@@ -276,7 +276,7 @@ void Application::load(SceneInfo* sceneInfo) {
 
     set_scroll_rate();
   }
-  
+
   // set default draw styles for meshEdit -
   scene->set_draw_styles(&defaultStyle, &hoverStyle, &selectStyle);
 
@@ -601,23 +601,23 @@ inline void Application::draw_string(float x, float y,
   messages.push_back(line_index);
 }
 
-void Application::draw_coordinates() { 
+void Application::draw_coordinates() {
 
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_LIGHTING);
 
   glBegin(GL_LINES);
   glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
-  glVertex3i(0,0,0); 
+  glVertex3i(0,0,0);
   glVertex3i(1,0,0);
-   
+
   glColor4f(0.0f, 1.0f, 0.0f, 0.5f);
-  glVertex3i(0,0,0); 
-  glVertex3i(0,1,0); 
+  glVertex3i(0,0,0);
+  glVertex3i(0,1,0);
 
   glColor4f(0.0f, 0.0f, 1.0f, 0.5f);
-  glVertex3i(0,0,0); 
-  glVertex3i(0,0,1); 
+  glVertex3i(0,0,0);
+  glVertex3i(0,0,1);
 
   glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
   for (int x = 0; x <= 8; ++x) {
@@ -660,7 +660,7 @@ void Application::draw_hud() {
         draw_string(x0, y, s1, size, text_color);
         draw_string(x0 + (use_hdpi ? 150 : 75 ), y, s2, size, text_color);
       } else {
-        draw_string(x0, y, s, size, text_color);        
+        draw_string(x0, y, s, size, text_color);
       }
       y += inc;
     }
