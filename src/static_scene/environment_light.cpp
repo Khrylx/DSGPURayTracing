@@ -92,7 +92,7 @@ void EnvironmentLight::importanceSampling(Vector3D *wi, float *pdf) const
     y = t + (r1 - prev)/(*itr - prev);
     theta = std::min(y / h, 1.f) * PI;
     
-    
+    // Normalize r2
     r2 *= pPhiGivenTheta[t].back();
     // Calculate phi, almost the same as theta
     itr = std::lower_bound(pPhiGivenTheta[t].begin(), pPhiGivenTheta[t].end(), r2);
