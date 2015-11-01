@@ -196,9 +196,9 @@ BVHAccel::BVHAccel(const std::vector<Primitive *> &_primitives,
 
   root = new BVHNode(bb, 0, primitives.size());
 
-    maxLeaf = 0;
+    //maxLeaf = 0;
     buildBVH(primitives, root, 32, max_leaf_size);
-    cout << "max:" << maxLeaf << endl;
+    //cout << "max:" << maxLeaf << endl;
 }
 
 //  destroy BVH nodesv
