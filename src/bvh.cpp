@@ -16,7 +16,7 @@ struct Bucket{
     Bucket():prim_count(0) {}
 };
 
-    
+    int maxLeaf;
 // buildBVH helper
 void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, size_t max_leaf_size)
 {
@@ -140,17 +140,31 @@ void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, siz
     }
     
     
-    node->l = lRange == 0 ? NULL : new BVHNode(lbb, node->start, lRange);
-    node->r = rRange == 0 ? NULL : new BVHNode(rbb, node->start + lRange, rRange);
+    node->l = (lRange == 0 || rRange == 0) ? NULL : new BVHNode(lbb, node->start, lRange);
+    node->r = (lRange == 0 || rRange == 0) ? NULL : new BVHNode(rbb, node->start + lRange, rRange);
     
-    
-    if (lRange <= max_leaf_size || rRange <= max_leaf_size) {
+    // maxLeaf = std::max(lRange, std::max(rRange,maxLeaf));
+    if (lRange <= max_leaf_size && rRange <= max_leaf_size) {
         //cout << lRange << ":" << rRange << endl;
         return;
     }
+    else if (lRange <= max_leaf_size){
+        // lRange > 0 is for the case if all primitives are together.
+        if (lRange > 0) {
+            buildBVH(primitives, node->r, bucketNum, max_leaf_size);
+        }
+    }
+    else if (rRange <= max_leaf_size){
+        // rRange > 0 is for the case if all primitives are together.
+        if (rRange > 0) {
+            buildBVH(primitives, node->l, bucketNum, max_leaf_size);
+        }
+    }
+    else{
+        buildBVH(primitives, node->l, bucketNum, max_leaf_size);
+        buildBVH(primitives, node->r, bucketNum, max_leaf_size);
+    }
     
-    buildBVH(primitives, node->l, bucketNum, max_leaf_size);
-    buildBVH(primitives, node->r, bucketNum, max_leaf_size);
     
     return;
     
@@ -175,7 +189,9 @@ BVHAccel::BVHAccel(const std::vector<Primitive *> &_primitives,
 
   root = new BVHNode(bb, 0, primitives.size());
 
+    //maxLeaf = 0;
     buildBVH(primitives, root, 32, max_leaf_size);
+    //cout << "max:" << maxLeaf << endl;
 }
 
 //  destroy BVH nodesv
