@@ -143,9 +143,10 @@ void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, siz
     node->l = (lRange == 0 || rRange == 0) ? NULL : new BVHNode(lbb, node->start, lRange);
     node->r = (lRange == 0 || rRange == 0) ? NULL : new BVHNode(rbb, node->start + lRange, rRange);
     
-    // maxLeaf = std::max(lRange, std::max(rRange,maxLeaf));
+
     if (lRange <= max_leaf_size && rRange <= max_leaf_size) {
         //cout << lRange << ":" << rRange << endl;
+        //maxLeaf = std::max(lRange, std::max(rRange,maxLeaf));
         return;
     }
     else if (lRange <= max_leaf_size){
@@ -153,12 +154,18 @@ void buildBVH(vector<Primitive *>& primitives, BVHNode* node, int bucketNum, siz
         if (lRange > 0) {
             buildBVH(primitives, node->r, bucketNum, max_leaf_size);
         }
+//        else{
+//            maxLeaf = std::max(lRange, std::max(rRange,maxLeaf));
+//        }
     }
     else if (rRange <= max_leaf_size){
         // rRange > 0 is for the case if all primitives are together.
         if (rRange > 0) {
             buildBVH(primitives, node->l, bucketNum, max_leaf_size);
         }
+//        else{
+//            maxLeaf = std::max(lRange, std::max(rRange,maxLeaf));
+//        }
     }
     else{
         buildBVH(primitives, node->l, bucketNum, max_leaf_size);
@@ -189,9 +196,9 @@ BVHAccel::BVHAccel(const std::vector<Primitive *> &_primitives,
 
   root = new BVHNode(bb, 0, primitives.size());
 
-    //maxLeaf = 0;
+    maxLeaf = 0;
     buildBVH(primitives, root, 32, max_leaf_size);
-    //cout << "max:" << maxLeaf << endl;
+    cout << "max:" << maxLeaf << endl;
 }
 
 //  destroy BVH nodesv
