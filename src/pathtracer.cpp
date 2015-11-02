@@ -506,12 +506,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
             // evaluate surface brdf
             Spectrum f = isect.bsdf->f(w_out, w_in);
             
-            
-            light_L.r *= f.r;
-            light_L.g *= f.g;
-            light_L.b *= f.b;
-            //cout << w_in <<endl;
-            L += cos_theta/pdf*light_L;
+            L += cos_theta / pdf * light_L * f;
         }
         L_out += L*scale;
     }
@@ -543,11 +538,8 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     //refR.throughput = throughput;
     
     Spectrum indirL = trace_ray(refR);
-    indirL.r *= f.r;
-    indirL.g *= f.g;
-    indirL.b *= f.b;
-
-    return L_out + cos_theta / (pdf*(1-terminateProbability)) * indirL;
+    
+    return L_out + cos_theta / (pdf*(1-terminateProbability)) * indirL * f;
 }
 
 Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
