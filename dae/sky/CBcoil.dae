@@ -25,17 +25,10 @@
     </camera>
   </library_cameras>
   <library_lights>
-    <light id="Hemi-light" name="Hemi.003">
-      <technique_common>
-        <ambient>
-          <color>1 1 1</color>
-        </ambient>
-      </technique_common>
-    </light>
     <light id="Area-light" name="Light">
       <technique_common>
         <point>
-          <color sid="color">5 5 5 </color>
+          <color sid="color">3 3 3</color>
           <constant_attenuation>1</constant_attenuation>
           <linear_attenuation>0</linear_attenuation>
           <quadratic_attenuation>0.001599967</quadratic_attenuation>
@@ -44,7 +37,7 @@
       <extra>
         <technique profile="CMU462">
           <area>
-            <color sid="color">5 5 5</color>
+            <color sid="color">3 3 3</color>
           </area>
         </technique>
       </extra>
@@ -106,7 +99,7 @@
       <extra>
         <technique profile="CMU462">
           <emission>
-            <radiance>5 5 5</radiance>
+            <radiance>10 10 10</radiance>
           </emission>
         </technique>
       </extra>
@@ -579,12 +572,8 @@
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="Camera" name="Camera" type="NODE">
-        <matrix sid="transform">-1 2.69452e-14 1.50996e-7 2.36042e-7 1.50996e-7 1.62921e-7 1 3 2.34488e-15 1 -1.62921e-7 0.75 0 0 0 1</matrix>
+        <matrix sid="transform">-1 0 0 0 0 0 1 3 0 1 0 0 0 0 0 1</matrix>
         <instance_camera url="#Camera-camera"/>
-      </node>
-      <node id="Hemi" name="Hemi" type="NODE">
-        <matrix sid="transform">-1 -1.50996e-7 0 -2.62268e-8 1.50996e-7 -1 0 0 0 0 1 5 0 0 0 1</matrix>
-        <instance_light url="#Hemi-light"/>
       </node>
       <node id="Area" name="Area" type="NODE">
         <matrix sid="transform">-0.6 -1.20797e-7 0 -2.62268e-8 9.05975e-8 -0.8 0 0.004315853 0 0 1 1.49 0 0 0 1</matrix>
