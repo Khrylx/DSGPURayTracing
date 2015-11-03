@@ -175,7 +175,7 @@
       <extra>
         <technique profile="CMU462">
           <emission>
-            <radiance>1 1 1</radiance>
+            <radiance>10 10 10</radiance>
           </emission>
         </technique>
       </extra>

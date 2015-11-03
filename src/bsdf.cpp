@@ -46,11 +46,13 @@ Spectrum DiffuseBSDF::sample_f(const Vector3D& wo, Vector3D* wi, float* pdf) {
 // Mirror BSDF //
 
 Spectrum MirrorBSDF::f(const Vector3D& wo, const Vector3D& wi) {
-    double eps = 1e-3;
+//    double eps = 1e-3;
+//    
+//    if (fabs(wo[2] - wi[2]) < eps && fabs(wo[0] + wi[0]) < eps && fabs(wo[1] + wi[1]) < eps ) {
+//        return reflectance * (1/std::max(wi[2],1e-8));
+//    }
     
-    if (fabs(wo[2] - wi[2]) < eps && fabs(wo[0] + wi[0]) < eps && fabs(wo[1] + wi[1]) < eps ) {
-        return reflectance * (1/std::max(wi[2],1e-8));
-    }
+    // Note: Because we already using emission for light source, zero f for direct lighting.
     
     return Spectrum();
 }

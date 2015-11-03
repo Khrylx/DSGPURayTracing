@@ -397,7 +397,7 @@ void PathTracer::key_press(int key) {
   }
 }
 
-Spectrum PathTracer::trace_ray(const Ray &r) {
+Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
 
   Intersection isect;
 
@@ -421,7 +421,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
   #endif
 
   //  Spectrum L_out;
-  Spectrum L_out = isect.bsdf->get_emission(); // Le
+  Spectrum L_out = includeLe ? isect.bsdf->get_emission() : Spectrum();
 
   // TODO :
   // Instead of initializing this value to a constant color, use the direct,
@@ -537,7 +537,7 @@ Spectrum PathTracer::trace_ray(const Ray &r) {
     refR.depth = r.depth+1;
     //refR.throughput = throughput;
     
-    Spectrum indirL = trace_ray(refR);
+    Spectrum indirL = trace_ray(refR, isect.bsdf->is_delta());
     
     return L_out + cos_theta / (pdf*(1-terminateProbability)) * indirL * f;
 }
@@ -563,7 +563,7 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
         double px = (x+rp.x) / w;
         double py = (y+rp.y) / h;
         Ray r = camera->generate_ray(px, py);
-        s += trace_ray(r);
+        s += trace_ray(r, true);
     }
     s *= 1.0/num_samples;
     
