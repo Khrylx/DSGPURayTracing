@@ -411,8 +411,12 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
     // TODO: 
     // If you have an environment map, return the Spectrum this ray
     // samples from the environment map. If you don't return black.
-    
-    return Spectrum(0,0,0);
+      if (envLight && includeLe) {
+          return envLight->sample_dir(r);
+      }
+      else{
+          return Spectrum(0,0,0);
+      }
   }
 
   // log ray hit
@@ -531,7 +535,6 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
     
     Vector3D v = o2w * w_in;
     v.normalize();
-    
     
     Ray refR(hit_p+ EPS_D * v, v);
     refR.depth = r.depth+1;

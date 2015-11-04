@@ -65,7 +65,7 @@ Vector3D getUniformSphereSample3D()
     double phi = 2*PI*r2;
     
     //return sampleToWorld * Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), cos_theta);
-    return Vector3D(sin_theta*cos(phi), cos_theta, -sin_theta*sin(phi));
+    return Vector3D(-sin_theta*sin(phi), cos_theta, sin_theta*cos(phi));
 }
     
 void EnvironmentLight::importanceSampling(Vector3D *wi, float *pdf) const
@@ -110,7 +110,7 @@ void EnvironmentLight::importanceSampling(Vector3D *wi, float *pdf) const
     // calculate ray-wise pdf , a pixel represent a solid angle subtending sin_theta * d_theta * d_phi area
     *pdf /= (sin_theta * (2*PI / w) * (PI / h));
     
-    *wi = Vector3D(sin_theta*cos(phi), cos_theta, -sin_theta*sin(phi));
+    *wi = Vector3D(-sin_theta*sin(phi), cos_theta, sin_theta*cos(phi));
     
 }
 
@@ -137,8 +137,8 @@ Spectrum EnvironmentLight::sample_dir(const Ray& r) const {
     
     double theta = acos(r.d[1]);
     double sin_theta = sqrt(1 - r.d[1]*r.d[1]);
-    double phi = sin_theta == 0 ? PI : acos(clamp(r.d[0] / sin_theta,-1.0,1.0));
-    if (r.d[2] > 0) {
+    double phi = sin_theta == 0 ? PI : acos(clamp(r.d[2] / sin_theta,-1.0,1.0));
+    if (r.d[0] > 0) {
         phi = 2*PI - phi;
     }
     double u = phi / (2*PI);
