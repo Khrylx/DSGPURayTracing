@@ -225,7 +225,7 @@ class EmissionBSDF : public BSDF {
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
-  Spectrum get_emission() const { return radiance * (1.0 / PI); }
+  Spectrum get_emission() const { return radiance; }
   bool is_delta() const { return false; }
 
  private:
