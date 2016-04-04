@@ -155,7 +155,7 @@ int test(){
         }
     }
 
-    printf("Test PASSED\n");
+    printf("Test PASSED! YEAH!!\n");
 
     // Free device global memory
     err = cudaFree(d_A);
