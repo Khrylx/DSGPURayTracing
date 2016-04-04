@@ -154,6 +154,8 @@ else(BUILD_LIBCMU462)
   find_package(GLFW REQUIRED)
 endif(BUILD_LIBCMU462)
 
+add_subdirectory(cuda_src)
+
 #-------------------------------------------------------------------------------
 # Add subdirectories
 #-------------------------------------------------------------------------------

@@ -66,9 +66,13 @@ HDRImageBuffer* load_exr(const char* file_path) {
   return envmap;
 }
 
+extern int test();
+
 int main( int argc, char** argv ) {
 
-    std::srand(std::time(0));
+  test();
+
+  std::srand(std::time(0));
     
   // get the options
   AppConfig config; int opt;

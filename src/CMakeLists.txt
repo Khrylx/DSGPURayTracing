@@ -75,6 +75,7 @@ target_link_libraries( pathtracer
     ${OPENGL_LIBRARIES}
     ${FREETYPE_LIBRARIES}
     ${CMAKE_THREADS_INIT}
+    GPUAccel
 )
 
 #-------------------------------------------------------------------------------
