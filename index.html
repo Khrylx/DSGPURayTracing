@@ -26,7 +26,7 @@
 <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h2>
 
 <p>The project aims at accelerating the computationally intensive ray tracing algorithm. To achieve this end,
-we will utilize the computing power of both GPU and distributed machines.</p>
+we will utilize the computing power of both GPU and distributed machines. We are going to build BVH on GPU to allow faster ray-triangle intersection test. For machines on clusters, they all build the same BVH but will process different parts of the image. We will treat patches of the image as jobs and use some workload balance strategy.</p>
 
 <h2>
 <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h2>
