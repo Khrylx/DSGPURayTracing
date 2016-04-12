@@ -46,23 +46,36 @@ CUDAPathTracer::~CUDAPathTracer()
 
 void CUDAPathTracer::init()
 {
-    
+    loadCamera();
 }
 
 void CUDAPathTracer::loadCamera()
 {
     GPUCamera tmpCam;
-    Camera* cam = pathTracer->camera;
-    tmpCam.widthDivDist = cam->screenW / cam->screenDist;
-    tmpCam.heightDivDist = cam->screenH / cam->screenDist;
+    //Camera* cam = pathTracer->camera;
+    //tmpCam.widthDivDist = cam->screenW / cam->screenDist;
+    //tmpCam.heightDivDist = cam->screenH / cam->screenDist;
     
     for (int i = 0; i < 9; i++) {
-        tmpCam.c2w[i] = (cam->c2w)(i / 3, i % 3);
+        tmpCam.c2w[i] = i;//(cam->c2w)(i / 3, i % 3);
     }
     
     for (int i = 0; i < 3; i++) {
-        tmpCam.pos[i] = cam->pos[i];
+        tmpCam.pos[i] = i;//cam->pos[i];
     }
+
+    cudaMalloc((void**)&camera,sizeof(GPUCamera));
+    cudaMemcpy(camera, &tmpCam,sizeof(GPUCamera),cudaMemcpyHostToDevice);
+    cudaMemcpy(&tmpCam, camera,sizeof(GPUCamera),cudaMemcpyDeviceToHost);
+    
+    for (int i = 0; i < 9; i++) {
+        cout << tmpCam.c2w[i] << endl;
+    }
+    
+    for (int i = 0; i < 3; i++) {
+        cout << tmpCam.pos[i] << endl;
+    }
+    cudaFree(camera);
 }
 
 
