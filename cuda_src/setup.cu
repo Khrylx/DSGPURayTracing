@@ -72,14 +72,14 @@ void CUDAPathTracer::loadCamera()
     // gpuCam = (GPUCamera*) malloc(sizeof(GPUCamera));
     // memcpy(gpuCam, &tmpCam, sizeof(GPUCamera));
 
-    cudaMalloc((void**)gpuCam, sizeof(GPUCamera));
-    cudaMemcpy((void*)gpuCam, &tmpCam, sizeof(GPUCamera), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&gpuCam, sizeof(GPUCamera));
+    cudaMemcpy(gpuCam, &tmpCam, sizeof(GPUCamera), cudaMemcpyHostToDevice);
     
     GPUCamera rtCam;
     // memcpy(&rtCam, gpuCam, sizeof(GPUCamera));
     // free(gpuCam);
 
-    cudaMemcpy((void*)rtCam, (void*)gpuCam, sizeof(GPUCamera), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&rtCam, gpuCam, sizeof(GPUCamera), cudaMemcpyDeviceToHost);
     cudaFree(gpuCam);
 
 
@@ -87,6 +87,9 @@ void CUDAPathTracer::loadCamera()
     {
         cout << rtCam.c2w[i] << endl;
     }
+
+    // free(tmpCam);
+    // free(rtCam);
 }
 
 
