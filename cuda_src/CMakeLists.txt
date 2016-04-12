@@ -13,8 +13,11 @@ if(LINUX)
 	SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
 endif(LINUX)
 
+file(GLOB GPUSRC
+    "*.cu"
+)
 
 # Specify binary name and source file to build it from
 CUDA_ADD_LIBRARY(
     GPUAccel SHARED
-    kernel.cu)
+    ${GPUSRC})
