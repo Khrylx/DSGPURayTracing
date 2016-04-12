@@ -27,6 +27,7 @@ CUDA_ADD_LIBRARY(
 GPUAccel SHARED
 ${GPUSRC})
 
+if(APPLE)
 link_directories(
 ${GLEW_LIBRARY_DIRS}
 ${GLFW_LIBRARY_DIRS}
@@ -37,3 +38,4 @@ ${FREETYPE_LIBRARY_DIRS}
 target_link_libraries( GPUAccel
 CMU462 ${CMU462_LIBRARIES}
 )
+endif()
