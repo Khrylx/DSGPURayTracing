@@ -116,6 +116,7 @@ class BVHAccel : public Aggregate {
    */
   void drawOutline(const Color& c) const { }
 
+    int getType() {return 3;}
  private:
   BVHNode* root; ///< root node of the BVH
 };

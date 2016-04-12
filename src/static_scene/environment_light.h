@@ -44,6 +44,8 @@ class EnvironmentLight : public SceneLight {
 
   void importanceSampling(Vector3D *wi ,float* pdf) const;
     
+    int getType() {return 1;}
+    
  private:
   const HDRImageBuffer* envMap;
     std::vector<std::vector<float>> pThetaPhi;

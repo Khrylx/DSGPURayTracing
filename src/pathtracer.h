@@ -192,6 +192,9 @@ class PathTracer {
    */
   void log_ray_hit(const Ray& r, double hit_t);
 
+    void transferToGPU();
+    
+    
   enum State {
     INIT,               ///< to be initialized
     READY,              ///< initialized ready to do stuff

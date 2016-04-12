@@ -23,6 +23,7 @@
 #include <cuda_runtime.h>
 
 #include "helper.cu"
+#include "../src/pathtracer.h"
 /**
  * CUDA Kernel Device code
  *
@@ -30,8 +31,33 @@
  * number of elements numElements.
  */
 
+using namespace CMU462;
+
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
+
+
+
+
+
+
+class CUDAPathTracer{
+    
+
+    
+public:
+    CUDAPathTracer(PathTracer* pathtracer);
+    ~CUDAPathTracer();
+
+private:
+    PathTracer* pathTracer;
+    
+};
+
+
+
+
+
 
 int test(){
 

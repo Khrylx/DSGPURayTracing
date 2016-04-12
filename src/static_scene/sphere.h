@@ -81,6 +81,8 @@ class Sphere : public Primitive {
   * Draw outline with OpenGL (for visualizer)
   */
   void drawOutline(const Color& c) const;
+    
+    int getType() {return 0;}
 
  private:
 

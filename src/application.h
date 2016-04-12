@@ -87,6 +87,7 @@ class Application : public Renderer {
 
   void load(Collada::SceneInfo* sceneInfo);
 
+    void transferToGPU();
  private:
 
   enum Mode {

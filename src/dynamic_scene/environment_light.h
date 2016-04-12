@@ -11,7 +11,7 @@ class EnvironmentLight : public SceneLight {
  public:
 
   EnvironmentLight(HDRImageBuffer* envmap) : envmap(envmap) { }
-
+    
   StaticScene::SceneLight *get_static_light() const {
     StaticScene::EnvironmentLight* l = 
       new StaticScene::EnvironmentLight(envmap);

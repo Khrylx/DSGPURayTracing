@@ -104,6 +104,7 @@ class BSDF {
    */
   virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
 
+    virtual int getType() = 0;
 }; // class BSDF
 
 /**
@@ -119,6 +120,8 @@ class DiffuseBSDF : public BSDF {
   Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return false; }
 
+    int getType() {return 0;}
+    
 private:
 
   Spectrum albedo;
@@ -139,6 +142,8 @@ class MirrorBSDF : public BSDF {
   Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
+    int getType() {return 1;}
+    
 private:
 
   float roughness;
@@ -182,6 +187,8 @@ class RefractionBSDF : public BSDF {
   Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
+    int getType() {return 2;}
+    
  private:
 
   float ior;
@@ -206,6 +213,8 @@ class GlassBSDF : public BSDF {
   Spectrum get_emission() const { return Spectrum(); }
   bool is_delta() const { return true; }
 
+    int getType() {return 3;}
+    
  private:
 
   float ior;
@@ -228,6 +237,7 @@ class EmissionBSDF : public BSDF {
   Spectrum get_emission() const { return radiance; }
   bool is_delta() const { return false; }
 
+    int getType() {return 4;}
  private:
 
   Spectrum radiance;

@@ -230,6 +230,7 @@ void PathTracer::build_accel() {
     primitives.reserve(primitives.size() + obj_prims.size());
     primitives.insert(primitives.end(), obj_prims.begin(), obj_prims.end());
   }
+    
   timer.stop();
   fprintf(stdout, "Done! (%.4f sec)\n", timer.duration());
 
@@ -397,6 +398,11 @@ void PathTracer::key_press(int key) {
   }
 }
 
+    void PathTracer::transferToGPU(){
+        
+    }
+    
+    
 Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
 
   Intersection isect;

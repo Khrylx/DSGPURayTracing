@@ -38,6 +38,7 @@ class SceneLight {
                             float* distToLight, float* pdf) const = 0;
   virtual bool is_delta_light() const = 0;
 
+    virtual int getType() = 0;
 };
 
 

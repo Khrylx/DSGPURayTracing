@@ -203,6 +203,12 @@ string Application::info() {
       break;
   }
 }
+    
+    
+    void Application::transferToGPU(){
+        
+        
+    }
 
 void Application::load(SceneInfo* sceneInfo) {
 
