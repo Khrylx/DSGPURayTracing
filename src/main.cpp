@@ -124,13 +124,14 @@ int main( int argc, char** argv ) {
   // set renderer
   viewer.set_renderer(&app);
 
+
+
   // init viewer
   viewer.init();
 
   // load scene
-  app.load(sceneInfo);
+    app.load(sceneInfo);
     app.transferToGPU();
-
 
   delete sceneInfo;
 
