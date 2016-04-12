@@ -6,11 +6,13 @@ project(GPUAccel)
 
 find_package(CUDA QUIET REQUIRED)
 
-#set(
-#    CUDA_NVCC_FLAGS
-#    ${CUDA_NVCC_FLAGS};
-#    -O3 -gencode arch=compute_20,code=sm_20
-#    )
+if(APPLE)
+
+elseif(LINUX)
+	list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+	SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
+endif(LINUX)
+
 
 # Specify binary name and source file to build it from
 CUDA_ADD_LIBRARY(
