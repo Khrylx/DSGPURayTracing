@@ -6,9 +6,12 @@ project(GPUAccel)
 
 find_package(CUDA QUIET REQUIRED)
 
-
-if(LINUX)
-	list(APPEND CUDA_NVCC_FLAGS "-std=c++11 -O3")
+if(APPLE)
+    list(APPEND CUDA_NVCC_FLAGS -std=c++11 -m=64)
+    LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
+    SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
+elseif(LINUX)
+	list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
 	LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
 	SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
 endif(LINUX)

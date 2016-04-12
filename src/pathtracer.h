@@ -51,6 +51,7 @@ struct WorkItem {
  * -> DONE: completed rendering a scene.
  */
 class PathTracer {
+    
  public:
 
   /**
@@ -144,7 +145,7 @@ class PathTracer {
    */
   void save_image();
 
- private:
+ public:
 
   /**
    * Used in initialization.

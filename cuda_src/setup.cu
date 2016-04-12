@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <iostream>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
@@ -30,7 +31,8 @@
  * Computes the vector addition of A and B into C. The 3 vectors have the same
  * number of elements numElements.
  */
-
+using namespace std;
+using namespace CMU462;
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 {
@@ -42,8 +44,30 @@ CUDAPathTracer::~CUDAPathTracer()
     
 }
 
-extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
+void CUDAPathTracer::init()
+{
+    
+}
 
+void CUDAPathTracer::loadCamera()
+{
+    GPUCamera tmpCam;
+    Camera* cam = pathTracer->camera;
+    tmpCam.widthDivDist = cam->screenW / cam->screenDist;
+    tmpCam.heightDivDist = cam->screenH / cam->screenDist;
+    
+    for (int i = 0; i < 9; i++) {
+        tmpCam.c2w[i] = (cam->c2w)(i / 3, i % 3);
+    }
+    
+    for (int i = 0; i < 3; i++) {
+        tmpCam.pos[i] = cam->pos[i];
+    }
+}
+
+
+
+extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
 
 
 int test(){

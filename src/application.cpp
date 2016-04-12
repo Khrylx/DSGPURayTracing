@@ -209,7 +209,7 @@ string Application::info() {
     
     void Application::transferToGPU(){
         
-        
+        cuPathTracer->init();
     }
 
 void Application::load(SceneInfo* sceneInfo) {
