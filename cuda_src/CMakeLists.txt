@@ -15,6 +15,7 @@ endif(LINUX)
 
 file(GLOB GPUSRC
     "*.cu"
+    "*.h"
 )
 
 # Specify binary name and source file to build it from

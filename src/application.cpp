@@ -31,10 +31,12 @@ Application::Application(AppConfig config) {
     config.pathtracer_envmap
   );
 
+    cuPathTracer = new CUDAPathTracer(pathtracer);
 }
 
 Application::~Application() {
 
+    delete cuPathTracer;
   delete pathtracer;
 
 }

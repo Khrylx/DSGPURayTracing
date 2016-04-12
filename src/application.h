@@ -34,6 +34,8 @@
 // Shared modules
 #include "camera.h"
 
+#include "../cuda_src/setup.h"
+
 using namespace std;
 
 namespace CMU462 {
@@ -102,6 +104,7 @@ class Application : public Renderer {
 
   DynamicScene::Scene *scene;
   PathTracer* pathtracer;
+    CUDAPathTracer* cuPathTracer;
 
   // View Frustrum Variables.
   // On resize, the aspect ratio is changed. On reset_camera, the position and
