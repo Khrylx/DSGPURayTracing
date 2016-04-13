@@ -25,6 +25,7 @@
 
 #include "helper.cu"
 #include "setup.h"
+#include <map>
 
 /**
  * CUDA Kernel Device code
@@ -41,7 +42,15 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
+    
     cudaFree(gpu_camera);
+    cudaFree(gpu_bsdfs);
+    
+    cudaFree(tmp_primitives.types);
+    cudaFree(tmp_primitives.bsdfs);
+    cudaFree(tmp_primitives.positions);
+    cudaFree(tmp_primitives.normals);
+    cudaFree(gpu_primitives);
 }
 
 void CUDAPathTracer::init()
@@ -80,20 +89,28 @@ void CUDAPathTracer::loadPrimitives()
     }
     
     int N = primitives.size();
-    int type[N];
-    int bsdf[N];
+    int types[N];
+    int bsdfs[N];
     float positions[9 * N];
     float normals[9 * N];
-    
-    cudaMalloc((void**)&gpu_primitives.type, N * sizeof(int));
-    cudaMalloc((void**)&gpu_primitives.bsdf, N * sizeof(int));
-    cudaMalloc((void**)&gpu_primitives.positions, 9 * N * sizeof(float));
-    cudaMalloc((void**)&gpu_primitives.normals, 9 * N * sizeof(float));
+
+    map<BSDF*, int> BSDFMap;
     
     for (int i = 0; i < N; i++) {
-        type[i] = primitives[i]->getType();
-        bsdf[i] = primitives[i]->get_bsdf()->getType();
-        if (type[i] == 0) {
+        types[i] = primitives[i]->getType();
+        BSDF* bsdf  = primitives[i]->get_bsdf();
+        
+        if (BSDFMap.find(bsdf) == BSDFMap.end()) {
+            int index = BSDFMap.size();
+            BSDFMap[bsdf] = index;
+            bsdfs[i] = index;
+        }
+        else{
+            bsdfs[i] = BSDFMap[bsdf];
+        }
+        
+        
+        if (types[i] == 0) {
             Vector3D o = ((Sphere*)primitives[i])->o;
             positions[9 * i] = o[0];
             positions[9 * i + 1] = o[1];
@@ -105,18 +122,21 @@ void CUDAPathTracer::loadPrimitives()
             int v1 = ((Triangle*)primitives[i])->v1;
             int v2 = ((Triangle*)primitives[i])->v2;
             int v3 = ((Triangle*)primitives[i])->v3;
+            
             positions[9 * i] = mesh->positions[v1][0];
             positions[9 * i + 1] = mesh->positions[v1][1];
             positions[9 * i + 2] = mesh->positions[v1][2];
             normals[9 * i] = mesh->normals[v1][0];
             normals[9 * i + 1] = mesh->normals[v1][1];
             normals[9 * i + 2] = mesh->normals[v1][2];
+            
             positions[9 * i + 3] = mesh->positions[v2][0];
             positions[9 * i + 4] = mesh->positions[v2][1];
             positions[9 * i + 5] = mesh->positions[v2][2];
             normals[9 * i + 3] = mesh->normals[v2][0];
             normals[9 * i + 4] = mesh->normals[v2][1];
             normals[9 * i + 5] = mesh->normals[v2][2];
+            
             positions[9 * i + 6] = mesh->positions[v3][0];
             positions[9 * i + 7] = mesh->positions[v3][1];
             positions[9 * i + 8] = mesh->positions[v3][2];
@@ -125,6 +145,95 @@ void CUDAPathTracer::loadPrimitives()
             normals[9 * i + 8] = mesh->normals[v3][2];
         }
     }
+    
+    GPUBSDF BSDFArray[BSDFMap.size()];
+    
+    for (auto itr = BSDFMap.begin(); itr != BSDFMap.end(); itr++) {
+        GPUBSDF& gpu_bsdf = BSDFArray[itr->second];
+        BSDF* bsdf = itr->first;
+        gpu_bsdf.type = bsdf->getType();
+        
+        if (gpu_bsdf.type == 0) {
+            Spectrum& albedo = ((DiffuseBSDF*)bsdf)->albedo;
+            gpu_bsdf.albedo[0] = albedo.r;
+            gpu_bsdf.albedo[1] = albedo.g;
+            gpu_bsdf.albedo[2] = albedo.b;
+        }
+        else if(gpu_bsdf.type == 1){
+            Spectrum& reflectance = ((MirrorBSDF*)bsdf)->reflectance;
+            gpu_bsdf.reflectance[0] = reflectance.r;
+            gpu_bsdf.reflectance[1] = reflectance.g;
+            gpu_bsdf.reflectance[2] = reflectance.b;
+        }
+        else if(gpu_bsdf.type == 2){
+            Spectrum& transmittance = ((RefractionBSDF*)bsdf)->transmittance;
+            gpu_bsdf.transmittance[0] = transmittance.r;
+            gpu_bsdf.transmittance[1] = transmittance.g;
+            gpu_bsdf.transmittance[2] = transmittance.b;
+            gpu_bsdf.ior = ((RefractionBSDF*)bsdf)->ior;
+        }
+        else if(gpu_bsdf.type == 3){
+            Spectrum& reflectance = ((GlassBSDF*)bsdf)->reflectance;
+            gpu_bsdf.reflectance[0] = reflectance.r;
+            gpu_bsdf.reflectance[1] = reflectance.g;
+            gpu_bsdf.reflectance[2] = reflectance.b;
+            Spectrum& transmittance = ((GlassBSDF*)bsdf)->transmittance;
+            gpu_bsdf.transmittance[0] = transmittance.r;
+            gpu_bsdf.transmittance[1] = transmittance.g;
+            gpu_bsdf.transmittance[2] = transmittance.b;
+            gpu_bsdf.ior = ((GlassBSDF*)bsdf)->ior;
+        }
+        else if(gpu_bsdf.type == 4){
+            Spectrum& albedo = ((EmissionBSDF*)bsdf)->radiance;
+            gpu_bsdf.albedo[0] = albedo.r;
+            gpu_bsdf.albedo[1] = albedo.g;
+            gpu_bsdf.albedo[2] = albedo.b;
+
+        }
+    }
+    
+    cudaMalloc((void**)&tmp_primitives.types, N * sizeof(int));
+    cudaMalloc((void**)&tmp_primitives.bsdfs, N * sizeof(int));
+    cudaMalloc((void**)&tmp_primitives.positions, 9 * N * sizeof(float));
+    cudaMalloc((void**)&tmp_primitives.normals, 9 * N * sizeof(float));
+    
+    cudaMemcpy(tmp_primitives.types, types, N * sizeof(int),cudaMemcpyHostToDevice);
+    cudaMemcpy(tmp_primitives.bsdfs, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
+    cudaMemcpy(tmp_primitives.positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(tmp_primitives.normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
+    
+    cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
+    cudaMemcpy(gpu_bsdfs, BSDFArray, BSDFMap.size() * sizeof(GPUBSDF),cudaMemcpyHostToDevice);
+    
+    cudaMalloc((void**)&gpu_primitives, sizeof(GPUPrimitives));
+    cudaMemcpy(gpu_primitives, &tmp_primitives, sizeof(GPUPrimitives),cudaMemcpyHostToDevice);
+
+//    GPUBSDF tmpArray[BSDFMap.size()];
+//    cudaMemcpy(tmpArray, gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF),cudaMemcpyDeviceToHost);
+//    
+//    for (int i = 0; i < (int)BSDFMap.size(); i++) {
+//        if (tmpArray[i].type == 0) {
+//            cout << "0" << endl;
+//            cout << tmpArray[i].albedo[0] << ", " << tmpArray[i].albedo[1] << ", " << tmpArray[i].albedo[2] << ", " << endl;
+//        }
+//        else if (tmpArray[i].type == 1) {
+//            cout << "1" << endl;
+//            cout << tmpArray[i].reflectance[0] << ", " << tmpArray[i].reflectance[1] << ", " << tmpArray[i].reflectance[2] << ", " << endl;
+//        }
+//        else if (tmpArray[i].type == 2) {
+//            cout << "2" << endl;
+//        }
+//        else if (tmpArray[i].type == 3) {
+//            cout << "3" << endl;
+//            cout << tmpArray[i].reflectance[0] << ", " << tmpArray[i].reflectance[1] << ", " << tmpArray[i].reflectance[2] << ", " << endl;
+//            cout << tmpArray[i].transmittance[0] << ", " << tmpArray[i].transmittance[1] << ", " << tmpArray[i].transmittance[2] << ", " << endl;
+//        }
+//        else {
+//            cout << "4" << endl;
+//            cout << tmpArray[i].albedo[0] << ", " << tmpArray[i].albedo[1] << ", " << tmpArray[i].albedo[2] << ", " << endl;
+//        }
+//    }
+    
 }
 
 

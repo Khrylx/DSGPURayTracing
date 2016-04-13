@@ -122,7 +122,6 @@ class DiffuseBSDF : public BSDF {
 
     int getType() {return 0;}
     
-private:
 
   Spectrum albedo;
   CosineWeightedHemisphereSampler3D sampler;
@@ -143,8 +142,7 @@ class MirrorBSDF : public BSDF {
   bool is_delta() const { return true; }
 
     int getType() {return 1;}
-    
-private:
+
 
   float roughness;
   Spectrum reflectance;
@@ -189,7 +187,6 @@ class RefractionBSDF : public BSDF {
 
     int getType() {return 2;}
     
- private:
 
   float ior;
   float roughness;
@@ -215,7 +212,6 @@ class GlassBSDF : public BSDF {
 
     int getType() {return 3;}
     
- private:
 
   float ior;
   float roughness;
@@ -238,7 +234,6 @@ class EmissionBSDF : public BSDF {
   bool is_delta() const { return false; }
 
     int getType() {return 4;}
- private:
 
   Spectrum radiance;
   CosineWeightedHemisphereSampler3D sampler;
