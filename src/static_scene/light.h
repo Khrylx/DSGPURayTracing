@@ -23,7 +23,7 @@ class DirectionalLight : public SceneLight {
 
     int getType() {return 0;}
     
- private:
+ public:
   Spectrum radiance;
   Vector3D dirToLight;
 
@@ -40,7 +40,7 @@ class InfiniteHemisphereLight : public SceneLight {
 
     int getType() {return 1;}
     
- private:
+ public:
   Spectrum radiance;
   Matrix3x3 sampleToWorld;
   UniformHemisphereSampler3D sampler;
@@ -59,7 +59,7 @@ class PointLight : public SceneLight {
 
     int getType() {return 2;}
     
- private:
+ public:
   Spectrum radiance;
   Vector3D position;
   
@@ -98,7 +98,7 @@ class AreaLight : public SceneLight {
 
     int getType() {return 3;}
     
- private:
+ public:
   Spectrum radiance;
   Vector3D position;
   Vector3D direction;

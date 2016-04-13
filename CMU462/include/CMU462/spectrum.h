@@ -36,6 +36,16 @@ class Spectrum {
 
   // operators //
 
+  // returns reference to the specified component (0-based indexing: r, g, b)
+  inline float& operator[] ( const int& index ) {
+    return ( &r )[ index ];
+  }
+
+  // returns const reference to the specified component (0-based indexing: r, g, b)
+  inline const float& operator[] ( const int& index ) const {
+    return ( &r )[ index ];
+  }
+
   inline Spectrum operator+(const Spectrum &rhs) const {
     return Spectrum(r + rhs.r, g + rhs.g, b + rhs.b);
   }

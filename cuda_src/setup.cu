@@ -70,7 +70,60 @@ void CUDAPathTracer::loadCamera()
     cudaFree(camera);
 }
 
+// Load light
+void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
+    switch(l->getType()) {
+        case 0: // DirectionalLight
+        {
+            DirectionalLight* light = (DirectionalLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->dirToLight[i] = light->dirToLight[i];
+            }
+        }
+        break;
 
+        case 1: // InfiniteHemisphereLight
+        {
+            InfiniteHemisphereLight* light = (InfiniteHemisphereLight*) l;
+            for (int i = 0; i < 3; ++i) {
+                gpuLight->radiance[i] = light->radiance[i];
+            }
+        }
+        break;
+
+        case 2: // PointLight
+        {
+            PointLight* light = (PointLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->position[i] = light->position[i];
+            }
+        }
+        break;
+
+        case 3: // AreaLight
+        {
+            AreaLight* light = (AreaLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->position[i] = light->position[i];
+              gpuLight->direction[i] = light->direction[i];
+              gpuLight->dim_x[i] = light->dim_x[i];
+              gpuLight->dim_y[i] = light->dim_y[i];
+              gpuLight->area = light->area;
+            }
+        }
+        break;
+
+        default:
+        break;
+    }
+}
+
+void CUDAPathTracer::loadLights() {
+
+}
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
 
