@@ -23,11 +23,23 @@ struct GPULight
     int type;
 };
 
+struct Parameters
+{
+    size_t screenW;
+    size_t screenH;
+    size_t num_tiles_w;       ///< number of tiles along width of the image
+    size_t num_tiles_h;       ///< number of tiles along height of the image
+    size_t max_ray_depth; ///< maximum allowed ray depth (applies to all rays)
+    size_t ns_aa;         ///< number of camera rays in one pixel (along one axis)
+    size_t ns_area_light; ///< number samples per area light source
+};
+
 class CUDAPathTracer{
     
     GPUCamera* camera;
     GPULight* gpu_lights;
-    int lightNum;
+    Parameters *parms;
+    int* lightNum;
     
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
@@ -36,6 +48,8 @@ public:
     void loadCamera();
 
     void loadLights();
+
+    void loadParameters();
 
     void toGPULight(SceneLight *light, GPULight *gpuLight);
     

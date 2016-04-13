@@ -41,7 +41,9 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
+    cudaFree(lightNum);
     cudaFree(gpu_lights);
+    cudaFree(parms);
 }
 
 void CUDAPathTracer::init()
@@ -123,14 +125,32 @@ void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
 }
 
 void CUDAPathTracer::loadLights() {
-    lightNum = pathTracer->scene->lights.size();
-    GPULight tmpLights[lightNum];
+    int tmpLightNum = pathTracer->scene->lights.size();
+    cudaMalloc((void**)&lightNum, sizeof(int));
+    cudaMemcpy(lightNum, &tmpLightNum, sizeof(int), cudaMemcpyHostToDevice);
 
-    for (int i = 0; i < lightNum; ++i) {
+    GPULight tmpLights[tmpLightNum];
+
+    for (int i = 0; i < tmpLightNum; ++i) {
         toGPULight(pathTracer->scene->lights[i], tmpLights + i);
     }
-    cudaMalloc((void**)&gpu_lights, sizeof(GPULight) * lightNum);
-    cudaMemcpy(gpu_lights, tmpLights, sizeof(GPULight) * lightNum, cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&gpu_lights, sizeof(GPULight) * tmpLightNum);
+    cudaMemcpy(gpu_lights, tmpLights, sizeof(GPULight) * tmpLightNum, cudaMemcpyHostToDevice);
+}
+
+// load Parameters
+void CUDAPathTracer::loadParameters() {
+    Parameters tmpParms;
+    tmpParms.screenW = pathTracer->frameBuffer.w;
+    tmpParms.screenH = pathTracer->frameBuffer.h;
+    tmpParms.num_tiles_w = pathTracer->num_tiles_w;
+    tmpParms.num_tiles_h = pathTracer->num_tiles_h;
+    tmpParms.max_ray_depth = pathTracer->max_ray_depth;
+    tmpParms.ns_aa = pathTracer->ns_aa;
+    tmpParms.ns_area_light = pathTracer->ns_area_light;
+
+    cudaMalloc((void**)&parms, sizeof(Parameters));
+    cudaMemcpy(parms, &tmpParms, sizeof(Parameters), cudaMemcpyHostToDevice);
 }
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
