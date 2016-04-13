@@ -27,6 +27,8 @@
 #include "setup.h"
 #include <map>
 
+#define MAX_NUM_LIGHT 20
+#define MAX_NUM_BSDF 20
 /**
  * CUDA Kernel Device code
  *
@@ -36,7 +38,58 @@
 using namespace std;
 
 __constant__  GPUCamera const_camera;
-__constant__  GPUBSDF const_bsdfs[20];
+__constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
+__constant__  GPULight const_lights[MAX_NUM_LIGHT];
+__constant__  Parameters const_params;
+
+
+__global__ void
+printInfo()
+{
+    GPUBSDF* bsdfs = const_params.bsdfs;
+    GPUCamera* camera = const_params.camera;
+    
+    for (int i = 0; i < 8; i++) {
+        if (bsdfs[i].type == 0) {
+            printf("0: %lf %lf %lf\n", bsdfs[i].albedo[0], bsdfs[i].albedo[1], bsdfs[i].albedo[2] );
+        }
+        else if (bsdfs[i].type == 1) {
+            printf("1: %lf %lf %lf\n", bsdfs[i].reflectance[0], bsdfs[i].reflectance[1], bsdfs[i].reflectance[2] );
+        }
+        else if (bsdfs[i].type == 2) {
+            //cout << "2" << endl;
+        }
+        else if (bsdfs[i].type == 3) {
+            printf("3: %lf %lf %lf\n", bsdfs[i].reflectance[0], bsdfs[i].reflectance[1], bsdfs[i].reflectance[2] );
+            printf("3: %lf %lf %lf\n", bsdfs[i].transmittance[0], bsdfs[i].transmittance[1], bsdfs[i].transmittance[2] );
+        }
+        else {
+            printf("4: %lf %lf %lf\n", bsdfs[i].albedo[0], bsdfs[i].albedo[1], bsdfs[i].albedo[2] );
+        }
+    }
+    
+    
+    printf("%lf %lf %lf\n", camera->pos[0], camera->pos[1], camera->pos[2] );
+    
+    
+    float* positions = const_params.positions;
+    float* normals = const_params.normals;
+    
+    printf("+++++++++++++++++++++++\n");
+    for (int i = 0; i < const_params.primNum; i++) {
+        printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_params.bsdfs[const_params.bsdfIndexes[i]].type);
+        
+        printf("%lf %lf %lf\n", positions[9 * i], positions[9 * i + 1], positions[9 * i + 2] );
+        printf("%lf %lf %lf\n", positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5] );
+        printf("%lf %lf %lf\n", positions[9 * i + 6], positions[9 * i + 7], positions[9 * i + 8] );
+        printf("=======================\n");
+        printf("%lf %lf %lf\n", normals[9 * i], normals[9 * i + 1], normals[9 * i + 2] );
+        printf("%lf %lf %lf\n", normals[9 * i + 3], normals[9 * i + 4], normals[9 * i + 5] );
+        printf("%lf %lf %lf\n", normals[9 * i + 6], normals[9 * i + 7], normals[9 * i + 8] );
+        printf("+++++++++++++++++++++++\n\n");
+    }
+    
+}
 
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
@@ -46,26 +99,33 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
-    
     cudaFree(gpu_types);
-    cudaFree(gpu_bsdfs);
+    cudaFree(gpu_bsdfIndexes);
     cudaFree(gpu_positions);
     cudaFree(gpu_normals);
+
 }
 
 void CUDAPathTracer::init()
 {
     loadCamera();
     loadPrimitives();
+    loadLights();
+    loadParameters();
+    
+    //printInfo<<<1, 1>>>();
+    //cudaDeviceSynchronize();
 }
 
 void CUDAPathTracer::loadCamera()
 {
+    //printf("load camera\n");
+    //printf("camera: %p\n", pathTracer->camera);
     GPUCamera tmpCam;
     Camera* cam = pathTracer->camera;
     tmpCam.widthDivDist = cam->screenW / cam->screenDist;
     tmpCam.heightDivDist = cam->screenH / cam->screenDist;
-    
+    //printf("after loading camera\n");
     for (int i = 0; i < 9; i++) {
         tmpCam.c2w[i] = cam->c2w(i / 3, i % 3);
     }
@@ -78,41 +138,12 @@ void CUDAPathTracer::loadCamera()
     //cudaMalloc((void**)&gpu_camera,sizeof(GPUCamera));
     err = cudaMemcpyToSymbol(const_camera, &tmpCam,sizeof(GPUCamera));
     
-    
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 }
-
-__global__ void
-printInfo()
-{
-    for (int i = 0; i < 8; i++) {
-        if (const_bsdfs[i].type == 0) {
-            printf("0: %lf %lf %lf\n", const_bsdfs[i].albedo[0], const_bsdfs[i].albedo[1], const_bsdfs[i].albedo[2] );
-        }
-        else if (const_bsdfs[i].type == 1) {
-            printf("1: %lf %lf %lf\n", const_bsdfs[i].reflectance[0], const_bsdfs[i].reflectance[1], const_bsdfs[i].reflectance[2] );
-        }
-        else if (const_bsdfs[i].type == 2) {
-            //cout << "2" << endl;
-        }
-        else if (const_bsdfs[i].type == 3) {
-            printf("3: %lf %lf %lf\n", const_bsdfs[i].reflectance[0], const_bsdfs[i].reflectance[1], const_bsdfs[i].reflectance[2] );
-            printf("3: %lf %lf %lf\n", const_bsdfs[i].transmittance[0], const_bsdfs[i].transmittance[1], const_bsdfs[i].transmittance[2] );
-        }
-        else {
-            printf("4: %lf %lf %lf\n", const_bsdfs[i].albedo[0], const_bsdfs[i].albedo[1], const_bsdfs[i].albedo[2] );
-        }
-    }
-
-    
-    printf("%lf %lf %lf\n", const_camera.pos[0], const_camera.pos[1], const_camera.pos[2] );
-    
-}
-
 
 void CUDAPathTracer::loadPrimitives()
 {
@@ -128,6 +159,8 @@ void CUDAPathTracer::loadPrimitives()
     int bsdfs[N];
     float positions[9 * N];
     float normals[9 * N];
+    
+    primNum = N;
 
     map<BSDF*, int> BSDFMap;
     
@@ -228,22 +261,20 @@ void CUDAPathTracer::loadPrimitives()
     }
     
     cudaMalloc((void**)&gpu_types, N * sizeof(int));
-    cudaMalloc((void**)&gpu_bsdfs, N * sizeof(int));
+    cudaMalloc((void**)&gpu_bsdfIndexes, N * sizeof(int));
     cudaMalloc((void**)&gpu_positions, 9 * N * sizeof(float));
     cudaMalloc((void**)&gpu_normals, 9 * N * sizeof(float));
     
     cudaMemcpy(gpu_types, types, N * sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_bsdfs, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_bsdfIndexes, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
     
     //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
     
-        cudaError_t err = cudaSuccess;
+    cudaError_t err = cudaSuccess;
     
     err = cudaMemcpyToSymbol(const_bsdfs, BSDFArray, BSDFMap.size() * sizeof(GPUBSDF));
-    
-
     
     if (err != cudaSuccess)
     {
@@ -251,11 +282,127 @@ void CUDAPathTracer::loadPrimitives()
         exit(EXIT_FAILURE);
     }
     
-    printInfo<<<1, 1>>>();
-    cudaDeviceSynchronize();
 }
 
+// Load light
+void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
+    gpuLight->type = l->getType();
+    switch(l->getType()) {
+        case 0: // DirectionalLight
+        {
+            DirectionalLight* light = (DirectionalLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->dirToLight[i] = light->dirToLight[i];
+            }
+        }
+        break;
 
+        case 1: // InfiniteHemisphereLight
+        {
+            InfiniteHemisphereLight* light = (InfiniteHemisphereLight*) l;
+            for (int i = 0; i < 3; ++i) {
+                gpuLight->radiance[i] = light->radiance[i];
+            }
+        }
+        break;
+
+        case 2: // PointLight
+        {
+            PointLight* light = (PointLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->position[i] = light->position[i];
+            }
+        }
+        break;
+
+        case 3: // AreaLight
+        {
+            AreaLight* light = (AreaLight*) l;
+            for (int i = 0; i < 3; ++i) {
+              gpuLight->radiance[i] = light->radiance[i];
+              gpuLight->position[i] = light->position[i];
+              gpuLight->direction[i] = light->direction[i];
+              gpuLight->dim_x[i] = light->dim_x[i];
+              gpuLight->dim_y[i] = light->dim_y[i];
+              gpuLight->area = light->area;
+            }
+        }
+        break;
+
+        default:
+        break;
+    }
+}
+
+void CUDAPathTracer::loadLights() {
+    int tmpLightNum = pathTracer->scene->lights.size();
+
+    GPULight tmpLights[tmpLightNum];
+
+    for (int i = 0; i < tmpLightNum; ++i) {
+        //displayLight(pathTracer->scene->lights[i]);
+        toGPULight(pathTracer->scene->lights[i], tmpLights + i);
+    }
+    //cudaMalloc((void**)&gpu_lights, sizeof(GPULight) * tmpLightNum);
+
+
+    cudaError_t err = cudaSuccess;
+    
+    err = cudaMemcpyToSymbol(const_lights, tmpLights, sizeof(GPULight) * tmpLightNum);
+    
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+//    GPULight rtLights[tmpLightNum];
+//    cudaMemcpy(rtLights, gpu_lights, sizeof(GPULight) * tmpLightNum, cudaMemcpyDeviceToHost);
+//    //printf("==================\n");
+//    for (int i = 0; i < tmpLightNum; ++i)
+//    {
+//        displayGPULight(rtLights + i);
+//    }
+}
+
+// load Parameters
+void CUDAPathTracer::loadParameters() {
+    Parameters tmpParams;
+    tmpParams.screenW = pathTracer->frameBuffer.w;
+    tmpParams.screenH = pathTracer->frameBuffer.h;
+    tmpParams.max_ray_depth = pathTracer->max_ray_depth;
+    tmpParams.ns_aa = pathTracer->ns_aa;
+    tmpParams.ns_area_light = pathTracer->ns_area_light;
+    tmpParams.lightNum = pathTracer->scene->lights.size();
+    tmpParams.types = gpu_types;
+    tmpParams.bsdfIndexes = gpu_bsdfIndexes;
+    tmpParams.positions = gpu_positions;
+    tmpParams.normals = gpu_normals;
+    tmpParams.primNum = primNum;
+    
+    cudaGetSymbolAddress((void **)&tmpParams.bsdfs, const_bsdfs);
+    cudaGetSymbolAddress((void **)&tmpParams.lights, const_lights);
+    cudaGetSymbolAddress((void **)&tmpParams.camera, const_camera);
+    //printf("Parameters:\n");
+    //printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", tmpParms.screenW, tmpParms.screenH, tmpParms.max_ray_depth, tmpParms.ns_aa, tmpParms.ns_area_light, tmpParms.lightNum);
+    //cudaMalloc((void**)&parms, sizeof(Parameters));
+
+    cudaError_t err = cudaSuccess;
+    
+    err = cudaMemcpyToSymbol(const_params, &tmpParams, sizeof(Parameters));
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    //Parameters rtParms;
+    //cudaMemcpy(&rtParms, parms, sizeof(Parameters), cudaMemcpyDeviceToHost);
+    //printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light, rtParms.lightNum);
+}
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
 
