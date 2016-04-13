@@ -41,7 +41,7 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
-    
+    cudaFree(gpu_lights);
 }
 
 void CUDAPathTracer::init()
@@ -72,6 +72,7 @@ void CUDAPathTracer::loadCamera()
 
 // Load light
 void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
+    gpuLight->type = l->getType();
     switch(l->getType()) {
         case 0: // DirectionalLight
         {
@@ -122,7 +123,14 @@ void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
 }
 
 void CUDAPathTracer::loadLights() {
+    lightNum = pathTracer->scene->lights.size();
+    GPULight tmpLights[lightNum];
 
+    for (int i = 0; i < lightNum; ++i) {
+        toGPULight(pathTracer->scene->lights[i], tmpLights + i);
+    }
+    cudaMalloc((void**)&gpu_lights, sizeof(GPULight) * lightNum);
+    cudaMemcpy(gpu_lights, tmpLights, sizeof(GPULight) * lightNum, cudaMemcpyHostToDevice);
 }
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);

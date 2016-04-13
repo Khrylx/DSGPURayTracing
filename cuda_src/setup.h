@@ -20,11 +20,14 @@ struct GPULight
     float dim_x[3];
     float dim_y[3];
     float area;
+    int type;
 };
 
 class CUDAPathTracer{
     
     GPUCamera* camera;
+    GPULight* gpu_lights;
+    int lightNum;
     
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
