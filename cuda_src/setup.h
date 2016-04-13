@@ -27,8 +27,6 @@ struct Parameters
 {
     size_t screenW;
     size_t screenH;
-    size_t num_tiles_w;       ///< number of tiles along width of the image
-    size_t num_tiles_h;       ///< number of tiles along height of the image
     size_t max_ray_depth; ///< maximum allowed ray depth (applies to all rays)
     size_t ns_aa;         ///< number of camera rays in one pixel (along one axis)
     size_t ns_area_light; ///< number samples per area light source

@@ -143,8 +143,6 @@ void CUDAPathTracer::loadParameters() {
     Parameters tmpParms;
     tmpParms.screenW = pathTracer->frameBuffer.w;
     tmpParms.screenH = pathTracer->frameBuffer.h;
-    tmpParms.num_tiles_w = pathTracer->num_tiles_w;
-    tmpParms.num_tiles_h = pathTracer->num_tiles_h;
     tmpParms.max_ray_depth = pathTracer->max_ray_depth;
     tmpParms.ns_aa = pathTracer->ns_aa;
     tmpParms.ns_area_light = pathTracer->ns_area_light;
