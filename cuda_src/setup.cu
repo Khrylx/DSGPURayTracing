@@ -41,7 +41,6 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
-    cudaFree(lightNum);
     cudaFree(gpu_lights);
     cudaFree(parms);
 }
@@ -49,8 +48,8 @@ CUDAPathTracer::~CUDAPathTracer()
 void CUDAPathTracer::init()
 {
     loadCamera();
-    loadLights();
     loadParameters();
+    loadLights();
 }
 
 void CUDAPathTracer::loadCamera()
@@ -306,8 +305,6 @@ void displayGPULight(GPULight *light) {
 
 void CUDAPathTracer::loadLights() {
     int tmpLightNum = pathTracer->scene->lights.size();
-    cudaMalloc((void**)&lightNum, sizeof(int));
-    cudaMemcpy(lightNum, &tmpLightNum, sizeof(int), cudaMemcpyHostToDevice);
 
     GPULight tmpLights[tmpLightNum];
 
@@ -335,14 +332,15 @@ void CUDAPathTracer::loadParameters() {
     tmpParms.max_ray_depth = pathTracer->max_ray_depth;
     tmpParms.ns_aa = pathTracer->ns_aa;
     tmpParms.ns_area_light = pathTracer->ns_area_light;
+    tmpParms.lightNum = pathTracer->scene->lights.size();
     printf("Parameters:\n");
-    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d\n", tmpParms.screenW, tmpParms.screenH, tmpParms.max_ray_depth, tmpParms.ns_aa, tmpParms.ns_area_light);
+    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", tmpParms.screenW, tmpParms.screenH, tmpParms.max_ray_depth, tmpParms.ns_aa, tmpParms.ns_area_light, tmpParms.lightNum);
     cudaMalloc((void**)&parms, sizeof(Parameters));
     cudaMemcpy(parms, &tmpParms, sizeof(Parameters), cudaMemcpyHostToDevice);
 
     Parameters rtParms;
     cudaMemcpy(&rtParms, parms, sizeof(Parameters), cudaMemcpyDeviceToHost);
-    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light);
+    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light, rtParms.lightNum);
 }
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);

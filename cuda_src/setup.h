@@ -30,6 +30,7 @@ struct Parameters
     size_t max_ray_depth; ///< maximum allowed ray depth (applies to all rays)
     size_t ns_aa;         ///< number of camera rays in one pixel (along one axis)
     size_t ns_area_light; ///< number samples per area light source
+    size_t lightNum;
 };
 
 class CUDAPathTracer{
@@ -37,7 +38,6 @@ class CUDAPathTracer{
     GPUCamera* camera;
     GPULight* gpu_lights;
     Parameters *parms;
-    int* lightNum;
     
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
