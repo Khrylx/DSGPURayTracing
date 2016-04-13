@@ -25,6 +25,7 @@
 
 #include "helper.cu"
 #include "setup.h"
+
 /**
  * CUDA Kernel Device code
  *
@@ -32,7 +33,6 @@
  * number of elements numElements.
  */
 using namespace std;
-using namespace CMU462;
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 {
@@ -41,12 +41,13 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
-    
+    cudaFree(gpu_camera);
 }
 
 void CUDAPathTracer::init()
 {
     loadCamera();
+    loadPrimitives();
 }
 
 void CUDAPathTracer::loadCamera()
@@ -64,10 +65,66 @@ void CUDAPathTracer::loadCamera()
         tmpCam.pos[i] = cam->pos[i];
     }
 
-    cudaMalloc((void**)&camera,sizeof(GPUCamera));
-    cudaMemcpy(camera, &tmpCam,sizeof(GPUCamera),cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&gpu_camera,sizeof(GPUCamera));
+    cudaMemcpy(gpu_camera, &tmpCam,sizeof(GPUCamera),cudaMemcpyHostToDevice);
     
-    cudaFree(camera);
+}
+
+void CUDAPathTracer::loadPrimitives()
+{
+    vector<Primitive *> primitives;
+    for (SceneObject *obj : pathTracer->scene->objects) {
+        const vector<Primitive *> &obj_prims = obj->get_primitives();
+        primitives.reserve(primitives.size() + obj_prims.size());
+        primitives.insert(primitives.end(), obj_prims.begin(), obj_prims.end());
+    }
+    
+    int N = primitives.size();
+    int type[N];
+    int bsdf[N];
+    float positions[9 * N];
+    float normals[9 * N];
+    
+    cudaMalloc((void**)&gpu_primitives.type, N * sizeof(int));
+    cudaMalloc((void**)&gpu_primitives.bsdf, N * sizeof(int));
+    cudaMalloc((void**)&gpu_primitives.positions, 9 * N * sizeof(float));
+    cudaMalloc((void**)&gpu_primitives.normals, 9 * N * sizeof(float));
+    
+    for (int i = 0; i < N; i++) {
+        type[i] = primitives[i]->getType();
+        bsdf[i] = primitives[i]->get_bsdf()->getType();
+        if (type[i] == 0) {
+            Vector3D o = ((Sphere*)primitives[i])->o;
+            positions[9 * i] = o[0];
+            positions[9 * i + 1] = o[1];
+            positions[9 * i + 2] = o[2];
+            positions[9 * i + 3] = ((Sphere*)primitives[i])->r;
+        }
+        else{
+            const Mesh* mesh = ((Triangle*)primitives[i])->mesh;
+            int v1 = ((Triangle*)primitives[i])->v1;
+            int v2 = ((Triangle*)primitives[i])->v2;
+            int v3 = ((Triangle*)primitives[i])->v3;
+            positions[9 * i] = mesh->positions[v1][0];
+            positions[9 * i + 1] = mesh->positions[v1][1];
+            positions[9 * i + 2] = mesh->positions[v1][2];
+            normals[9 * i] = mesh->normals[v1][0];
+            normals[9 * i + 1] = mesh->normals[v1][1];
+            normals[9 * i + 2] = mesh->normals[v1][2];
+            positions[9 * i + 3] = mesh->positions[v2][0];
+            positions[9 * i + 4] = mesh->positions[v2][1];
+            positions[9 * i + 5] = mesh->positions[v2][2];
+            normals[9 * i + 3] = mesh->normals[v2][0];
+            normals[9 * i + 4] = mesh->normals[v2][1];
+            normals[9 * i + 5] = mesh->normals[v2][2];
+            positions[9 * i + 6] = mesh->positions[v3][0];
+            positions[9 * i + 7] = mesh->positions[v3][1];
+            positions[9 * i + 8] = mesh->positions[v3][2];
+            normals[9 * i + 6] = mesh->normals[v3][0];
+            normals[9 * i + 7] = mesh->normals[v3][1];
+            normals[9 * i + 8] = mesh->normals[v3][2];
+        }
+    }
 }
 
 

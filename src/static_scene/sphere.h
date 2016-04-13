@@ -84,7 +84,7 @@ class Sphere : public Primitive {
     
     int getType() {return 0;}
 
- private:
+ public:
 
   /**
    * Tests for ray-sphere intersection, returning true if there are

@@ -72,7 +72,7 @@ namespace CMU462 { namespace StaticScene {
   void drawOutline(const Color& c) const;
 
      int getType() {return 1;}
- private:
+ public:
 
   const Mesh* mesh;   ///< pointer to the mesh the triangle is a part of
 
