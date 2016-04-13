@@ -15,12 +15,12 @@ struct GPUCamera{
 
 
 // Use structures for better data locality
-struct GPUPrimitives{
-    int* types;
-    int* bsdfs;
-    float* positions;
-    float* normals;
-};
+//struct GPUPrimitives{
+//    int* types;
+//    int* bsdfs;
+//    float* positions;
+//    float* normals;
+//};
 
 struct GPUBSDF{
     int type;
@@ -33,12 +33,13 @@ struct GPUBSDF{
 
 class CUDAPathTracer{
     
-    GPUCamera* gpu_camera;
-    GPUPrimitives *gpu_primitives;
-    GPUBSDF* gpu_bsdfs;
+    int* gpu_types;
+    int* gpu_bsdfs;
+    float* gpu_positions;
+    float* gpu_normals;
     
     // just for release memory in GPUPrimitives
-    GPUPrimitives tmp_primitives;
+    
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
     ~CUDAPathTracer();

@@ -35,6 +35,10 @@
  */
 using namespace std;
 
+__constant__  GPUCamera const_camera;
+__constant__  GPUBSDF const_bsdfs[20];
+
+
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 {
     pathTracer = _pathTracer;
@@ -43,14 +47,10 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 CUDAPathTracer::~CUDAPathTracer()
 {
     
-    cudaFree(gpu_camera);
+    cudaFree(gpu_types);
     cudaFree(gpu_bsdfs);
-    
-    cudaFree(tmp_primitives.types);
-    cudaFree(tmp_primitives.bsdfs);
-    cudaFree(tmp_primitives.positions);
-    cudaFree(tmp_primitives.normals);
-    cudaFree(gpu_primitives);
+    cudaFree(gpu_positions);
+    cudaFree(gpu_normals);
 }
 
 void CUDAPathTracer::init()
@@ -74,10 +74,45 @@ void CUDAPathTracer::loadCamera()
         tmpCam.pos[i] = cam->pos[i];
     }
 
-    cudaMalloc((void**)&gpu_camera,sizeof(GPUCamera));
-    cudaMemcpy(gpu_camera, &tmpCam,sizeof(GPUCamera),cudaMemcpyHostToDevice);
+    cudaError_t err = cudaSuccess;
+    //cudaMalloc((void**)&gpu_camera,sizeof(GPUCamera));
+    err = cudaMemcpyToSymbol(const_camera, &tmpCam,sizeof(GPUCamera));
+    
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+}
+
+__global__ void
+printInfo()
+{
+    for (int i = 0; i < 8; i++) {
+        if (const_bsdfs[i].type == 0) {
+            printf("0: %lf %lf %lf\n", const_bsdfs[i].albedo[0], const_bsdfs[i].albedo[1], const_bsdfs[i].albedo[2] );
+        }
+        else if (const_bsdfs[i].type == 1) {
+            printf("1: %lf %lf %lf\n", const_bsdfs[i].reflectance[0], const_bsdfs[i].reflectance[1], const_bsdfs[i].reflectance[2] );
+        }
+        else if (const_bsdfs[i].type == 2) {
+            //cout << "2" << endl;
+        }
+        else if (const_bsdfs[i].type == 3) {
+            printf("3: %lf %lf %lf\n", const_bsdfs[i].reflectance[0], const_bsdfs[i].reflectance[1], const_bsdfs[i].reflectance[2] );
+            printf("3: %lf %lf %lf\n", const_bsdfs[i].transmittance[0], const_bsdfs[i].transmittance[1], const_bsdfs[i].transmittance[2] );
+        }
+        else {
+            printf("4: %lf %lf %lf\n", const_bsdfs[i].albedo[0], const_bsdfs[i].albedo[1], const_bsdfs[i].albedo[2] );
+        }
+    }
+
+    
+    printf("%lf %lf %lf\n", const_camera.pos[0], const_camera.pos[1], const_camera.pos[2] );
     
 }
+
 
 void CUDAPathTracer::loadPrimitives()
 {
@@ -192,48 +227,32 @@ void CUDAPathTracer::loadPrimitives()
         }
     }
     
-    cudaMalloc((void**)&tmp_primitives.types, N * sizeof(int));
-    cudaMalloc((void**)&tmp_primitives.bsdfs, N * sizeof(int));
-    cudaMalloc((void**)&tmp_primitives.positions, 9 * N * sizeof(float));
-    cudaMalloc((void**)&tmp_primitives.normals, 9 * N * sizeof(float));
+    cudaMalloc((void**)&gpu_types, N * sizeof(int));
+    cudaMalloc((void**)&gpu_bsdfs, N * sizeof(int));
+    cudaMalloc((void**)&gpu_positions, 9 * N * sizeof(float));
+    cudaMalloc((void**)&gpu_normals, 9 * N * sizeof(float));
     
-    cudaMemcpy(tmp_primitives.types, types, N * sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(tmp_primitives.bsdfs, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(tmp_primitives.positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
-    cudaMemcpy(tmp_primitives.normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_types, types, N * sizeof(int),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_bsdfs, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
     
-    cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
-    cudaMemcpy(gpu_bsdfs, BSDFArray, BSDFMap.size() * sizeof(GPUBSDF),cudaMemcpyHostToDevice);
+    //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
     
-    cudaMalloc((void**)&gpu_primitives, sizeof(GPUPrimitives));
-    cudaMemcpy(gpu_primitives, &tmp_primitives, sizeof(GPUPrimitives),cudaMemcpyHostToDevice);
+        cudaError_t err = cudaSuccess;
+    
+    err = cudaMemcpyToSymbol(const_bsdfs, BSDFArray, BSDFMap.size() * sizeof(GPUBSDF));
+    
 
-//    GPUBSDF tmpArray[BSDFMap.size()];
-//    cudaMemcpy(tmpArray, gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF),cudaMemcpyDeviceToHost);
-//    
-//    for (int i = 0; i < (int)BSDFMap.size(); i++) {
-//        if (tmpArray[i].type == 0) {
-//            cout << "0" << endl;
-//            cout << tmpArray[i].albedo[0] << ", " << tmpArray[i].albedo[1] << ", " << tmpArray[i].albedo[2] << ", " << endl;
-//        }
-//        else if (tmpArray[i].type == 1) {
-//            cout << "1" << endl;
-//            cout << tmpArray[i].reflectance[0] << ", " << tmpArray[i].reflectance[1] << ", " << tmpArray[i].reflectance[2] << ", " << endl;
-//        }
-//        else if (tmpArray[i].type == 2) {
-//            cout << "2" << endl;
-//        }
-//        else if (tmpArray[i].type == 3) {
-//            cout << "3" << endl;
-//            cout << tmpArray[i].reflectance[0] << ", " << tmpArray[i].reflectance[1] << ", " << tmpArray[i].reflectance[2] << ", " << endl;
-//            cout << tmpArray[i].transmittance[0] << ", " << tmpArray[i].transmittance[1] << ", " << tmpArray[i].transmittance[2] << ", " << endl;
-//        }
-//        else {
-//            cout << "4" << endl;
-//            cout << tmpArray[i].albedo[0] << ", " << tmpArray[i].albedo[1] << ", " << tmpArray[i].albedo[2] << ", " << endl;
-//        }
-//    }
     
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    
+    printInfo<<<1, 1>>>();
+    cudaDeviceSynchronize();
 }
 
 
