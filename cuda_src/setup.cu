@@ -49,15 +49,19 @@ CUDAPathTracer::~CUDAPathTracer()
 void CUDAPathTracer::init()
 {
     loadCamera();
+    loadLights();
+    loadParameters();
 }
 
 void CUDAPathTracer::loadCamera()
 {
+    printf("load camera\n");
+    printf("camera: %p\n", pathTracer->camera);
     GPUCamera tmpCam;
     Camera* cam = pathTracer->camera;
     tmpCam.widthDivDist = cam->screenW / cam->screenDist;
     tmpCam.heightDivDist = cam->screenH / cam->screenDist;
-    
+    printf("after loading camera\n");
     for (int i = 0; i < 9; i++) {
         tmpCam.c2w[i] = cam->c2w(i / 3, i % 3);
     }
@@ -124,6 +128,182 @@ void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
     }
 }
 
+// for debug
+void displayLight(SceneLight *l) {
+    switch(l->getType()) {
+        case 0:{
+        DirectionalLight* light = (DirectionalLight*) l;
+        printf("DirectionalLight\n");
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        printf("dirToLight\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->dirToLight[i]);
+        }
+        printf("\n");
+        }
+        break;
+        
+
+        case 1:{
+        InfiniteHemisphereLight* light = (InfiniteHemisphereLight*) l;
+        printf("InfiniteHemisphereLight\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        }
+        break;
+        
+
+        case 2:{
+        PointLight* light = (PointLight*) l;
+        printf("PointLight\n");
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        printf("position\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->position[i]);
+        }
+        printf("\n");
+        }
+        break;
+        
+
+        case 3: {
+        AreaLight* light = (AreaLight*) l;
+        printf("AreaLight\n");
+
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+
+        printf("position\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->position[i]);
+        }
+        printf("\n");
+
+        printf("dim_x\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f", light->dim_x[i]);
+        }
+        printf("\n");
+
+        printf("dim_y\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f", light->dim_y[i]);
+        }
+        printf("\n");
+
+        printf("area: %f\n", light->area);
+        }
+        break;
+
+        default:
+        break;
+    }
+}
+
+void displayGPULight(GPULight *light) {
+    switch(light->type) {
+        case 0:
+        printf("DirectionalLight\n");
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        printf("dirToLight\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->dirToLight[i]);
+        }
+        printf("\n");
+        break;
+
+        case 1:
+        printf("InfiniteHemisphereLight\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        break;
+
+        case 2:
+        printf("PointLight\n");
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+        printf("position\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->position[i]);
+        }
+        printf("\n");
+        break;
+
+        case 3:
+        printf("AreaLight\n");
+
+        printf("radiance\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->radiance[i]);
+        }
+        printf("\n");
+
+        printf("position\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f ", light->position[i]);
+        }
+        printf("\n");
+
+        printf("dim_x\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f", light->dim_x[i]);
+        }
+        printf("\n");
+
+        printf("dim_y\n");
+        for (int i = 0; i < 3; ++i)
+        {
+            printf("%f", light->dim_y[i]);
+        }
+        printf("\n");
+
+        printf("area: %f\n", light->area);
+        break;
+
+        default:
+        break;
+    }
+}
+
 void CUDAPathTracer::loadLights() {
     int tmpLightNum = pathTracer->scene->lights.size();
     cudaMalloc((void**)&lightNum, sizeof(int));
@@ -132,10 +312,19 @@ void CUDAPathTracer::loadLights() {
     GPULight tmpLights[tmpLightNum];
 
     for (int i = 0; i < tmpLightNum; ++i) {
+        displayLight(pathTracer->scene->lights[i]);
         toGPULight(pathTracer->scene->lights[i], tmpLights + i);
     }
     cudaMalloc((void**)&gpu_lights, sizeof(GPULight) * tmpLightNum);
     cudaMemcpy(gpu_lights, tmpLights, sizeof(GPULight) * tmpLightNum, cudaMemcpyHostToDevice);
+
+    GPULight rtLights[tmpLightNum];
+    cudaMemcpy(rtLights, gpu_lights, sizeof(GPULight) * tmpLightNum, cudaMemcpyDeviceToHost);
+    printf("==================\n");
+    for (int i = 0; i < tmpLightNum; ++i)
+    {
+        displayGPULight(rtLights + i);
+    }
 }
 
 // load Parameters
@@ -146,9 +335,14 @@ void CUDAPathTracer::loadParameters() {
     tmpParms.max_ray_depth = pathTracer->max_ray_depth;
     tmpParms.ns_aa = pathTracer->ns_aa;
     tmpParms.ns_area_light = pathTracer->ns_area_light;
-
+    printf("Parameters:\n");
+    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d\n", tmpParms.screenW, tmpParms.screenH, tmpParms.max_ray_depth, tmpParms.ns_aa, tmpParms.ns_area_light);
     cudaMalloc((void**)&parms, sizeof(Parameters));
     cudaMemcpy(parms, &tmpParms, sizeof(Parameters), cudaMemcpyHostToDevice);
+
+    Parameters rtParms;
+    cudaMemcpy(&rtParms, parms, sizeof(Parameters), cudaMemcpyDeviceToHost);
+    printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light);
 }
 
 extern __global__ void vectorAdd(float *A, float *B, float *C, int numElements);
