@@ -108,6 +108,41 @@ vectorAdd(float *A, float *B, float *C, int numElements)
 }
 
 // primitive and normals are shift pointers to the primitive and normal we selected
+__device__ bool triangleIntersect(int primIndex, GPURay& r) {
+    
+    float* primitive = const_params.positions + 9 * primIndex;
+
+    float* v1 = primitive;
+    float* v2 = primitive + 3;
+    float* v3 = primitive + 6;
+
+    float e1[3], e2[3], s[3];
+    subVector3D(v2, v1, e1);
+    subVector3D(v3, v1, e2);
+    subVector3D(r.o, v1, s);
+
+    float tmp[3];
+    VectorCross3D(e1, r.d, tmp);
+    double f = VectorDot3D(tmp, e2);
+    if (f == 0) {
+        return false;
+    }
+
+    VectorCross3D(s, r.d, tmp);
+    double u = VectorDot3D(tmp, e2) / f;
+    VectorCross3D(e1, r.d, tmp);
+    double v = VectorDot3D(tmp, s) / f;
+    VectorCross3D(e1, s, tmp);
+    double t = - VectorDot3D(tmp, e2) / f;
+
+    if (u >= 0 && v >= 0 && u+v <= 1 && t > r.min_t && t < r.max_t) {
+        return true;
+    }
+
+    return false;
+}
+
+// primitive and normals are shift pointers to the primitive and normal we selected
 __device__ bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
     
     float* primitive = const_params.positions + 9 * primIndex;
