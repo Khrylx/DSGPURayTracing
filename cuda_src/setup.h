@@ -95,6 +95,7 @@ public:
     
     void init();
     
+    void updateHostSampleBuffer();
     
 private:
     PathTracer* pathTracer;

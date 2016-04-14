@@ -364,6 +364,12 @@ void CUDAPathTracer::loadParameters() {
     //printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light, rtParms.lightNum);
 }
 
+void CUDAPathTracer::updateHostSampleBuffer() {
+    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * (pathTracer->sampleBuffer.w) * (pathTracer->sampleBuffer.h)));
+    cudaMemcpyDeviceToHost(gpuBuffer, frameBuffer, sizeof(float) * (3 * (pathTracer->sampleBuffer.w) * (pathTracer->sampleBuffer.h)), cudaMemcpyDeviceToHost);
+    pathTracer->updateBufferFromGPU(gpuBuffer);
+    free(gpuBuffer);
+}
 
 int test(){
 
