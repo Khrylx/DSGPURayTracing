@@ -398,11 +398,25 @@ void PathTracer::key_press(int key) {
   }
 }
 
-    void PathTracer::transferToGPU(){
-        
+void PathTracer::transferToGPU(){
+    
+}
+
+void PathTracer::updateBufferFromGPU(float* gpuBuffer) {
+  size_t w = sampleBuffer.w;
+  size_t h = sampleBuffer.h;
+  for (int x = 0; x < w; ++x)
+  {
+    for (int y = 0; y < h; ++y)
+    {
+      int index = 3 * (y * w + x);
+      Spectrum s(gpuBuffer[index], gpuBuffer[index + 1], gpuBuffer[index + 2]);
+      sampleBuffer.update_pixel(s, x, y);
     }
-    
-    
+  }
+  sampleBuffer.toColor(frameBuffer, 0, 0, w, h);
+}
+
 Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
 
   Intersection isect;
