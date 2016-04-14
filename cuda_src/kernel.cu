@@ -61,6 +61,8 @@ generateRay(GPURay* ray, float x, float y)
 __device__ float3
 traceRay(curandState* s, GPURay* ray)
 {
+    float3 L_out;
+
     GPUIntersection isect;
     isect.t = 1e10;
 
@@ -77,13 +79,12 @@ traceRay(curandState* s, GPURay* ray)
 
     switch(bsdf.type)
     {
-        case 0: case 4: return make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]);
-        case 1: return make_float3(0.0, 1.0, 0.0);
-        case 3: return make_float3(0.0, 0.0, 1.0);
-        default: break;
+        case 0: case 4: L_out = make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]); break;
+        case 1: L_out = make_float3(0.0, 1.0, 0.0); break;
+        case 3: default: return L_out = make_float3(0.0, 0.0, 1.0);
     }
 
-    return make_float3(1.0, 0.0, 0.0);
+    return L_out;
 
 }
 
