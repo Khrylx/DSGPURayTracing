@@ -17,9 +17,7 @@ elseif(LINUX)
 endif()
 
 file(GLOB GPUSRC
-    "*.cu"
-    "*.cpp"
-    "*.h"
+    "setup.cu"
 )
 
 # Specify binary name and source file to build it from

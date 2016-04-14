@@ -101,11 +101,10 @@ void VectorRMulMatrix3D(float* X,float* S,float* Y)
 inline __device__
 void MatrixMulMatrix3D(float* X,float* Y,float* Z)
 {
-    int i,j,k;
+    int i,k;
     for (k = 0; k < 9; k++)
     {
         i=k/3;
-        j=k%3;
         Z[k]=X[3*i]*Y[i]+X[3*i+1]*Y[i+3]+X[3*i+2]*Y[i+6];
     }
 }
@@ -113,7 +112,7 @@ void MatrixMulMatrix3D(float* X,float* Y,float* Z)
 inline __device__
 void MatrixAddMatrix3D(float* X,float* Y,float* Z)
 {
-    int i,j,k;
+    int k;
     for (k = 0; k < 9; k++)
     {
         Z[k]=X[k]+Y[k];
@@ -123,7 +122,7 @@ void MatrixAddMatrix3D(float* X,float* Y,float* Z)
 inline __device__
 void MatrixScale3D(float* X,float a)
 {
-    int i,j,k;
+    int k;
     for (k = 0; k < 9; k++)
     {
         X[k]=X[k]*a;
