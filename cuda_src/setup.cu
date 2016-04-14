@@ -52,6 +52,17 @@ CUDAPathTracer::~CUDAPathTracer()
 
 }
 
+
+void CUDAPathTracer::startRayTracing()
+{
+    int blockDim = 256;
+    int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
+    
+    tracePixel<<<gridDim, blockDim>>>();
+    cudaThreadSynchronize();
+}
+
+
 void CUDAPathTracer::init()
 {
     loadCamera();
@@ -62,13 +73,19 @@ void CUDAPathTracer::init()
     
     printInfo<<<1, 1>>>();
     cudaDeviceSynchronize();
+    
+    startRayTracing();
+    
 }
 
 void CUDAPathTracer::createFrameBuffer()
 {
     cudaError_t err = cudaSuccess;
     
-    err = cudaMalloc((void**)&frameBuffer, 3 * pathTracer->frameBuffer.w * pathTracer->frameBuffer.h * sizeof(float));
+    screenH = pathTracer->frameBuffer.h;
+    screenW = pathTracer->frameBuffer.w;
+    
+    err = cudaMalloc((void**)&frameBuffer, 3 * screenW * screenH * sizeof(float));
     
     if (err != cudaSuccess)
     {
@@ -365,11 +382,37 @@ void CUDAPathTracer::loadParameters() {
 }
 
 void CUDAPathTracer::updateHostSampleBuffer() {
-    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * (pathTracer->sampleBuffer.w) * (pathTracer->sampleBuffer.h)));
-    cudaMemcpyDeviceToHost(gpuBuffer, frameBuffer, sizeof(float) * (3 * (pathTracer->sampleBuffer.w) * (pathTracer->sampleBuffer.h)), cudaMemcpyDeviceToHost);
+    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * screenW * screenH));
+    cudaError_t err = cudaSuccess;
+    
+    err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * screenW * screenH), cudaMemcpyDeviceToHost);
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    
     pathTracer->updateBufferFromGPU(gpuBuffer);
     free(gpuBuffer);
 }
+
+void PathTracer::updateBufferFromGPU(float* gpuBuffer) {
+    size_t w = sampleBuffer.w;
+    size_t h = sampleBuffer.h;
+    for (int x = 0; x < w; ++x)
+    {
+        for (int y = 0; y < h; ++y)
+        {
+            int index = 3 * (y * w + x);
+            Spectrum s(gpuBuffer[index], gpuBuffer[index + 1], gpuBuffer[index + 2]);
+            //cout << s.r << "," << s.g << "," << s.b << endl;
+            sampleBuffer.update_pixel(s, x, y);
+        }
+    }
+    sampleBuffer.toColor(frameBuffer, 0, 0, w, h);
+}
+
 
 int test(){
 

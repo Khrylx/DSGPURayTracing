@@ -65,9 +65,32 @@ struct Parameters
     float* frameBuffer;
 };
 
+struct GPURay
+{
+    int depth;  ///< depth of the Ray
+    
+    float o[3];  ///< origin
+    float d[3];  ///< direction
+    float min_t; ///< treat the ray as a segment (ray "begin" at max_t)
+    float max_t; ///< treat the ray as a segment (ray "ends" at max_t)
+};
+
+struct GPUIntersection {
+    
+    float t;    ///< time of intersection
+    
+    int pIndex;
+    
+    float n[3];  ///< normal at point of intersection
+    
+    int bsdfIndex; ///< BSDF of the surface at point of intersection
+    
+    // More to follow.
+};
 
 class CUDAPathTracer{
     
+    int screenW, screenH;
     int primNum;
     
     int* gpu_types;    // size: N.    *** 1 for triangle, 0 for sphere
@@ -94,6 +117,8 @@ public:
     void toGPULight(SceneLight *light, GPULight *gpuLight);
     
     void init();
+    
+    void startRayTracing();
     
     void updateHostSampleBuffer();
     
