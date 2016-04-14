@@ -281,7 +281,11 @@ void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
             InfiniteHemisphereLight* light = (InfiniteHemisphereLight*) l;
             for (int i = 0; i < 3; ++i) {
                 gpuLight->radiance[i] = light->radiance[i];
+                for (int j = 0; j < 3; j++) {
+                    gpuLight->sampleToWorld[3 * i + j] = light->sampleToWorld(i, j);
+                }
             }
+
         }
         break;
 

@@ -40,10 +40,17 @@ initVector3D(float x, float y, float z, float* S)
 }
 
 __device__ inline void
-readVector3D(float* src, float* dst) {
+readVector3D(float* src, float *dst) {
     dst[0] = src[0];
     dst[1] = src[1];
     dst[2] = src[2];
+}
+
+__device__ inline void
+readVector3D(float3 src, float *dst) {
+    dst[0] = src.x;
+    dst[1] = src.y;
+    dst[2] = src.z;
 }
 
 __device__ inline void
