@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <curand_kernel.h>
 
 #include "helper.cu"
 #include "setup.h"
@@ -71,11 +72,20 @@ traceScene()
     const_params.frameBuffer[3 * index] = 1.0;
     const_params.frameBuffer[3 * index + 1] = 0.5;
     const_params.frameBuffer[3 * index + 2] = 0.5;
+
+    // initialize random sampler state
+    // need to pass to further functions
+    curandState s;
+    curand_init((unsigned int)index, 0, 0, &s);
+
 }
 
-
-
-
+__device__ float2 gridSampler(curandState *s) {
+    float2 rt;
+    rt.x = curand_uniform(s);
+    rt.y = curand_uniform(s);
+    return rt;
+}
 
 __global__ void
 vectorAdd(float *A, float *B, float *C, int numElements)
