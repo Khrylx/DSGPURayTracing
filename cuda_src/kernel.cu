@@ -7,6 +7,8 @@
 #define MAX_NUM_LIGHT 20
 #define MAX_NUM_BSDF 20
 
+#define INF_FLOAT 1e20
+
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
@@ -280,6 +282,20 @@ __device__ bool intersect(int primIndex, GPURay& r, GPUIntersection *isect) {
         return triangleIntersect(primIndex, r, isect);
     }
 }
+
+__device__ float3 DirectionalLight_sample_L(int lightIndex, float *p, float *wi, float *distToLight, float *pdf) {
+    GPULight *light = const_lights + lightIndex;
+    readVector3D(light->dirToLight, wi);
+    *distToLight = INF_FLOAT;
+    *pdf = 1.0;
+    float3 spec;
+    spec.x = light->radiance[0];
+    spec.y = light->radiance[1];
+    spec.z = light->radiance[2];
+    return spec;
+}
+
+__device__ float3 
 
 __global__ void
 printInfo()
