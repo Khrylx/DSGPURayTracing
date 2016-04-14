@@ -12,6 +12,10 @@ __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
 __constant__  Parameters const_params;
 
+__device__ bool intersect(int primIndex, GPURay& r);
+__device__ bool intersect(int primIndex, GPURay& r, GPUIntersection *isect);
+
+
 __device__ float2 gridSampler(curandState *s) {
     float2 rt;
     rt.x = curand_uniform(s);
@@ -38,15 +42,44 @@ generateRay(GPURay* ray, float x, float y)
 }
 
 __device__ float3
+traceRay(curandState* s, GPURay* ray)
+{
+    GPUIntersection isect;
+    isect.t = 1e10;
+
+    bool isIntersect = false;
+    for(int i = 0; i < const_params.primNum; i++)
+    {
+        isIntersect = intersect(i, *ray, &isect) || isIntersect;
+    }
+
+    if(!isIntersect)
+        return make_float3(0.0, 0.0, 0.0);
+
+    GPUBSDF& bsdf = const_bsdfs[isect.bsdfIndex];
+
+    switch(bsdf.type)
+    {
+        case 0: case 4: return make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]);
+        case 1: return make_float3(0.0, 1.0, 0.0);
+        case 3: return make_float3(0.0, 0.0, 1.0);
+        default: break;
+    }
+
+    return make_float3(1.0, 0.0, 0.0);
+
+}
+
+__device__ float3
 tracePixel(curandState* s, int x, int y, bool verbose)
 {
-    float3 spec = make_float3(1.0, 0.0, 0.0);
+    float3 spec = make_float3(0.0, 0.0, 0.0);
 
     int w = const_params.screenW;
     int h = const_params.screenH;
+    int ns_aa = const_params.ns_aa;
 
-
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < ns_aa; i++)
     {
         float2 r = gridSampler(s);
         float px = (x + r.x) / (float)w;
@@ -55,16 +88,15 @@ tracePixel(curandState* s, int x, int y, bool verbose)
         GPURay ray;
         generateRay(&ray, px, py);
 
-        // if(verbose)
-        // {
-        //     printf("%f %f\n", r.x, r.y);
-        //     printf("%f %f %f\n", ray.o[0], ray.o[1], ray.o[2]);
-        //     printf("%f %f %f\n", ray.d[0], ray.d[1], ray.d[2]);
-        // }
+        float3 tmpSpec = traceRay(s, &ray);
+        spec.x += tmpSpec.x;
+        spec.y += tmpSpec.y;
+        spec.z += tmpSpec.z;
+        
     }
 
 
-    return spec;
+    return make_float3(spec.x / ns_aa, spec.y / ns_aa, spec.z / ns_aa);
 }
 
 
@@ -83,11 +115,11 @@ traceScene()
     int x = index % const_params.screenW;
     int y = index / const_params.screenW;
 
-    tracePixel(&s, x, y, x == 500 && y == 300);
+    float3 spec = tracePixel(&s, x, y, x == 500 && y == 300);
 
-    const_params.frameBuffer[3 * index] = 1.0;
-    const_params.frameBuffer[3 * index + 1] = 0.5;
-    const_params.frameBuffer[3 * index + 2] = 0.5;
+    const_params.frameBuffer[3 * index] = spec.x;
+    const_params.frameBuffer[3 * index + 1] = spec.y;
+    const_params.frameBuffer[3 * index + 2] = spec.z;
 
     // initialize random sampler state
     // need to pass to further functions
@@ -109,7 +141,7 @@ vectorAdd(float *A, float *B, float *C, int numElements)
 
 // primitive and normals are shift pointers to the primitive and normal we selected
 __device__ bool triangleIntersect(int primIndex, GPURay& r) {
-    
+
     float* primitive = const_params.positions + 9 * primIndex;
 
     float* v1 = primitive;
@@ -144,7 +176,7 @@ __device__ bool triangleIntersect(int primIndex, GPURay& r) {
 
 // primitive and normals are shift pointers to the primitive and normal we selected
 __device__ bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
-    
+
     float* primitive = const_params.positions + 9 * primIndex;
     float* normals = const_params.normals + 9 * primIndex;
 

@@ -58,8 +58,21 @@ void CUDAPathTracer::startRayTracing()
     int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
 
     traceScene<<<gridDim, blockDim>>>();
+
+    cudaError_t err = cudaPeekAtLastError();
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
     cudaThreadSynchronize();
     cudaDeviceSynchronize();
+
+
+
+
 }
 
 
