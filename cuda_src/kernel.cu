@@ -261,6 +261,26 @@ __device__ bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect
     return true;
 }
 
+__device__ bool intersect(int primIndex, GPURay& r) {
+    if (const_params.types[primIndex] == 0) {
+        // sphere
+        return sphereIntersect(primIndex, r);
+    } else {
+        // triangle
+        return triangleIntersect(primIndex, r);
+    }
+}
+
+__device__ bool intersect(int primIndex, GPURay& r, GPUIntersection *isect) {
+    if (const_params.types[primIndex] == 0) {
+        // sphere
+        return sphereIntersect(primIndex, r, isect);
+    } else {
+        // triangle
+        return triangleIntersect(primIndex, r, isect);
+    }
+}
+
 __global__ void
 printInfo()
 {
