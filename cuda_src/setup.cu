@@ -52,6 +52,17 @@ CUDAPathTracer::~CUDAPathTracer()
 
 }
 
+
+void CUDAPathTracer::startRayTracing()
+{
+    int blockDim = 256;
+    int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
+    
+    tracePixel<<<blockDim, gridDim>>>();
+    
+}
+
+
 void CUDAPathTracer::init()
 {
     loadCamera();
@@ -62,13 +73,18 @@ void CUDAPathTracer::init()
     
     printInfo<<<1, 1>>>();
     cudaDeviceSynchronize();
+    
+    startRayTracing();
 }
 
 void CUDAPathTracer::createFrameBuffer()
 {
     cudaError_t err = cudaSuccess;
     
-    err = cudaMalloc((void**)&frameBuffer, 3 * pathTracer->frameBuffer.w * pathTracer->frameBuffer.h * sizeof(float));
+    screenH = pathTracer->frameBuffer.h;
+    screenW = pathTracer->frameBuffer.w;
+    
+    err = cudaMalloc((void**)&frameBuffer, 3 * screenW * screenH * sizeof(float));
     
     if (err != cudaSuccess)
     {

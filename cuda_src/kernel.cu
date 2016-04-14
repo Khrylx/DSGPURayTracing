@@ -13,7 +13,19 @@ __constant__  Parameters const_params;
 
 
 
-
+__global__ void
+tracePixel()
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    
+    if (index >= const_params.screenW * const_params.screenH) {
+        return;
+    }
+    
+    const_params.frameBuffer[3 * index] = 2.0;
+    const_params.frameBuffer[3 * index + 1] = 2.0;
+    const_params.frameBuffer[3 * index + 2] = 2.0;
+}
 
 
 
