@@ -30,8 +30,6 @@ Application::Application(AppConfig config) {
     config.pathtracer_num_threads,
     config.pathtracer_envmap
   );
-
-    cuPathTracer = new CUDAPathTracer(pathtracer);
 }
 
 Application::~Application() {
@@ -461,10 +459,9 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
     case EDIT_MODE:
       if (event == EVENT_PRESS) {
         switch(key) {
-          case 'r': case 'R':
-            //set_up_pathtracer();
-            //pathtracer->start_raytracing();
+          case 'e': case 'E':
 
+            cuPathTracer = new CUDAPathTracer(pathtracer);
             transferToGPU();
 
             pathtracer->state = PathTracer::RENDERING;
@@ -474,6 +471,11 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             pathtracer->frameBuffer.clear();
             cuPathTracer->updateHostSampleBuffer();
             delete cuPathTracer;
+            mode = RENDER_MODE;
+            break;
+          case 'r': case 'R':
+            set_up_pathtracer();
+            pathtracer->start_raytracing();
             mode = RENDER_MODE;
             break;
           case 'v': case 'V':
