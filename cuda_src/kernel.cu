@@ -199,6 +199,68 @@ __device__ bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *ise
     return true;
 }
 
+__device__ bool sphereTest(int primIndex, GPURay& ray, double& t1, double& t2) {
+    float* primitive = const_params.positions + 9 * primIndex;
+    float* o = primitive;
+    float r = primitive[3];
+    float r2 = r * r;
+
+    float m[3];
+    subVector3D(o, ray.o, m);
+    double b = VectorDot3D(m, ray.d);
+    double c = VectorDot3D(m, m) - r2;
+    double delta = b * b - c;
+    if (delta < 0) {
+        return false;
+    }
+
+    t1 = b - sqrt(delta);
+    t2 = b + sqrt(delta);
+
+    if (t1 >= ray.max_t || t2 <= ray.min_t) {
+        return false;
+    }
+
+    return true;
+}
+
+__device__ bool sphereIntersect(int primIndex, GPURay& r) {
+    double tmp;
+    return sphereTest(primIndex, r, tmp, tmp);
+}
+
+__device__ bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
+    double t1;
+    double t2;
+    bool res = sphereTest(primIndex, r, t1, t2);
+    if (!res) {
+        return false;
+    }
+    isect->bsdfIndex = const_params.bsdfIndexes[primIndex];
+    isect->pIndex = primIndex;
+
+    float* primitive = const_params.positions + 9 * primIndex;
+    float* o = primitive;
+    double t = t1;
+    if (t1 <= r.min_t) {
+        t = t2;
+    }
+    float n[3];
+    float tmp[3];
+    for (int i = 0; i < 3; ++i)
+    {
+        tmp[i] = r.d[i] * t;
+    }
+    addVector3D(r.o, tmp);
+    subVector3D(tmp, o, n);
+    normalize3D(n);
+    readVector3D(n, isect->n);
+    isect->t = t;
+    r.max_t = t;
+
+    return true;
+}
+
 __global__ void
 printInfo()
 {
