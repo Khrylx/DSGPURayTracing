@@ -534,6 +534,8 @@ int test(){
     }
 
     printf("Done\n");
+
+    testSampler<<<1, 1>>>();
     return 0;
 
 

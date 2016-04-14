@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <curand_kernel.h>
 
 #include "helper.cu"
 #include "setup.h"
@@ -15,9 +16,26 @@ __constant__  Parameters const_params;
 
 
 
+__device__ float2 gridSampler(curandState *s) {
+    float2 rt;
+    rt[0] = curand_uniform(s);
+    rt[1] = curand_uniform(s);
+    return rt;
+}
 
 
-
+__global__ void
+testSampler()
+{
+    unsigned int seed = thread_id;
+    curandState s;
+    curand_init(seed, 0, 0, &s);
+    for (int i = 0; i < 100; ++i)
+    {
+        float2 result = gridSampler(&s);
+        printf("x: %f, y: %f\n", result[0], result[1]);
+    }
+}
 
 __global__ void
 vectorAdd(float *A, float *B, float *C, int numElements)
