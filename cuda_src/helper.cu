@@ -96,7 +96,7 @@ VectorDot3D(const float *X,const float *Y)
 }
 
 __device__ inline void
-VectorCross3D(const float *u, float *v, float *s) {
+VectorCross3D(const float *u, const float *v, float *s) {
     s[0] = u[1] * v[2] - u[2] * v[1];
     s[1] = u[2] * v[0] - u[0] * v[2];
     s[2] = u[0] * v[1] - u[1] * v[0];
