@@ -103,6 +103,7 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_bsdfIndexes);
     cudaFree(gpu_positions);
     cudaFree(gpu_normals);
+    cudaFree(frameBuffer);
 
 }
 
@@ -111,10 +112,25 @@ void CUDAPathTracer::init()
     loadCamera();
     loadPrimitives();
     loadLights();
+    createFrameBuffer();
     loadParameters();
     
-    //printInfo<<<1, 1>>>();
-    //cudaDeviceSynchronize();
+    printInfo<<<1, 1>>>();
+    cudaDeviceSynchronize();
+}
+
+void CUDAPathTracer::createFrameBuffer()
+{
+    cudaError_t err = cudaSuccess;
+    
+    err = cudaMalloc((void**)&frameBuffer, 3 * pathTracer->frameBuffer.w * pathTracer->frameBuffer.h * sizeof(float));
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
 }
 
 void CUDAPathTracer::loadCamera()
@@ -382,16 +398,15 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.positions = gpu_positions;
     tmpParams.normals = gpu_normals;
     tmpParams.primNum = primNum;
+    tmpParams.frameBuffer = frameBuffer;
     
     cudaGetSymbolAddress((void **)&tmpParams.bsdfs, const_bsdfs);
     cudaGetSymbolAddress((void **)&tmpParams.lights, const_lights);
     cudaGetSymbolAddress((void **)&tmpParams.camera, const_camera);
-    //printf("Parameters:\n");
-    //printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", tmpParms.screenW, tmpParms.screenH, tmpParms.max_ray_depth, tmpParms.ns_aa, tmpParms.ns_area_light, tmpParms.lightNum);
-    //cudaMalloc((void**)&parms, sizeof(Parameters));
-
-    cudaError_t err = cudaSuccess;
     
+    
+    cudaError_t err = cudaSuccess;
+
     err = cudaMemcpyToSymbol(const_params, &tmpParams, sizeof(Parameters));
     
     if (err != cudaSuccess)

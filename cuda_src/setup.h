@@ -59,6 +59,8 @@ struct Parameters
     int* bsdfIndexes;
     float* positions;
     float* normals;
+    
+    float* frameBuffer;
 };
 
 
@@ -71,6 +73,7 @@ class CUDAPathTracer{
     float* gpu_positions; // size: 9 * N.  *** for triangle, 9 floats representing all 3 vertices;
                           // for sphere, first 3 floats represent origin, 4th float represent radius
     float* gpu_normals;  // size: 9 * N.  *** normals for triangle
+    float* frameBuffer;
     
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
@@ -80,10 +83,11 @@ public:
 
     void loadPrimitives();
     
-
     void loadLights();
 
     void loadParameters();
+    
+    void createFrameBuffer();
 
     void toGPULight(SceneLight *light, GPULight *gpuLight);
     
