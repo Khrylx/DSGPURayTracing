@@ -131,7 +131,7 @@ int main( int argc, char** argv ) {
 
   // load scene
     app.load(sceneInfo);
-    app.transferToGPU();
+
 
   delete sceneInfo;
 

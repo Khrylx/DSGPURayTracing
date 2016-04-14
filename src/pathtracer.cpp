@@ -61,7 +61,7 @@ PathTracer::PathTracer(size_t ns_aa,
   tm_level = 1.0f;
   tm_key = 0.18;
   tm_wht = 5.0f;
-  
+
 }
 
 PathTracer::~PathTracer() {
@@ -231,7 +231,7 @@ void PathTracer::build_accel() {
     primitives.reserve(primitives.size() + obj_prims.size());
     primitives.insert(primitives.end(), obj_prims.begin(), obj_prims.end());
   }
-    
+
   timer.stop();
   fprintf(stdout, "Done! (%.4f sec)\n", timer.duration());
 
@@ -400,7 +400,7 @@ void PathTracer::key_press(int key) {
 }
 
 void PathTracer::transferToGPU(){
-    
+
 }
 
 Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
@@ -414,7 +414,7 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
     log_ray_miss(r);
     #endif
 
-    // TODO: 
+    // TODO:
     // If you have an environment map, return the Spectrum this ray
     // samples from the environment map. If you don't return black.
       if (envLight && includeLe) {
@@ -464,19 +464,19 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
   Vector3D dir_to_light;
   float dist_to_light;
   float pdf;
-   
+
     for (SceneLight* light : scene->lights){
-        
+
         Spectrum L(0,0,0);
-        
+
         // no need to take multiple samples from a directional source
         int num_light_samples = light->is_delta_light() ? 1 : ns_area_light;
-        
+
         // integrate light over the hemisphere about the normal
         double scale = 1.0 / num_light_samples;
 
         for (int i=0; i<num_light_samples; i++) {
-            
+
             // returns a vector 'dir_to_light' that is a direction from
             // point hit_p to the point on the light source.  It also returns
             // the distance from point x to this point on the light source.
@@ -486,50 +486,50 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
             // TODO:
             // construct a shadow ray and compute whether the intersected surface is
             // in shadow and accumulate reflected radiance
-            
+
             // ****************************
             //  Shadow Ray Implementation!
-            
+
             // *** NOTE: Why move along the normal here? this is to cope with the situation where
             // *** the light direction is parellel to the surface, by moving out a little bit,
             // *** we can effectively avoid self-intersection.
             double eps = light->is_delta_light()? EPS_N:0;
-            
+
             Ray sR(hit_p + eps * isect.n + EPS_D * dir_to_light , dir_to_light);
             sR.max_t = dist_to_light;
-            
+
             if (bvh->intersect(sR)){
                 continue;
             }
-            
-            
+
+
             // convert direction into coordinate space of the surface, where
             // the surface normal is [0 0 1]
             //dir_to_light = Vector3D(0,0,1);
             Vector3D w_in = w2o * dir_to_light;
             w_in.normalize();
-            
+
             // note that computing dot(n,w_in) is simple
             // in surface coordinates since the normal is [0 0 1]
             double cos_theta = std::max(0.0, w_in[2]);
-            
+
             // evaluate surface brdf
             Spectrum f = isect.bsdf->f(w_out, w_in);
-            
+
             L += cos_theta / pdf * light_L * f;
         }
         L_out += L*scale;
     }
-    
+
     // *************** Indirect Lighting ***************
-    
+
     if (r.depth >= max_ray_depth) {
         return L_out;
     }
-    
+
     Vector3D w_in;
     Spectrum f = isect.bsdf->sample_f(w_out, &w_in, &pdf);
-    
+
     // Russian Roulette
     //double throughput = r.throughput*f.illum()*fabs(w_in[2]);
     double cos_theta = fabs(w_in[2]);
@@ -538,34 +538,34 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
     if (std::rand() / (double) RAND_MAX < terminateProbability) {
         return L_out;
     }
-    
+
     Vector3D v = o2w * w_in;
     v.normalize();
-    
+
     Ray refR(hit_p+ EPS_D * v, v);
     refR.depth = r.depth+1;
     //refR.throughput = throughput;
-    
+
     Spectrum indirL = trace_ray(refR, isect.bsdf->is_delta());
-    
+
     return L_out + cos_theta / (pdf*(1-terminateProbability)) * indirL * f;
 }
 
 Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
 
   // TODO:
-  // Sample the pixel with coordinate (x,y) and return the result spectrum. 
+  // Sample the pixel with coordinate (x,y) and return the result spectrum.
   // The sample rate is given by the number of camera rays per pixel.
 
     size_t w = frameBuffer.w;
     size_t h = frameBuffer.h;
-    
+
   int num_samples = ns_aa;
 
 //  Vector2D p = Vector2D(0.5,0.5);
 //  Spectrum s = trace_ray(camera->generate_ray(p.x, p.y));
 //  frameBuffer.put_color(s.toColor(), x, y);
-    
+
     Spectrum s(0,0,0);
     for (int i = 0; i < num_samples; i++) {
         Vector2D rp = gridSampler->get_sample();
@@ -575,9 +575,9 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
         s += trace_ray(r, true);
     }
     s *= 1.0/num_samples;
-    
+
     return s;
-    
+
 
 }
 

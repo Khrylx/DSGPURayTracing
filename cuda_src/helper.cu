@@ -22,6 +22,14 @@ norm3D(const float *X)
     return sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
 }
 
+__device__ inline void
+normalize3D(float *X)
+{
+    double norm = sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
+    X[0] /= norm;
+    X[1] /= norm;
+    X[2] /= norm;
+}
 
 __device__ inline void
 initVector3D(float x, float y, float z, float* S)
@@ -62,13 +70,6 @@ VectorMulVectorT3D(const float *X,float* S)
 }
 
 __device__ inline float
-localization(float r,float h)
-{
-    float tmp=4*r/h;
-    return exp(-tmp*tmp);
-}
-
-__device__ inline float
 VectorDot3D(const float *X,const float *Y)
 {
     return X[0]*Y[0]+X[1]*Y[1]+X[2]*Y[2];
@@ -100,8 +101,8 @@ void inverse3D(const float* X,float* Y)
     Y[6]=(X[3]*X[7]-X[4]*X[6])/a;
     Y[7]=(X[1]*X[6]-X[0]*X[7])/a;
     Y[8]=(X[0]*X[4]-X[1]*X[3])/a;
-    
-    
+
+
 }
 
 inline __device__
@@ -111,7 +112,7 @@ void VectorTMulMatrix3D(float* X,float* S,float* Y)
     {
         Y[i]=X[0]*S[i]+X[1]*S[i+3]+X[2]*S[i+6];
     }
-    
+
 }
 
 inline __device__
@@ -121,7 +122,7 @@ void MatrixMulVector3D(float* S,float* X,float* Y)
     {
         Y[i]=X[0]*S[3*i]+X[1]*S[3*i+1]+X[2]*S[3*i+2];
     }
-    
+
 }
 
 inline __device__

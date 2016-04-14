@@ -15,32 +15,42 @@ __constant__  Parameters const_params;
 __device__ void
 generateRay(GPURay* ray, float x, float y)
 {
+    ray->depth = 0;
+    ray->min_t = 0;
+    ray->max_t = 1e10;
+
     float sp[3];
-    sp[0] = -(x-0.5) * const_camera.widthDivDist;
-    sp[1] = -(y-0.5) * const_camera.heightDivDist;
-    sp[2] = 1;
     float dir[3];
-    dir[0] = -sp[0];
-    dir[1] = -sp[1];
-    dir[2] = -sp[2];
-    float world_sp[3];
-    MatrixMulVector3D(const_camera.c2w, sp, world_sp);
-    
+
+    initVector3D(-(x-0.5) * const_camera.widthDivDist, -(y-0.5) * const_camera.heightDivDist, 1, sp);
+    negVector3D(sp, dir);
+    MatrixMulVector3D(const_camera.c2w, sp, ray->o);
+    addVector3D(const_camera.pos, ray->o);
+    MatrixMulVector3D(const_camera.c2w, dir, ray->d);
+    normalize3D(ray->d);
 }
 
 __device__ float3
-tracePixel(int x, int y)
+tracePixel(int x, int y, bool verbose)
 {
-    float3 s;
-    
+    float3 s = make_float3(1.0, 0.0, 0.0);
+
     int w = const_params.screenW;
     int h = const_params.screenH;
-    
+
     float px = x / (float)w;
     float py = y / (float)h;
-    
+
     GPURay ray;
     generateRay(&ray, px, py);
+
+    if(verbose)
+    {
+        printf("%f %f %f\n", ray.o[0], ray.o[1], ray.o[2]);
+        printf("%f %f %f\n", ray.d[0], ray.d[1], ray.d[2]);
+    }
+
+    return s;
 }
 
 
@@ -48,16 +58,16 @@ __global__ void
 traceScene()
 {
     int index = blockDim.x * blockIdx.x + threadIdx.x;
-    
+
     if (index >= const_params.screenW * const_params.screenH) {
         return;
     }
-    
+
     int x = index % const_params.screenW;
     int y = index / const_params.screenW;
-    
-    tracePixel(x, y);
-    
+
+    tracePixel(x, y, x == 500 && y == 300);
+
     const_params.frameBuffer[3 * index] = 1.0;
     const_params.frameBuffer[3 * index + 1] = 0.5;
     const_params.frameBuffer[3 * index + 2] = 0.5;
@@ -84,7 +94,7 @@ printInfo()
 {
     GPUBSDF* bsdfs = const_bsdfs;
     GPUCamera camera = const_camera;
-    
+
     for (int i = 0; i < 8; i++) {
         if (bsdfs[i].type == 0) {
             printf("0: %lf %lf %lf\n", bsdfs[i].albedo[0], bsdfs[i].albedo[1], bsdfs[i].albedo[2] );
@@ -103,18 +113,18 @@ printInfo()
             printf("4: %lf %lf %lf\n", bsdfs[i].albedo[0], bsdfs[i].albedo[1], bsdfs[i].albedo[2] );
         }
     }
-    
-    
+
+
     printf("%lf %lf %lf\n", camera.pos[0], camera.pos[1], camera.pos[2] );
-    
-    
+
+
     float* positions = const_params.positions;
     float* normals = const_params.normals;
-    
+
     printf("+++++++++++++++++++++++\n");
     for (int i = 0; i < const_params.primNum; i++) {
         printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_bsdfs[const_params.bsdfIndexes[i]].type);
-        
+
         printf("%lf %lf %lf\n", positions[9 * i], positions[9 * i + 1], positions[9 * i + 2] );
         printf("%lf %lf %lf\n", positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5] );
         printf("%lf %lf %lf\n", positions[9 * i + 6], positions[9 * i + 7], positions[9 * i + 8] );
@@ -124,10 +134,5 @@ printInfo()
         printf("%lf %lf %lf\n", normals[9 * i + 6], normals[9 * i + 7], normals[9 * i + 8] );
         printf("+++++++++++++++++++++++\n\n");
     }
-    
+
 }
-
-
-
-
-

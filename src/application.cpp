@@ -205,8 +205,8 @@ string Application::info() {
       break;
   }
 }
-    
-    
+
+
     void Application::transferToGPU(){
         set_up_pathtracer();
         cuPathTracer->init();
@@ -464,13 +464,16 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
           case 'r': case 'R':
             //set_up_pathtracer();
             //pathtracer->start_raytracing();
-                pathtracer->state = PathTracer::RENDERING;
-                pathtracer->continueRaytracing = true;
-                
-                pathtracer->sampleBuffer.clear();
-                pathtracer->frameBuffer.clear();
-                cuPathTracer->updateHostSampleBuffer();
-                delete cuPathTracer;
+
+            transferToGPU();
+
+            pathtracer->state = PathTracer::RENDERING;
+            pathtracer->continueRaytracing = true;
+
+            pathtracer->sampleBuffer.clear();
+            pathtracer->frameBuffer.clear();
+            cuPathTracer->updateHostSampleBuffer();
+            delete cuPathTracer;
             mode = RENDER_MODE;
             break;
           case 'v': case 'V':
@@ -599,6 +602,9 @@ void Application::set_up_pathtracer() {
   pathtracer->set_scene(scene->get_static_scene());
   pathtracer->set_frame_size(screenW, screenH);
 
+  // Ray ray = pathtracer->camera->generate_ray(500.0 / screenW, 300.0 / screenH);
+  // printf("T: %f %f %f\n", ray.o[0], ray.o[1], ray.o[2]);
+  // printf("T: %f %f %f\n", ray.d[0], ray.d[1], ray.d[2]);
 }
 
 Matrix4x4 Application::get_world_to_3DH() {

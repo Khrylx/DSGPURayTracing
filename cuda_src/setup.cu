@@ -56,9 +56,10 @@ void CUDAPathTracer::startRayTracing()
 {
     int blockDim = 256;
     int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
-    
+
     traceScene<<<gridDim, blockDim>>>();
     cudaThreadSynchronize();
+    cudaDeviceSynchronize();
 }
 
 
@@ -69,23 +70,23 @@ void CUDAPathTracer::init()
     loadLights();
     createFrameBuffer();
     loadParameters();
-    
-    printInfo<<<1, 1>>>();
-    cudaDeviceSynchronize();
-    
+
+    //printInfo<<<1, 1>>>();
+    //cudaDeviceSynchronize();
+
     startRayTracing();
-    
+
 }
 
 void CUDAPathTracer::createFrameBuffer()
 {
     cudaError_t err = cudaSuccess;
-    
+
     screenH = pathTracer->frameBuffer.h;
     screenW = pathTracer->frameBuffer.w;
-    
+
     err = cudaMalloc((void**)&frameBuffer, 3 * screenW * screenH * sizeof(float));
-    
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
@@ -106,7 +107,7 @@ void CUDAPathTracer::loadCamera()
     for (int i = 0; i < 9; i++) {
         tmpCam.c2w[i] = cam->c2w(i / 3, i % 3);
     }
-    
+
     for (int i = 0; i < 3; i++) {
         tmpCam.pos[i] = cam->pos[i];
     }
@@ -114,7 +115,7 @@ void CUDAPathTracer::loadCamera()
     cudaError_t err = cudaSuccess;
     //cudaMalloc((void**)&gpu_camera,sizeof(GPUCamera));
     err = cudaMemcpyToSymbol(const_camera, &tmpCam,sizeof(GPUCamera));
-    
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n", cudaGetErrorString(err));
@@ -130,21 +131,21 @@ void CUDAPathTracer::loadPrimitives()
         primitives.reserve(primitives.size() + obj_prims.size());
         primitives.insert(primitives.end(), obj_prims.begin(), obj_prims.end());
     }
-    
+
     int N = primitives.size();
     int types[N];
     int bsdfs[N];
     float positions[9 * N];
     float normals[9 * N];
-    
+
     primNum = N;
 
     map<BSDF*, int> BSDFMap;
-    
+
     for (int i = 0; i < N; i++) {
         types[i] = primitives[i]->getType();
         BSDF* bsdf  = primitives[i]->get_bsdf();
-        
+
         if (BSDFMap.find(bsdf) == BSDFMap.end()) {
             int index = BSDFMap.size();
             BSDFMap[bsdf] = index;
@@ -153,8 +154,8 @@ void CUDAPathTracer::loadPrimitives()
         else{
             bsdfs[i] = BSDFMap[bsdf];
         }
-        
-        
+
+
         if (types[i] == 0) {
             Vector3D o = ((Sphere*)primitives[i])->o;
             positions[9 * i] = o[0];
@@ -167,21 +168,21 @@ void CUDAPathTracer::loadPrimitives()
             int v1 = ((Triangle*)primitives[i])->v1;
             int v2 = ((Triangle*)primitives[i])->v2;
             int v3 = ((Triangle*)primitives[i])->v3;
-            
+
             positions[9 * i] = mesh->positions[v1][0];
             positions[9 * i + 1] = mesh->positions[v1][1];
             positions[9 * i + 2] = mesh->positions[v1][2];
             normals[9 * i] = mesh->normals[v1][0];
             normals[9 * i + 1] = mesh->normals[v1][1];
             normals[9 * i + 2] = mesh->normals[v1][2];
-            
+
             positions[9 * i + 3] = mesh->positions[v2][0];
             positions[9 * i + 4] = mesh->positions[v2][1];
             positions[9 * i + 5] = mesh->positions[v2][2];
             normals[9 * i + 3] = mesh->normals[v2][0];
             normals[9 * i + 4] = mesh->normals[v2][1];
             normals[9 * i + 5] = mesh->normals[v2][2];
-            
+
             positions[9 * i + 6] = mesh->positions[v3][0];
             positions[9 * i + 7] = mesh->positions[v3][1];
             positions[9 * i + 8] = mesh->positions[v3][2];
@@ -190,14 +191,14 @@ void CUDAPathTracer::loadPrimitives()
             normals[9 * i + 8] = mesh->normals[v3][2];
         }
     }
-    
+
     GPUBSDF BSDFArray[BSDFMap.size()];
-    
+
     for (auto itr = BSDFMap.begin(); itr != BSDFMap.end(); itr++) {
         GPUBSDF& gpu_bsdf = BSDFArray[itr->second];
         BSDF* bsdf = itr->first;
         gpu_bsdf.type = bsdf->getType();
-        
+
         if (gpu_bsdf.type == 0) {
             Spectrum& albedo = ((DiffuseBSDF*)bsdf)->albedo;
             gpu_bsdf.albedo[0] = albedo.r;
@@ -236,29 +237,29 @@ void CUDAPathTracer::loadPrimitives()
 
         }
     }
-    
+
     cudaMalloc((void**)&gpu_types, N * sizeof(int));
     cudaMalloc((void**)&gpu_bsdfIndexes, N * sizeof(int));
     cudaMalloc((void**)&gpu_positions, 9 * N * sizeof(float));
     cudaMalloc((void**)&gpu_normals, 9 * N * sizeof(float));
-    
+
     cudaMemcpy(gpu_types, types, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_bsdfIndexes, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
-    
+
     //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
-    
+
     cudaError_t err = cudaSuccess;
-    
+
     err = cudaMemcpyToSymbol(const_bsdfs, BSDFArray, BSDFMap.size() * sizeof(GPUBSDF));
-    
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    
+
 }
 
 // Load light
@@ -326,10 +327,10 @@ void CUDAPathTracer::loadLights() {
 
 
     cudaError_t err = cudaSuccess;
-    
+
     err = cudaMemcpyToSymbol(const_lights, tmpLights, sizeof(GPULight) * tmpLightNum);
-    
-    
+
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
@@ -360,11 +361,11 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.normals = gpu_normals;
     tmpParams.primNum = primNum;
     tmpParams.frameBuffer = frameBuffer;
-    
+
     cudaError_t err = cudaSuccess;
 
     err = cudaMemcpyToSymbol(const_params, &tmpParams, sizeof(Parameters));
-    
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
@@ -378,15 +379,15 @@ void CUDAPathTracer::loadParameters() {
 void CUDAPathTracer::updateHostSampleBuffer() {
     float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * screenW * screenH));
     cudaError_t err = cudaSuccess;
-    
+
     err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * screenW * screenH), cudaMemcpyDeviceToHost);
-    
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    
+
     pathTracer->updateBufferFromGPU(gpuBuffer);
     free(gpuBuffer);
 }
