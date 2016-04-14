@@ -22,9 +22,9 @@ tracePixel()
         return;
     }
     
-    const_params.frameBuffer[3 * index] = 2.0;
-    const_params.frameBuffer[3 * index + 1] = 2.0;
-    const_params.frameBuffer[3 * index + 2] = 2.0;
+    const_params.frameBuffer[3 * index] = 1.0;
+    const_params.frameBuffer[3 * index + 1] = 0.5;
+    const_params.frameBuffer[3 * index + 2] = 0.5;
 }
 
 

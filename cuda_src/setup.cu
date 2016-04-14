@@ -58,8 +58,8 @@ void CUDAPathTracer::startRayTracing()
     int blockDim = 256;
     int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
     
-    tracePixel<<<blockDim, gridDim>>>();
-    
+    tracePixel<<<gridDim, blockDim>>>();
+    cudaThreadSynchronize();
 }
 
 
@@ -75,6 +75,7 @@ void CUDAPathTracer::init()
     cudaDeviceSynchronize();
     
     startRayTracing();
+    
 }
 
 void CUDAPathTracer::createFrameBuffer()
@@ -378,6 +379,38 @@ void CUDAPathTracer::loadParameters() {
     //Parameters rtParms;
     //cudaMemcpy(&rtParms, parms, sizeof(Parameters), cudaMemcpyDeviceToHost);
     //printf("screenW: %d, screenH: %d, max_ray_depth: %d, ns_aa: %d, ns_area_light: %d, lightNum: %d\n", rtParms.screenW, rtParms.screenH, rtParms.max_ray_depth, rtParms.ns_aa, rtParms.ns_area_light, rtParms.lightNum);
+}
+
+void CUDAPathTracer::updateHostSampleBuffer() {
+    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * screenW * screenH));
+    cudaError_t err = cudaSuccess;
+    
+    err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * screenW * screenH), cudaMemcpyDeviceToHost);
+    
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    
+    pathTracer->updateBufferFromGPU(gpuBuffer);
+    free(gpuBuffer);
+}
+
+void PathTracer::updateBufferFromGPU(float* gpuBuffer) {
+    size_t w = sampleBuffer.w;
+    size_t h = sampleBuffer.h;
+    for (int x = 0; x < w; ++x)
+    {
+        for (int y = 0; y < h; ++y)
+        {
+            int index = 3 * (y * w + x);
+            Spectrum s(gpuBuffer[index], gpuBuffer[index + 1], gpuBuffer[index + 2]);
+            //cout << s.r << "," << s.g << "," << s.b << endl;
+            sampleBuffer.update_pixel(s, x, y);
+        }
+    }
+    sampleBuffer.toColor(frameBuffer, 0, 0, w, h);
 }
 
 

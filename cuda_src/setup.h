@@ -120,6 +120,7 @@ public:
     
     void startRayTracing();
     
+    void updateHostSampleBuffer();
     
 private:
     PathTracer* pathTracer;

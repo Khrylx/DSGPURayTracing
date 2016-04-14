@@ -136,6 +136,7 @@ void PathTracer::update_screen() {
     case RENDERING:
       glDrawPixels(frameBuffer.w, frameBuffer.h, GL_RGBA,
                    GL_UNSIGNED_BYTE, &frameBuffer.data[0]);
+
       break;
     case DONE:
       //sampleBuffer.tonemap(frameBuffer, tm_gamma, tm_level, tm_key, tm_wht);
@@ -398,11 +399,10 @@ void PathTracer::key_press(int key) {
   }
 }
 
-    void PathTracer::transferToGPU(){
-        
-    }
+void PathTracer::transferToGPU(){
     
-    
+}
+
 Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
 
   Intersection isect;

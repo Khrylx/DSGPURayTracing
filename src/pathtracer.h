@@ -193,7 +193,9 @@ class PathTracer {
    */
   void log_ray_hit(const Ray& r, double hit_t);
 
-    void transferToGPU();
+  void transferToGPU();
+
+  void updateBufferFromGPU(float* gpuBuffer);
     
     
   enum State {
