@@ -12,6 +12,12 @@ __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
 __constant__  Parameters const_params;
 
+__device__ float2 gridSampler(curandState *s) {
+    float2 rt;
+    rt.x = curand_uniform(s);
+    rt.y = curand_uniform(s);
+    return rt;
+}
 
 __device__ void
 generateRay(GPURay* ray, float x, float y)
@@ -32,26 +38,33 @@ generateRay(GPURay* ray, float x, float y)
 }
 
 __device__ float3
-tracePixel(int x, int y, bool verbose)
+tracePixel(curandState* s, int x, int y, bool verbose)
 {
-    float3 s = make_float3(1.0, 0.0, 0.0);
+    float3 spec = make_float3(1.0, 0.0, 0.0);
 
     int w = const_params.screenW;
     int h = const_params.screenH;
 
-    float px = x / (float)w;
-    float py = y / (float)h;
 
-    GPURay ray;
-    generateRay(&ray, px, py);
-
-    if(verbose)
+    for (int i = 0; i < 5; i++)
     {
-        printf("%f %f %f\n", ray.o[0], ray.o[1], ray.o[2]);
-        printf("%f %f %f\n", ray.d[0], ray.d[1], ray.d[2]);
+        float2 r = gridSampler(s);
+        float px = (x + r.x) / (float)w;
+        float py = (y + r.y) / (float)h;
+
+        GPURay ray;
+        generateRay(&ray, px, py);
+
+        // if(verbose)
+        // {
+        //     printf("%f %f\n", r.x, r.y);
+        //     printf("%f %f %f\n", ray.o[0], ray.o[1], ray.o[2]);
+        //     printf("%f %f %f\n", ray.d[0], ray.d[1], ray.d[2]);
+        // }
     }
 
-    return s;
+
+    return spec;
 }
 
 
@@ -64,10 +77,13 @@ traceScene()
         return;
     }
 
+    curandState s;
+    curand_init((unsigned int)index, 0, 0, &s);
+
     int x = index % const_params.screenW;
     int y = index / const_params.screenW;
 
-    tracePixel(x, y, x == 500 && y == 300);
+    tracePixel(&s, x, y, x == 500 && y == 300);
 
     const_params.frameBuffer[3 * index] = 1.0;
     const_params.frameBuffer[3 * index + 1] = 0.5;
@@ -75,16 +91,8 @@ traceScene()
 
     // initialize random sampler state
     // need to pass to further functions
-    curandState s;
-    curand_init((unsigned int)index, 0, 0, &s);
 
-}
 
-__device__ float2 gridSampler(curandState *s) {
-    float2 rt;
-    rt.x = curand_uniform(s);
-    rt.y = curand_uniform(s);
-    return rt;
 }
 
 __global__ void
