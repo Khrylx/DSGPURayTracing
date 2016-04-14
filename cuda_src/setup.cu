@@ -57,7 +57,7 @@ void CUDAPathTracer::startRayTracing()
     int blockDim = 256;
     int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
 
-    traceScene<<<gridDim, blockDim>>>();
+    traceScene<<<gridDim, blockDim>>>(0, 0, screenW, screenH);
 
     cudaError_t err = cudaPeekAtLastError();
 

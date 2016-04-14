@@ -92,7 +92,7 @@ tracePixel(curandState* s, int x, int y, bool verbose)
         spec.x += tmpSpec.x;
         spec.y += tmpSpec.y;
         spec.z += tmpSpec.z;
-        
+
     }
 
 
@@ -101,19 +101,20 @@ tracePixel(curandState* s, int x, int y, bool verbose)
 
 
 __global__ void
-traceScene()
+traceScene(int xStart, int yStart, int width, int height)
 {
-    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int tIndex = blockDim.x * blockIdx.x + threadIdx.x;
+    int x = xStart + tIndex % width;
+    int y = yStart + tIndex / width;
+    int index = x + y * const_params.screenW;
 
-    if (index >= const_params.screenW * const_params.screenH) {
+    if (tIndex >= width * height || index > const_params.screenW * const_params.screenH) {
         return;
     }
 
+
     curandState s;
     curand_init((unsigned int)index, 0, 0, &s);
-
-    int x = index % const_params.screenW;
-    int y = index / const_params.screenW;
 
     float3 spec = tracePixel(&s, x, y, x == 500 && y == 300);
 
