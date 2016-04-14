@@ -12,15 +12,51 @@ __constant__  GPULight const_lights[MAX_NUM_LIGHT];
 __constant__  Parameters const_params;
 
 
+__device__ void
+generateRay(GPURay* ray, float x, float y)
+{
+    float sp[3];
+    sp[0] = -(x-0.5) * const_camera.widthDivDist;
+    sp[1] = -(y-0.5) * const_camera.heightDivDist;
+    sp[2] = 1;
+    float dir[3];
+    dir[0] = -sp[0];
+    dir[1] = -sp[1];
+    dir[2] = -sp[2];
+    float world_sp[3];
+    MatrixMulVector3D(const_camera.c2w, sp, world_sp);
+    
+}
+
+__device__ float3
+tracePixel(int x, int y)
+{
+    float3 s;
+    
+    int w = const_params.screenW;
+    int h = const_params.screenH;
+    
+    float px = x / (float)w;
+    float py = y / (float)h;
+    
+    GPURay ray;
+    generateRay(&ray, px, py);
+}
+
 
 __global__ void
-tracePixel()
+traceScene()
 {
     int index = blockDim.x * blockIdx.x + threadIdx.x;
     
     if (index >= const_params.screenW * const_params.screenH) {
         return;
     }
+    
+    int x = index % const_params.screenW;
+    int y = index / const_params.screenW;
+    
+    tracePixel(x, y);
     
     const_params.frameBuffer[3 * index] = 1.0;
     const_params.frameBuffer[3 * index + 1] = 0.5;
@@ -46,8 +82,8 @@ vectorAdd(float *A, float *B, float *C, int numElements)
 __global__ void
 printInfo()
 {
-    GPUBSDF* bsdfs = const_params.bsdfs;
-    GPUCamera* camera = const_params.camera;
+    GPUBSDF* bsdfs = const_bsdfs;
+    GPUCamera camera = const_camera;
     
     for (int i = 0; i < 8; i++) {
         if (bsdfs[i].type == 0) {
@@ -69,7 +105,7 @@ printInfo()
     }
     
     
-    printf("%lf %lf %lf\n", camera->pos[0], camera->pos[1], camera->pos[2] );
+    printf("%lf %lf %lf\n", camera.pos[0], camera.pos[1], camera.pos[2] );
     
     
     float* positions = const_params.positions;
@@ -77,7 +113,7 @@ printInfo()
     
     printf("+++++++++++++++++++++++\n");
     for (int i = 0; i < const_params.primNum; i++) {
-        printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_params.bsdfs[const_params.bsdfIndexes[i]].type);
+        printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_bsdfs[const_params.bsdfIndexes[i]].type);
         
         printf("%lf %lf %lf\n", positions[9 * i], positions[9 * i + 1], positions[9 * i + 2] );
         printf("%lf %lf %lf\n", positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5] );

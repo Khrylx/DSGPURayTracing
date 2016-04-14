@@ -49,7 +49,6 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_positions);
     cudaFree(gpu_normals);
     cudaFree(frameBuffer);
-
 }
 
 
@@ -58,7 +57,7 @@ void CUDAPathTracer::startRayTracing()
     int blockDim = 256;
     int gridDim = (screenW * screenH + blockDim - 1) / blockDim;
     
-    tracePixel<<<gridDim, blockDim>>>();
+    traceScene<<<gridDim, blockDim>>>();
     cudaThreadSynchronize();
 }
 
@@ -361,11 +360,6 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.normals = gpu_normals;
     tmpParams.primNum = primNum;
     tmpParams.frameBuffer = frameBuffer;
-    
-    cudaGetSymbolAddress((void **)&tmpParams.bsdfs, const_bsdfs);
-    cudaGetSymbolAddress((void **)&tmpParams.lights, const_lights);
-    cudaGetSymbolAddress((void **)&tmpParams.camera, const_camera);
-    
     
     cudaError_t err = cudaSuccess;
 

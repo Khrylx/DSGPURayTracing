@@ -470,6 +470,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
                 pathtracer->sampleBuffer.clear();
                 pathtracer->frameBuffer.clear();
                 cuPathTracer->updateHostSampleBuffer();
+                delete cuPathTracer;
             mode = RENDER_MODE;
             break;
           case 'v': case 'V':

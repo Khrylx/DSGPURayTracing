@@ -53,10 +53,6 @@ struct Parameters
     int lightNum;
     int primNum;
     
-    GPUBSDF* bsdfs;
-    GPULight* lights;
-    GPUCamera* camera;
-    
     int* types;
     int* bsdfIndexes;
     float* positions;

@@ -4,23 +4,49 @@
 #include <cuda_runtime.h>
 #define Pi 3.1415926
 
-extern "C" __device__ inline float
+__device__ inline float
 power(float X,float Y)
 {
     return pow(X,Y);
 }
 
-extern "C" __device__ inline float
+__device__ inline float
 dist3D(const float *X, const float *Y)
 {
     return sqrt((X[0]-Y[0])*(X[0]-Y[0])+(X[1]-Y[1])*(X[1]-Y[1])+(X[2]-Y[2])*(X[2]-Y[2]));
 }
 
-extern "C" __device__ inline float
+__device__ inline float
 norm3D(const float *X)
 {
     return sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
 }
+
+
+__device__ inline void
+initVector3D(float x, float y, float z, float* S)
+{
+    S[0] = x;
+    S[1] = y;
+    S[2] = z;
+}
+
+__device__ inline void
+negVector3D(const float *X,float* S)
+{
+    S[0] = -X[0];
+    S[1] = -X[1];
+    S[2] = -X[2];
+}
+
+__device__ inline void
+addVector3D(const float *X,float* S)
+{
+    S[0] += X[0];
+    S[1] += X[1];
+    S[2] += X[2];
+}
+
 
 __device__ inline void
 VectorMulVectorT3D(const float *X,float* S)
@@ -79,7 +105,7 @@ void inverse3D(const float* X,float* Y)
 }
 
 inline __device__
-void VectorLMulMatrix3D(float* X,float* S,float* Y)
+void VectorTMulMatrix3D(float* X,float* S,float* Y)
 {
     for (int i=0;i<3;i++)
     {
@@ -89,7 +115,7 @@ void VectorLMulMatrix3D(float* X,float* S,float* Y)
 }
 
 inline __device__
-void VectorRMulMatrix3D(float* X,float* S,float* Y)
+void MatrixMulVector3D(float* S,float* X,float* Y)
 {
     for (int i=0;i<3;i++)
     {
