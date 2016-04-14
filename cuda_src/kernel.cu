@@ -377,6 +377,30 @@ __device__ float3 PointLight_sample_L(GPULight *light, float *p, float *wi, floa
     return spec;
 }
 
+__device__ float3 AreaLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
+    float2 sample = gridSampler(s);
+    float d[3];
+    for (int i = 0; i < 3; ++i) {
+        d[i] = light->position[i] + sample.x * light->dim_x[i] + sample.y * light->dim_y[i] - p[i];
+    }
+    float cosTheta = VectorDot3D(d, light->direction);
+    float sqDist = VectorDot3D(d, d); // norm square
+    float dist = sqrt(sqDist);
+    for (int i = 0; i < 3; ++i) {
+        wi[i] = d[i] / dist;
+    }
+    *distToLight = dist;
+    *pdf = sqDist / (light->area * fabs(cosTheta));
+
+    float3 spec;
+    if (cosTheta < 0) {
+        spec.x = light->radiance[0];
+        spec.y = light->radiance[1];
+        spec.z = light->radiance[2];
+    }
+    return spec;
+}
+
 __device__ float3 sample_L(int lightIndex, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     GPULight *light = const_lights + lightIndex;
     float3 spec;
@@ -391,6 +415,7 @@ __device__ float3 sample_L(int lightIndex, float *p, float *wi, float *distToLig
             spec = PointLight_sample_L(light, p, wi, distToLight, pdf, s);
         break;
         case 3:
+            spec = AreaLight_sample_L(light, p, wi, distToLight, pdf, s);
         break;
         default:
         break;
