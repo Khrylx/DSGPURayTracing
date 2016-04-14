@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../src/pathtracer.h"
 #include "../src/static_scene/sphere.h"
 #include "../src/static_scene/triangle.h"
