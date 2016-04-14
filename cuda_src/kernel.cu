@@ -278,6 +278,20 @@ __device__ bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect
     return true;
 }
 
+__device__ bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) {
+    for (int i = 0; i < 3; ++i) {
+        if (r.d[i] != 0.0) {
+            double tx1 = (bbox->min[i] - r.o[i]) / r.d[i];
+            double tx2 = (bbox->max[i] - r.o[i]) / r.d[i];
+
+            t0 = fmaxf(t0, fminf(tx1, tx2));
+            t1 = fminf(t1, fmaxf(tx1, tx2));
+        }
+    }
+
+    return t0 <= t1;
+}
+
 __device__ bool intersect(int primIndex, GPURay& r) {
     if (const_params.types[primIndex] == 0) {
         // sphere
