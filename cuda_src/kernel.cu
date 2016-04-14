@@ -26,27 +26,19 @@ tracePixel()
     const_params.frameBuffer[3 * index] = 1.0;
     const_params.frameBuffer[3 * index + 1] = 0.5;
     const_params.frameBuffer[3 * index + 2] = 0.5;
+
+    // initialize random sampler state
+    // need to pass to further functions
+    curandState s;
+    curand_init((unsigned int)index, 0, 0, &s);
+
 }
 
 __device__ float2 gridSampler(curandState *s) {
     float2 rt;
-    rt[0] = curand_uniform(s);
-    rt[1] = curand_uniform(s);
+    rt.x = curand_uniform(s);
+    rt.y = curand_uniform(s);
     return rt;
-}
-
-
-__global__ void
-testSampler()
-{
-    unsigned int seed = thread_id;
-    curandState s;
-    curand_init(seed, 0, 0, &s);
-    for (int i = 0; i < 100; ++i)
-    {
-        float2 result = gridSampler(&s);
-        printf("x: %f, y: %f\n", result[0], result[1]);
-    }
 }
 
 __global__ void
