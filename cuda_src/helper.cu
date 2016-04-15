@@ -28,12 +28,12 @@ __device__ inline float3 UniformHemisphereSampler(curandState *s) {
 
 __device__ inline float3 CosineWeightedHemisphereSampler(float *pdf, curandState *s) {
     float2 tmp = gridSampler(s);
-    double r1 = tmp.x;
-    double r2 = tmp.y;
-    double theta = acos(1 - 2 * r1) / 2;
-    double phi = 2 * PI * r2;
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+    float r1 = tmp.x;
+    float r2 = tmp.y;
+    float theta = acos(1 - 2 * r1) / 2;
+    float phi = 2 * PI * r2;
+    float sin_theta = sin(theta);
+    float cos_theta = cos(theta);
     *pdf = cos_theta / PI;
 
     float3 rt;
@@ -312,6 +312,11 @@ printInfo()
 {
     GPUBSDF* bsdfs = const_bsdfs;
     GPUCamera camera = const_camera;
+
+    for (int i = 0; i < const_params.lightNum; i++)
+    {
+        printf("ligth: %d\n", const_lights[i].type);
+    }
 
     for (int i = 0; i < 8; i++) {
         if (bsdfs[i].type == 0) {

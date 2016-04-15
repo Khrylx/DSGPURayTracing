@@ -45,6 +45,9 @@ __device__ inline float3 PointLight_sample_L(GPULight *light, float *p, float *w
 
 __device__ inline float3 AreaLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     float2 sample = gridSampler(s);
+    sample.x -= 0.5;
+    sample.y -= 0.5;
+
     float d[3];
     for (int i = 0; i < 3; ++i) {
         d[i] = light->position[i] + sample.x * light->dim_x[i] + sample.y * light->dim_y[i] - p[i];
@@ -58,7 +61,7 @@ __device__ inline float3 AreaLight_sample_L(GPULight *light, float *p, float *wi
     *distToLight = dist;
     *pdf = sqDist / (light->area * fabs(cosTheta));
 
-    float3 spec;
+    float3 spec = make_float3(0.0, 0.0, 0.0);
     if (cosTheta < 0) {
         spec.x = light->radiance[0];
         spec.y = light->radiance[1];
