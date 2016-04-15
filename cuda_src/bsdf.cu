@@ -1,4 +1,4 @@
-__device__ float3 BSDF_f(int bsdfIndex, float* wo, float* wi)
+__device__ inline float3 BSDF_f(int bsdfIndex, float* wo, float* wi)
 {
     GPUBSDF* bsdf = const_bsdfs + bsdfIndex;
 
@@ -9,31 +9,31 @@ __device__ float3 BSDF_f(int bsdfIndex, float* wo, float* wi)
     return make_float3(0.0, 0.0, 0.0);
 }
 
-__device__ float3 DiffuseBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
+__device__ inline float3 DiffuseBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
 	float3 tmp = CosineWeightedHemisphereSampler(pdf, s);
 	readVector3D(tmp, wi);
 	return make_float3(bsdf->albedo[0] / PI, bsdf->albedo[1] / PI, bsdf->albedo[2] / PI);
 }
 
-__device__ void reflect(const float *wo, float *wi) {
+__device__ inline void reflect(const float *wo, float *wi) {
 	wi[0] = -wo[0];
 	wi[1] = -wo[1];
 	wi[2] = wo[2];
 }
 
-__device__ float3 MirrorBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf) {
+__device__ inline float3 MirrorBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf) {
 	reflect(wo, wi);
 	*pdf = 1.0;
 	return make_float3(bsdf->reflectance[0] / fmaxf(wo[2], 1e-8), bsdf->reflectance[1] / fmaxf(wo[2], 1e-8), bsdf->reflectance[2] / fmaxf(wo[2], 1e-8));
 }
 
-__device__ float3 EmissionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
+__device__ inline float3 EmissionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
 	float3 tmp = CosineWeightedHemisphereSampler(pdf, s);
 	readVector3D(tmp, wi);
 	return make_float3(0.0, 0.0, 0.0);
 }
 
-__device__ bool refract(const float *wo, float *wi, float ior) {
+__device__ inline bool refract(const float *wo, float *wi, float ior) {
 	int sign = 1;
 	float ratio = ior;
 	if (wo[2] > 0) {
@@ -57,7 +57,7 @@ __device__ bool refract(const float *wo, float *wi, float ior) {
     return true;
 }
 
-__device__ float3 RefractionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf) {
+__device__ inline float3 RefractionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf) {
 	*pdf = 1;
 	bool res = refract(wo, wi, bsdf->ior);
 	if (!res) {
@@ -76,7 +76,7 @@ __device__ float3 RefractionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float 
 	return make_float3(bsdf->transmittance[0] * coef, bsdf->transmittance[1] * coef, bsdf->transmittance[2] * coef);
 }
 
-__device__ float3 GlassBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
+__device__ inline float3 GlassBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf, curandState *s) {
 	*pdf = 1;
 
 	bool res = refract(wo, wi, bsdf->ior);
@@ -110,7 +110,7 @@ __device__ float3 GlassBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, 
     }
 }
 
-__device__ float3 BSDF_sample_f(int BSDFIndex, const float *wo, float *wi, float *pdf, curandState *s) {
+__device__ inline float3 BSDF_sample_f(int BSDFIndex, const float *wo, float *wi, float *pdf, curandState *s) {
 	GPUBSDF *bsdf = const_bsdfs + BSDFIndex;
 	float3 spec = make_float3(0.0, 0.0, 0.0);
 

@@ -1,4 +1,4 @@
-__device__ float3 DirectionalLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf) {
+__device__ inline float3 DirectionalLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf) {
     readVector3D(light->dirToLight, wi);
     *distToLight = INF_FLOAT;
     *pdf = 1.0;
@@ -10,7 +10,7 @@ __device__ float3 DirectionalLight_sample_L(GPULight *light, float *p, float *wi
     return spec;
 }
 
-__device__ float3 InfiniteHemisphereLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
+__device__ inline float3 InfiniteHemisphereLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     float3 dirTmp = UniformHemisphereSampler(s);
     float dir[3];
     readVector3D(dirTmp, dir);
@@ -26,7 +26,7 @@ __device__ float3 InfiniteHemisphereLight_sample_L(GPULight *light, float *p, fl
     return spec;
 }
 
-__device__ float3 PointLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
+__device__ inline float3 PointLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     float d[3];
     float d_unit[3];
     subVector3D(light->position, p, d);
@@ -43,7 +43,7 @@ __device__ float3 PointLight_sample_L(GPULight *light, float *p, float *wi, floa
     return spec;
 }
 
-__device__ float3 AreaLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
+__device__ inline float3 AreaLight_sample_L(GPULight *light, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     float2 sample = gridSampler(s);
     float d[3];
     for (int i = 0; i < 3; ++i) {
@@ -67,7 +67,7 @@ __device__ float3 AreaLight_sample_L(GPULight *light, float *p, float *wi, float
     return spec;
 }
 
-__device__ float3 sample_L(int lightIndex, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
+__device__ inline float3 sample_L(int lightIndex, float *p, float *wi, float *distToLight, float *pdf, curandState *s) {
     GPULight *light = const_lights + lightIndex;
     float3 spec;
     switch(light->type) {
