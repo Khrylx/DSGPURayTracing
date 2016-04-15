@@ -106,7 +106,6 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
             addScaledVector3D(hit_p, isect.n, eps, sR.o);
             addScaledVector3D(sR.o, dir_to_light, EPS_K, sR.o);
             readVector3D(dir_to_light, sR.d);
-
             sR.min_t = 0;
             sR.max_t = dist_to_light * 0.99;
 
@@ -136,14 +135,32 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
         L_out.z += L.z * scale;
     }
 
-    return L_out;
-
-    if(r.depth >= const_params.max_ray_depth){
+    if(ray->depth >= const_params.max_ray_depth){
         return L_out;
     }
 
-    
+    float3 f = BSDF_sample_f(isect.bsdfIndex, w_out, w_in, &pdf, s);
 
+    float cos_theta = fabs(w_in[2]);
+    float v[3];
+    MatrixMulVector3D(o2w, w_in, v);
+    normalize3D(v);
+
+    GPURay newR;
+    addScaledVector3D(hit_p, v, EPS_K, newR.o);
+    readVector3D(v, newR.d);
+    newR.depth = ray->depth + 1;
+    newR.min_t = 0;
+    newR.max_t = INF_FLOAT;
+
+    float coeff = cos_theta / pdf;
+    float3 indirL = traceRay(s, &newR, bsdf.type != 0 && bsdf.type != 4);
+
+    L_out.x += coeff * indirL.x * f.x;
+    L_out.y += coeff * indirL.x * f.y;
+    L_out.z += coeff * indirL.x * f.z;
+
+    return L_out;
 }
 
 __device__ float3
