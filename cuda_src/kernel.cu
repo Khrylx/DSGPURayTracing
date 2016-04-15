@@ -5,6 +5,8 @@
 #define MAX_NUM_LIGHT 20
 #define MAX_NUM_BSDF 20
 
+//#define RUSSIAN_ROULETTE
+
 #define INF_FLOAT 1e20
 #define ESP_N 5e-3
 #define EPS_K 1e-4
@@ -141,6 +143,13 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
 
     float3 f = BSDF_sample_f(isect.bsdfIndex, w_out, w_in, &pdf, s);
 
+#ifdef RUSSIAN_ROULETTE
+    float terminateProbability = fmaxf(1 - illum(f), 0.f);
+    if (curand_uniform(s) < terminateProbability){
+        return L_out;
+    }
+#endif
+
     float cos_theta = fabs(w_in[2]);
     float v[3];
     MatrixMulVector3D(o2w, w_in, v);
@@ -153,12 +162,17 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
     newR.min_t = 0;
     newR.max_t = INF_FLOAT;
 
+#ifdef RUSSIAN_ROULETTE
+    float coeff = cos_theta / pdf / (1 - terminateProbability);
+#else
     float coeff = cos_theta / pdf;
+#endif
+
     float3 indirL = traceRay(s, &newR, bsdf.type != 0 && bsdf.type != 4);
 
     L_out.x += coeff * indirL.x * f.x;
-    L_out.y += coeff * indirL.x * f.y;
-    L_out.z += coeff * indirL.x * f.z;
+    L_out.y += coeff * indirL.y * f.y;
+    L_out.z += coeff * indirL.z * f.z;
 
     return L_out;
 }

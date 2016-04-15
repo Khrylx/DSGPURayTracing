@@ -469,6 +469,13 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
 
             pathtracer->sampleBuffer.clear();
             pathtracer->frameBuffer.clear();
+
+            pathtracer->timer.start();
+            cuPathTracer->startRayTracing();
+            pathtracer->timer.stop();
+            fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
+
+
             cuPathTracer->updateHostSampleBuffer();
             delete cuPathTracer;
             mode = RENDER_MODE;

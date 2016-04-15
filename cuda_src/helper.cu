@@ -43,6 +43,12 @@ __device__ inline float3 CosineWeightedHemisphereSampler(float *pdf, curandState
     return rt;
 }
 
+
+__device__ inline float illum(float3& s)
+{
+    return 0.2126 * s.x + 0.7152 * s.y + 0.0722 * s.z;
+}
+
 __device__ inline float
 power(float X,float Y)
 {
@@ -315,7 +321,7 @@ printInfo()
 
     for (int i = 0; i < const_params.lightNum; i++)
     {
-        printf("ligth: %d\n", const_lights[i].type);
+        printf("light type: %d\n", const_lights[i].type);
     }
 
     for (int i = 0; i < 8; i++) {
