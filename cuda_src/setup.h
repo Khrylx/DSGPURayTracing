@@ -8,6 +8,12 @@
 using namespace CMU462;
 using namespace StaticScene;
 
+struct GPUBBox
+{
+    float max[3];
+    float min[3];
+};
+
 struct GPUCamera{
     float widthDivDist;
     float heightDivDist;

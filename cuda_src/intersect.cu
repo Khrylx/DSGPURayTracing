@@ -1,3 +1,17 @@
+__device__ bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) {
+    for (int i = 0; i < 3; ++i) {
+        if (r.d[i] != 0.0) {
+            double tx1 = (bbox->min[i] - r.o[i]) / r.d[i];
+            double tx2 = (bbox->max[i] - r.o[i]) / r.d[i];
+
+            t0 = fmaxf(t0, fminf(tx1, tx2));
+            t1 = fminf(t1, fmaxf(tx1, tx2));
+        }
+    }
+
+    return t0 <= t1;
+}
+
 // primitive and normals are shift pointers to the primitive and normal we selected
 __device__ bool triangleIntersect(int primIndex, GPURay& r) {
 
