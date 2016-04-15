@@ -28,9 +28,9 @@ void usage(const char* binaryName) {
 }
 
 HDRImageBuffer* load_exr(const char* file_path) {
-  
+
   const char* err;
-  
+
   EXRImage exr;
   InitEXRImage(&exr);
 
@@ -58,8 +58,8 @@ HDRImageBuffer* load_exr(const char* file_path) {
   float* channel_g = (float*) exr.images[1];
   float* channel_b = (float*) exr.images[0];
   for (size_t i = 0; i < exr.width * exr.height; i++) {
-    envmap->data[i] = Spectrum(channel_r[i], 
-                               channel_g[i], 
+    envmap->data[i] = Spectrum(channel_r[i],
+                               channel_g[i],
                                channel_b[i]);
   }
 
@@ -70,10 +70,10 @@ extern int test();
 
 int main( int argc, char** argv ) {
 
-  test();
+  //test();
 
   std::srand(std::time(0));
-    
+
   // get the options
   AppConfig config; int opt;
   while ( (opt = getopt(argc, argv, "s:l:t:m:e:h")) != -1 ) {  // for each option...

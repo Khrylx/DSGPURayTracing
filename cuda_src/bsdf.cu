@@ -114,7 +114,7 @@ __device__ inline float3 BSDF_sample_f(int BSDFIndex, const float *wo, float *wi
 	GPUBSDF *bsdf = const_bsdfs + BSDFIndex;
 	float3 spec = make_float3(0.0, 0.0, 0.0);
 
-	switch (BSDFIndex) {
+	switch (bsdf->type) {
 		case 0: // DiffuseBSDF
 			spec = DiffuseBSDF_sample_f(bsdf, wo, wi, pdf, s);
 			break;

@@ -55,8 +55,8 @@ CUDAPathTracer::~CUDAPathTracer()
 void CUDAPathTracer::startRayTracing()
 {
 
-    int xTileNum = 20;
-    int yTileNum = 20;
+    int xTileNum = 10;
+    int yTileNum = 10;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
     int blockDim = 256;
@@ -95,8 +95,6 @@ void CUDAPathTracer::init()
 
     //printInfo<<<1, 1>>>();
     //cudaDeviceSynchronize();
-
-    startRayTracing();
 
 }
 
