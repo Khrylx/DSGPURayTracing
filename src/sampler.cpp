@@ -29,7 +29,7 @@ Vector3D UniformHemisphereSampler3D::get_sample() const {
   return Vector3D(sin_theta*cos(phi), sin_theta*sin(phi), r1);
 
 }
-    
+
     
     Vector3D CosineWeightedHemisphereSampler3D::get_sample() const{
         double r1 = std::rand()/(double)RAND_MAX;
