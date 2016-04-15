@@ -56,3 +56,22 @@ __device__ bool refract(const float *wo, float *wi, float ior) {
     normalize3D(wi);
     return true;
 }
+
+__device__ float3 RefractionBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, float *pdf) {
+	*pdf = 1;
+	bool res = refract(wo, wi, bsdf->ior);
+	if (!res) {
+		return make_float3(0.0, 0.0, 0.0);
+	}
+
+	double ni = bsdf->ior;
+	double no = 1;
+	if (wo[2] < 0) {
+		double tmp = ni;
+		ni = no;
+		no = tmp;
+	}
+	double ratio = no / ni;
+	double coef = ratio * ratio / fmaxf(fabs(wi[2]), 1e-8);
+	return make_float3(bsdf->transmittance[0] * coef, bsdf->transmittance[1] * coef, bsdf->transmittance[2] * coef);
+}
