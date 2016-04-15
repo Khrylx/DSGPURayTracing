@@ -496,7 +496,7 @@ Spectrum PathTracer::trace_ray(const Ray &r, bool includeLe) {
             double eps = light->is_delta_light()? EPS_N:0;
 
             Ray sR(hit_p + eps * isect.n + EPS_D * dir_to_light , dir_to_light);
-            sR.max_t = dist_to_light;
+            sR.max_t = dist_to_light * 0.999;
 
             if (bvh->intersect(sR)){
                 continue;

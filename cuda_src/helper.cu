@@ -273,6 +273,11 @@ printInfo()
     GPUBSDF* bsdfs = const_bsdfs;
     GPUCamera camera = const_camera;
 
+    for (int i = 0; i < const_params.lightNum; i++)
+    {
+        printf("ligth: %d\n", const_lights[i].type);
+    }
+
     for (int i = 0; i < 8; i++) {
         if (bsdfs[i].type == 0) {
             printf("0: %lf %lf %lf\n", bsdfs[i].albedo[0], bsdfs[i].albedo[1], bsdfs[i].albedo[2] );

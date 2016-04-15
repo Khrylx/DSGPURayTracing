@@ -7,6 +7,7 @@
 
 #define INF_FLOAT 1e20
 #define ESP_N 5e-3
+#define EPS_K 1e-4
 
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
@@ -38,7 +39,7 @@ generateRay(GPURay* ray, float x, float y)
 }
 
 __device__ float3
-traceRay(curandState* s, GPURay* ray)
+traceRay(curandState* s, GPURay* ray, bool includeLe)
 {
     float3 L_out = make_float3(0.0, 0.0, 0.0);
 
@@ -53,6 +54,12 @@ traceRay(curandState* s, GPURay* ray)
 
     if(!isIntersect)
         return L_out;
+
+    GPUBSDF& bsdf = const_bsdfs[isect.bsdfIndex];
+    if(includeLe && bsdf.type == 4)
+    {
+        L_out = make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]);
+    }
 
     // GPUBSDF& bsdf = const_bsdfs[isect.bsdfIndex];
     //
@@ -97,11 +104,11 @@ traceRay(curandState* s, GPURay* ray)
 
             GPURay sR;
             addScaledVector3D(hit_p, isect.n, eps, sR.o);
-            addScaledVector3D(sR.o, dir_to_light, EPS_D, sR.o);
+            addScaledVector3D(sR.o, dir_to_light, EPS_K, sR.o);
             readVector3D(dir_to_light, sR.d);
-            
+
             sR.min_t = 0;
-            sR.max_t = dist_to_light;
+            sR.max_t = dist_to_light * 0.99;
 
             isIntersect = false;
             for(int i = 0; i < const_params.primNum; i++)
@@ -151,7 +158,7 @@ tracePixel(curandState* s, int x, int y, bool verbose)
         GPURay ray;
         generateRay(&ray, px, py);
 
-        float3 tmpSpec = traceRay(s, &ray);
+        float3 tmpSpec = traceRay(s, &ray, true);
         spec.x += tmpSpec.x;
         spec.y += tmpSpec.y;
         spec.z += tmpSpec.z;
