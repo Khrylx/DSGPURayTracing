@@ -11,6 +11,38 @@ __device__ float2 gridSampler(curandState *s) {
     return rt;
 }
 
+__device__ float3 UniformHemisphereSampler(curandState *s) {
+    float2 tmp = gridSampler(s);
+    double r1 = tmp.x;
+    double r2 = tmp.y;
+
+    double sin_theta = sqrt(1 - r1 * r1);
+    double phi = 2 * PI * r2;
+
+    float3 rt;
+    rt.x = sin_theta * cos(phi);
+    rt.y = sin_theta * sin(phi);
+    rt.z = r1;
+    return rt;
+}
+
+__device__ float3 CosineWeightedHemisphereSampler(float *pdf, curandState *s) {
+    float2 tmp = gridSampler(s);
+    double r1 = tmp.x;
+    double r2 = tmp.y;
+    double theta = acos(1 - 2 * r1) / 2;
+    double phi = 2 * PI * r2;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+    *pdf = cos_theta / PI;
+
+    float3 rt;
+    rt.x = sin_theta*cos(phi);
+    rt.y = sin_theta*sin(phi);
+    rt.z = cos_theta;
+    return rt;
+}
+
 __device__ inline float
 power(float X,float Y)
 {
@@ -44,6 +76,14 @@ scaleVector3D(float* X, float a)
     X[0] *= a;
     X[1] *= a;
     X[2] *= a;
+}
+
+__device__ inline void
+scaleVector3D(float* X, float a, float *S)
+{
+    S[0] = a * X[0];
+    S[1] = a * X[1];
+    S[2] = a * X[2];
 }
 
 // S = X + a * Y
