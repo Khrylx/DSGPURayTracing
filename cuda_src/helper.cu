@@ -4,14 +4,14 @@
 #include <cuda_runtime.h>
 #define Pi 3.1415926
 
-__device__ float2 gridSampler(curandState *s) {
+__device__ inline float2 gridSampler(curandState *s) {
     float2 rt;
     rt.x = curand_uniform(s);
     rt.y = curand_uniform(s);
     return rt;
 }
 
-__device__ float3 UniformHemisphereSampler(curandState *s) {
+__device__ inline float3 UniformHemisphereSampler(curandState *s) {
     float2 tmp = gridSampler(s);
     double r1 = tmp.x;
     double r2 = tmp.y;
@@ -26,7 +26,7 @@ __device__ float3 UniformHemisphereSampler(curandState *s) {
     return rt;
 }
 
-__device__ float3 CosineWeightedHemisphereSampler(float *pdf, curandState *s) {
+__device__ inline float3 CosineWeightedHemisphereSampler(float *pdf, curandState *s) {
     float2 tmp = gridSampler(s);
     float r1 = tmp.x;
     float r2 = tmp.y;

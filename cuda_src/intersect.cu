@@ -1,4 +1,4 @@
-__device__ bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) {
+__device__ inline bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) {
     for (int i = 0; i < 3; ++i) {
         if (r.d[i] != 0.0) {
             double tx1 = (bbox->min[i] - r.o[i]) / r.d[i];
@@ -13,7 +13,7 @@ __device__ bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) 
 }
 
 // primitive and normals are shift pointers to the primitive and normal we selected
-__device__ bool triangleIntersect(int primIndex, GPURay& r) {
+__device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 
     float* primitive = const_params.positions + 9 * primIndex;
 
@@ -48,7 +48,7 @@ __device__ bool triangleIntersect(int primIndex, GPURay& r) {
 }
 
 // primitive and normals are shift pointers to the primitive and normal we selected
-__device__ bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
+__device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
 
     float* primitive = const_params.positions + 9 * primIndex;
     float* normals = const_params.normals + 9 * primIndex;
@@ -104,7 +104,7 @@ __device__ bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *ise
     return true;
 }
 
-__device__ bool sphereTest(int primIndex, GPURay& ray, double& t1, double& t2) {
+__device__ inline bool sphereTest(int primIndex, GPURay& ray, double& t1, double& t2) {
     float* primitive = const_params.positions + 9 * primIndex;
     float* o = primitive;
     float r = primitive[3];
@@ -129,12 +129,12 @@ __device__ bool sphereTest(int primIndex, GPURay& ray, double& t1, double& t2) {
     return true;
 }
 
-__device__ bool sphereIntersect(int primIndex, GPURay& r) {
+__device__ inline bool sphereIntersect(int primIndex, GPURay& r) {
     double tmp;
     return sphereTest(primIndex, r, tmp, tmp);
 }
 
-__device__ bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
+__device__ inline bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
     double t1;
     double t2;
     bool res = sphereTest(primIndex, r, t1, t2);
@@ -166,7 +166,7 @@ __device__ bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect
     return true;
 }
 
-__device__ bool intersect(int primIndex, GPURay& r) {
+__device__ inline bool intersect(int primIndex, GPURay& r) {
     if (const_params.types[primIndex] == 0) {
         // sphere
         return sphereIntersect(primIndex, r);
@@ -176,7 +176,7 @@ __device__ bool intersect(int primIndex, GPURay& r) {
     }
 }
 
-__device__ bool intersect(int primIndex, GPURay& r, GPUIntersection *isect) {
+__device__ inline bool intersect(int primIndex, GPURay& r, GPUIntersection *isect) {
     if (const_params.types[primIndex] == 0) {
         // sphere
         return sphereIntersect(primIndex, r, isect);
