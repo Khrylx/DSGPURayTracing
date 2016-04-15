@@ -6,6 +6,7 @@
 #define MAX_NUM_BSDF 20
 
 #define INF_FLOAT 1e20
+#define ESP_N 5e-3
 
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
@@ -15,6 +16,7 @@ __constant__  Parameters const_params;
 #include "helper.cu"
 #include "light.cu"
 #include "intersect.cu"
+#include "bsdf.cu"
 
 
 __device__ void
@@ -52,15 +54,15 @@ traceRay(curandState* s, GPURay* ray)
     if(!isIntersect)
         return L_out;
 
-    GPUBSDF& bsdf = const_bsdfs[isect.bsdfIndex];
-
-    switch(bsdf.type)
-    {
-        case 0: case 4: L_out = make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]); break;
-        case 1: L_out = make_float3(0.0, 1.0, 0.0); break;
-        case 3: L_out = make_float3(0.0, 0.0, 1.0); break;
-        default: break;
-    }
+    // GPUBSDF& bsdf = const_bsdfs[isect.bsdfIndex];
+    //
+    // switch(bsdf.type)
+    // {
+    //     case 0: case 4: L_out = make_float3(bsdf.albedo[0], bsdf.albedo[1], bsdf.albedo[2]); break;
+    //     case 1: L_out = make_float3(0.0, 1.0, 0.0); break;
+    //     case 3: L_out = make_float3(0.0, 0.0, 1.0); break;
+    //     default: break;
+    // }
 
     float hit_p[3];
     addScaledVector3D(ray->o, ray->d, isect.t, hit_p);
@@ -76,6 +78,54 @@ traceRay(curandState* s, GPURay* ray)
     MatrixMulVector3D(w2o, tmpVec, w_out);
     normalize3D(w_out);
 
+    float dir_to_light[3];
+    float dist_to_light;
+    float pdf;
+    float w_in[3];
+
+    for(int i = 0; i < const_params.lightNum; i++)
+    {
+        float3 L = make_float3(0, 0, 0);
+        int num_light_samples = const_lights[i].type == 0 ? 1 : const_params.ns_area_light;
+        float scale = 1.0 / num_light_samples;
+
+        for (int i=0; i<num_light_samples; i++) {
+
+            float3 light_L = sample_L(i, hit_p, dir_to_light, &dist_to_light, &pdf, s);
+
+            float eps = const_lights[i].type == 0 ? EPS_N : 0;
+
+            GPURay sR;
+            addScaledVector3D(hit_p, isect.n, eps, sR.o);
+            addScaledVector3D(sR.o, dir_to_light, EPS_D, sR.o);
+            sR.min_t = 0;
+            sR.max_t = dist_to_light;
+
+            isIntersect = false;
+            for(int i = 0; i < const_params.primNum; i++)
+            {
+                if(intersect(i, sR)){
+                    isIntersect = true;
+                    break;
+                }
+            }
+            if(isIntersect) continue;
+
+            MatrixMulVector3D(w2o, dir_to_light, w_in);
+            normalize3D(w_in);
+
+            float coeff = fmaxf(0.0, w_in[2]) / pdf;
+
+            float3 f = BSDF_f(isect.bsdfIndex, w_out, w_in);
+
+            L.x += coeff * light_L.x * f.x;
+            L.y += coeff * light_L.y * f.y;
+            L.z += coeff * light_L.z * f.z;
+        }
+        L_out.x += L.x * scale;
+        L_out.y += L.y * scale;
+        L_out.z += L.z * scale;
+    }
 
     return L_out;
 
