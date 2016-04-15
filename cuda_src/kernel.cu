@@ -138,6 +138,12 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
 
     return L_out;
 
+    if(r.depth >= const_params.max_ray_depth){
+        return L_out;
+    }
+
+    
+
 }
 
 __device__ float3
