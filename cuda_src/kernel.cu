@@ -98,6 +98,8 @@ traceRay(curandState* s, GPURay* ray)
             GPURay sR;
             addScaledVector3D(hit_p, isect.n, eps, sR.o);
             addScaledVector3D(sR.o, dir_to_light, EPS_D, sR.o);
+            readVector3D(dir_to_light, sR.d);
+            
             sR.min_t = 0;
             sR.max_t = dist_to_light;
 
