@@ -109,3 +109,29 @@ __device__ float3 GlassBSDF_sample_f(GPUBSDF *bsdf, const float *wo, float *wi, 
     	return make_float3(bsdf->transmittance[0] * coef, bsdf->transmittance[1] * coef, bsdf->transmittance[2] * coef);
     }
 }
+
+__device__ float3 BSDF_sample_f(int BSDFIndex, const float *wo, float *wi, float *pdf, curandState *s) {
+	GPUBSDF *bsdf = const_bsdfs + BSDFIndex;
+	float3 spec = make_float3(0.0, 0.0, 0.0);
+
+	switch (BSDFIndex) {
+		case 0: // DiffuseBSDF
+			spec = DiffuseBSDF_sample_f(bsdf, wo, wi, pdf, s);
+			break;
+		case 1: // MirroBSDF
+			spec = MirrorBSDF_sample_f(bsdf, wo, wi, pdf);
+			break;
+		case 2: // RefractionBSDF
+			spec = RefractionBSDF_sample_f(bsdf, wo, wi, pdf);
+			break;
+		case 3: // GlassBSDF
+			spec = GlassBSDF_sample_f(bsdf, wo, wi, pdf, s);
+			break;
+		case 4: // EmissionBSDF
+			spec = EmissionBSDF_sample_f(bsdf, wo, wi, pdf, s);
+			break;
+		default:
+			break;
+	}
+	return spec;
+}
