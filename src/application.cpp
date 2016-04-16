@@ -206,7 +206,6 @@ string Application::info() {
 
 
     void Application::transferToGPU(){
-        set_up_pathtracer();
         cuPathTracer->init();
     }
 
@@ -460,7 +459,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
       if (event == EVENT_PRESS) {
         switch(key) {
           case 'e': case 'E':
-
+            //set_up_pathtracer();
             cuPathTracer = new CUDAPathTracer(pathtracer);
             transferToGPU();
 
@@ -481,7 +480,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             mode = RENDER_MODE;
             break;
           case 'r': case 'R':
-            set_up_pathtracer();
+            //set_up_pathtracer();
             pathtracer->start_raytracing();
             mode = RENDER_MODE;
             break;

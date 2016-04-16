@@ -5,7 +5,7 @@
 #define MAX_NUM_LIGHT 20
 #define MAX_NUM_BSDF 20
 
-//#define RUSSIAN_ROULETTE
+#define RUSSIAN_ROULETTE
 
 #define INF_FLOAT 1e20
 #define ESP_N 5e-3

@@ -14,6 +14,15 @@ struct GPUBBox
     float min[3];
 };
 
+struct GPUBVHNode
+{
+    GPUBVHNode* left;
+    GPUBVHNode* right;
+    int start;
+    int range;
+    GPUBBox bbox;
+};
+
 struct GPUCamera{
     float widthDivDist;
     float heightDivDist;
@@ -59,19 +68,22 @@ struct Parameters
     int ns_area_light; ///< number samples per area light source
     int lightNum;
     int primNum;
-    
+
     int* types;
     int* bsdfIndexes;
     float* positions;
     float* normals;
-    
+
     float* frameBuffer;
+
+    int* BVHPrimMap;
+    GPUBVHNode* BVHRoot;
 };
 
 struct GPURay
 {
     int depth;  ///< depth of the Ray
-    
+
     float o[3];  ///< origin
     float d[3];  ///< direction
     float min_t; ///< treat the ray as a segment (ray "begin" at max_t)
@@ -79,30 +91,33 @@ struct GPURay
 };
 
 struct GPUIntersection {
-    
+
     float t;    ///< time of intersection
-    
+
     int pIndex;
-    
+
     float n[3];  ///< normal at point of intersection
-    
+
     int bsdfIndex; ///< BSDF of the surface at point of intersection
-    
+
     // More to follow.
 };
 
 class CUDAPathTracer{
-    
+
     int screenW, screenH;
     int primNum;
-    
+
     int* gpu_types;    // size: N.    *** 1 for triangle, 0 for sphere
     int* gpu_bsdfIndexes; // size: N.  ***  index for bsdf
     float* gpu_positions; // size: 9 * N.  *** for triangle, 9 floats representing all 3 vertices;
                           // for sphere, first 3 floats represent origin, 4th float represent radius
     float* gpu_normals;  // size: 9 * N.  *** normals for triangle
     float* frameBuffer;
-    
+
+    int* BVHPrimMap;
+    GPUBVHNode* BVHRoot;
+
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
     ~CUDAPathTracer();
@@ -110,22 +125,22 @@ public:
     void loadCamera();
 
     void loadPrimitives();
-    
+
     void loadLights();
 
     void loadParameters();
-    
+
     void createFrameBuffer();
 
     void toGPULight(SceneLight *light, GPULight *gpuLight);
-    
+
     void init();
-    
+
     void startRayTracing();
-    
+
     void updateHostSampleBuffer();
-    
+
 private:
     PathTracer* pathTracer;
-    
+
 };
