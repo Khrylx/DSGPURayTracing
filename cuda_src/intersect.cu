@@ -1,4 +1,4 @@
-__device__ inline bool bboxIntersect(GPUBBox *bbox, GPURay& r, double& t0, double& t1) {
+__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0, float& t1) {
     for (int i = 0; i < 3; ++i) {
         if (r.d[i] != 0.0) {
             double tx1 = (bbox->min[i] - r.o[i]) / r.d[i];
@@ -184,4 +184,82 @@ __device__ inline bool intersect(int primIndex, GPURay& r, GPUIntersection *isec
         // triangle
         return triangleIntersect(primIndex, r, isect);
     }
+}
+
+// intersect with BVHNode
+__device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray, GPUIntersection *closest) {
+    bool hit = false;
+    if (node == NULL) {
+        return hit;
+    }
+
+    if (node->left == NULL && node->right == NULL) {
+        // Node is leaf
+        // traversal over primitives
+        for (int i = 0; i < node->range; i++) {
+            int primIndex = const_params.BVHPrimMap[node->start + i];
+            hit = intersect(primIndex, ray) || hit;
+        }
+    } else {
+        bool hit1 = false;
+        bool hit2 = false;
+        float min_t1 = -INF_FLOAT;
+        float min_t2 = -INF_FLOAT;
+        float max_t1 = INF_FLOAT;
+        float max_t2 = INF_FLOAT;
+        if (node->left) {
+            hit1 = bboxIntersect(&(node->left->bbox), ray, min_t1, max_t1);
+        }
+        if (node->right) {
+            hit2 = bboxIntersect(&(node->right->bbox), ray, min_t2, max_t2);
+        }
+
+        if (hit1 && hit2) {
+            GPUBVHNode* first = (min_t1 <= min_t2) ? node->left : node->right;
+            GPUBVHNode* second = (min_t1 <= min_t2) ? node->right : node->left;
+
+            hit1 = node_intersect(first, ray, closest);
+            if (closest->t > fmaxf(min_t1, min_t2)) {
+                hit2 = node_intersect(second, ray, closest);
+            }
+            hit = hit || hit1 || hit2;
+        } else if (hit1) {
+            hit = hit || node_intersect(node->left, ray, closest);
+        } else if (hit2) {
+            hit = hit || node_intersect(node->right, ray, closest);
+        }
+    }
+
+    return hit;
+}
+
+__device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray) {
+    if (node == NULL) {
+        return false;
+    }
+    float t0 = -INF_FLOAT;
+    float t1 = INF_FLOAT;
+    if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
+        return false;
+    }
+    if (node->left == NULL && node->right == NULL) {
+        // node is leaf
+        for (int i = 0; i < node->range; i++) {
+            int primIndex = const_params.BVHPrimMap[node->start + i];
+            if (intersect(primIndex, ray)) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        return node_intersect(node->left, ray) || node_intersect(node->right, ray);
+    }
+}
+
+__device__ bool BVH_intersect(GPURay &ray, GPUIntersection *isect) {
+    return node_intersect(const_params.BVHRoot, ray, isect);
+}
+
+__device__ bool BVH_intersect(GPURay &ray) {
+    return node_intersect(const_params.BVHRoot, ray);
 }
