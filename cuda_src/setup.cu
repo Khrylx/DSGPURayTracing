@@ -96,8 +96,8 @@ void CUDAPathTracer::init()
     createFrameBuffer();
     loadParameters();
 
-    //printInfo<<<1, 1>>>();
-    //cudaDeviceSynchronize();
+    printInfo<<<1, 1>>>();
+    cudaDeviceSynchronize();
 
 }
 
@@ -313,6 +313,8 @@ GPUBVHNode* CUDAPathTracer::generateBVHNode(BVHNode* node)
 
     gpu_node.start = node->start;
     gpu_node.range = node->range;
+
+    printf("(%d, %d)", (int)node->start, (int)node->range);
     convertBBox(node->bb, gpu_node.bbox);
 
     if (node->l)
@@ -343,13 +345,15 @@ void CUDAPathTracer::loadBVH()
     for(int i = 0; i < (int)primitives.size(); i++)
     {
         tmpMap[i] = primMap[primitives[i]];
+        //printf("%d ", tmpMap[i]);
     }
-
+    //cout << endl;
     cudaMalloc((void**)&BVHPrimMap, N * sizeof(int));
     cudaMemcpy(BVHPrimMap, tmpMap, N * sizeof(int), cudaMemcpyHostToDevice);
 
     BVHRoot = generateBVHNode(pathTracer->bvh->root);
-
+    // cout << endl;
+    // cout << "=========================" << endl;
 }
 
 // Load light

@@ -48,11 +48,11 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
     GPUIntersection isect;
     isect.t = INF_FLOAT;
 
-    bool isIntersect = false; //BVH_intersect(*ray, &isect);
-    for(int i = 0; i < const_params.primNum; i++)
-    {
-        isIntersect = intersect(i, *ray, &isect) || isIntersect;
-    }
+    bool isIntersect = BVH_intersect(*ray, &isect);
+    // for(int i = 0; i < const_params.primNum; i++)
+    // {
+    //     isIntersect = intersect(i, *ray, &isect) || isIntersect;
+    // }
 
     if(!isIntersect)
         return L_out;
@@ -111,14 +111,14 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
             sR.min_t = 0;
             sR.max_t = dist_to_light * 0.99;
 
-            isIntersect = false;//BVH_intersect(*ray);
-            for(int i = 0; i < const_params.primNum; i++)
-            {
-                if(intersect(i, sR)){
-                    isIntersect = true;
-                    break;
-                }
-            }
+            isIntersect = BVH_intersect(*ray);
+            // for(int i = 0; i < const_params.primNum; i++)
+            // {
+            //     if(intersect(i, sR)){
+            //         isIntersect = true;
+            //         break;
+            //     }
+            // }
             if(isIntersect) continue;
 
             MatrixMulVector3D(w2o, dir_to_light, w_in);

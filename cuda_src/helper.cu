@@ -312,12 +312,28 @@ vectorAdd(float *A, float *B, float *C, int numElements)
     }
 }
 
+__device__ void traverBVH(GPUBVHNode* node)
+{
+    printf("(%d, %d)", (int)node->start, (int)node->range);
+    if(node->left) traverBVH(node->left);
+    if(node->right) traverBVH(node->right);
+}
 
 __global__ void
 printInfo()
 {
+    // for(int i = 0; i < const_params.primNum; i++)
+    // {
+    //     printf("%d ", const_params.BVHPrimMap[i]);
+    // }
+    // printf("\n");
+    // traverBVH(const_params.BVHRoot);
+    // return;
+
     GPUBSDF* bsdfs = const_bsdfs;
     GPUCamera camera = const_camera;
+
+
 
     for (int i = 0; i < const_params.lightNum; i++)
     {
