@@ -111,7 +111,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
             sR.min_t = 0;
             sR.max_t = dist_to_light * 0.99;
 
-            isIntersect = BVH_intersect(*ray);
+            isIntersect = BVH_intersect(sR);
             // for(int i = 0; i < const_params.primNum; i++)
             // {
             //     if(intersect(i, sR)){
