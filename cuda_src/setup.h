@@ -5,6 +5,8 @@
 #include "../src/static_scene/triangle.h"
 #include "../src/static_scene/light.h"
 
+#include <map>
+
 using namespace CMU462;
 using namespace StaticScene;
 
@@ -118,6 +120,8 @@ class CUDAPathTracer{
     int* BVHPrimMap;
     GPUBVHNode* BVHRoot;
 
+    map<Primitive*, int> primMap;
+
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
     ~CUDAPathTracer();
@@ -127,6 +131,8 @@ public:
     void loadPrimitives();
 
     void loadLights();
+
+    void loadBVH();
 
     void loadParameters();
 
@@ -139,6 +145,11 @@ public:
     void startRayTracing();
 
     void updateHostSampleBuffer();
+
+private:
+    GPUBVHNode* generateBVHNode(BVHNode* node);
+    void freeBVHNode(GPUBVHNode* node);
+    void convertBBox(BBox& bbox, GPUBBox& gpu_bbox);
 
 private:
     PathTracer* pathTracer;

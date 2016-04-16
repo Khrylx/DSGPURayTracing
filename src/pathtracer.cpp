@@ -225,7 +225,7 @@ void PathTracer::build_accel() {
   // collect primitives //
   fprintf(stdout, "[PathTracer] Collecting primitives... "); fflush(stdout);
   timer.start();
-  vector<Primitive *> primitives;
+  
   for (SceneObject *obj : scene->objects) {
     const vector<Primitive *> &obj_prims = obj->get_primitives();
     primitives.reserve(primitives.size() + obj_prims.size());

@@ -16,6 +16,8 @@
 #include "work_queue.h"
 
 #include "static_scene/scene.h"
+
+using namespace CMU462::StaticScene;
 using CMU462::StaticScene::Scene;
 
 #include "static_scene/environment_light.h"
@@ -51,14 +53,14 @@ struct WorkItem {
  * -> DONE: completed rendering a scene.
  */
 class PathTracer {
-    
+
  public:
 
   /**
    * Default constructor.
    * Creates a new pathtracer instance.
    */
-  PathTracer(size_t ns_aa = 1, 
+  PathTracer(size_t ns_aa = 1,
              size_t max_ray_depth = 4, size_t ns_area_light = 1,
              size_t ns_diff = 1, size_t ns_glsy = 1, size_t ns_refr = 1,
              size_t num_threads = 1,
@@ -196,8 +198,8 @@ class PathTracer {
   void transferToGPU();
 
   void updateBufferFromGPU(float* gpuBuffer);
-    
-    
+
+
   enum State {
     INIT,               ///< to be initialized
     READY,              ///< initialized ready to do stuff
@@ -260,6 +262,7 @@ class PathTracer {
   std::vector<LoggedRay> rayLog;          ///< ray tracing log
   bool show_rays;                         ///< show rays from raylog
 
+  std::vector<Primitive*> primitives;
 
 };
 

@@ -44,6 +44,8 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
+    freeBVHNode(BVHRoot);
+
     cudaFree(gpu_types);
     cudaFree(gpu_bsdfIndexes);
     cudaFree(gpu_positions);
@@ -90,6 +92,7 @@ void CUDAPathTracer::init()
     loadCamera();
     loadPrimitives();
     loadLights();
+    loadBVH();
     createFrameBuffer();
     loadParameters();
 
@@ -145,12 +148,7 @@ void CUDAPathTracer::loadCamera()
 
 void CUDAPathTracer::loadPrimitives()
 {
-    vector<Primitive *> primitives;
-    for (SceneObject *obj : pathTracer->scene->objects) {
-        const vector<Primitive *> &obj_prims = obj->get_primitives();
-        primitives.reserve(primitives.size() + obj_prims.size());
-        primitives.insert(primitives.end(), obj_prims.begin(), obj_prims.end());
-    }
+    vector<Primitive *>& primitives = pathTracer->primitives;
 
     int N = primitives.size();
     int types[N];
@@ -163,6 +161,8 @@ void CUDAPathTracer::loadPrimitives()
     map<BSDF*, int> BSDFMap;
 
     for (int i = 0; i < N; i++) {
+
+        primMap[primitives[i]] = i;
         types[i] = primitives[i]->getType();
         BSDF* bsdf  = primitives[i]->get_bsdf();
 
@@ -282,6 +282,76 @@ void CUDAPathTracer::loadPrimitives()
 
 }
 
+void CUDAPathTracer::convertBBox(BBox& bbox, GPUBBox& gpu_bbox)
+{
+    gpu_bbox.min[0] = bbox.min[0];
+    gpu_bbox.min[1] = bbox.min[1];
+    gpu_bbox.min[2] = bbox.min[2];
+
+    gpu_bbox.max[0] = bbox.max[0];
+    gpu_bbox.max[1] = bbox.max[1];
+    gpu_bbox.max[2] = bbox.max[2];
+}
+
+void CUDAPathTracer::freeBVHNode(GPUBVHNode* node)
+{
+    GPUBVHNode gpu_node;
+    cudaMemcpy(&gpu_node, node, sizeof(GPUBVHNode), cudaMemcpyDeviceToHost);
+
+    cudaFree(node);
+
+    if(gpu_node.left)
+        freeBVHNode(gpu_node.left);
+
+    if(gpu_node.right)
+        freeBVHNode(gpu_node.right);
+}
+
+GPUBVHNode* CUDAPathTracer::generateBVHNode(BVHNode* node)
+{
+    GPUBVHNode gpu_node;
+
+    gpu_node.start = node->start;
+    gpu_node.range = node->range;
+    convertBBox(node->bb, gpu_node.bbox);
+
+    if (node->l)
+        gpu_node.left = generateBVHNode(node->l);
+    else
+        gpu_node.left = NULL;
+
+    if (node->r)
+        gpu_node.right = generateBVHNode(node->r);
+    else
+        gpu_node.right = NULL;
+
+    GPUBVHNode* device_node;
+
+    cudaMalloc((void**)&device_node, sizeof(GPUBVHNode));
+    cudaMemcpy(device_node, &gpu_node, sizeof(GPUBVHNode), cudaMemcpyHostToDevice);
+
+    return device_node;
+}
+
+void CUDAPathTracer::loadBVH()
+{
+    vector<Primitive*> &primitives = pathTracer->bvh->primitives;
+
+    int N = primitives.size();
+    int tmpMap[N];
+
+    for(int i = 0; i < (int)primitives.size(); i++)
+    {
+        tmpMap[i] = primMap[primitives[i]];
+    }
+
+    cudaMalloc((void**)&BVHPrimMap, N * sizeof(int));
+    cudaMemcpy(BVHPrimMap, tmpMap, N * sizeof(int), cudaMemcpyHostToDevice);
+
+    BVHRoot = generateBVHNode(pathTracer->bvh->root);
+
+}
+
 // Load light
 void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
     gpuLight->type = l->getType();
@@ -385,6 +455,8 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.normals = gpu_normals;
     tmpParams.primNum = primNum;
     tmpParams.frameBuffer = frameBuffer;
+    tmpParams.BVHPrimMap = BVHPrimMap;
+    tmpParams.BVHRoot = BVHRoot;
 
     cudaError_t err = cudaSuccess;
 
