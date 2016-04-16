@@ -96,8 +96,8 @@ void CUDAPathTracer::init()
     createFrameBuffer();
     loadParameters();
 
-    printInfo<<<1, 1>>>();
-    cudaDeviceSynchronize();
+    //printInfo<<<1, 1>>>();
+    //cudaDeviceSynchronize();
 
 }
 
@@ -314,7 +314,7 @@ GPUBVHNode* CUDAPathTracer::generateBVHNode(BVHNode* node)
     gpu_node.start = node->start;
     gpu_node.range = node->range;
 
-    printf("(%d, %d)", (int)node->start, (int)node->range);
+    //printf("(%d, %d)", (int)node->start, (int)node->range);
     convertBBox(node->bb, gpu_node.bbox);
 
     if (node->l)

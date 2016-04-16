@@ -41,18 +41,18 @@ generateRay(GPURay* ray, float x, float y)
 }
 
 __device__ float3
-traceRay(curandState* s, GPURay* ray, bool includeLe)
+traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
 {
     float3 L_out = make_float3(0.0, 0.0, 0.0);
 
     GPUIntersection isect;
     isect.t = INF_FLOAT;
 
-    bool isIntersect = BVH_intersect(*ray, &isect);
-    // for(int i = 0; i < const_params.primNum; i++)
-    // {
-    //     isIntersect = intersect(i, *ray, &isect) || isIntersect;
-    // }
+    bool isIntersect = false; //BVH_intersect(*ray, &isect);
+    for(int i = 0; i < const_params.primNum; i++)
+    {
+        isIntersect = intersect(i, *ray, &isect) || isIntersect;
+    }
 
     if(!isIntersect)
         return L_out;
@@ -110,16 +110,23 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
             readVector3D(dir_to_light, sR.d);
             sR.min_t = 0;
             sR.max_t = dist_to_light * 0.99;
+            if (verbose)
+                printf("Before intersection.\n");
 
-            isIntersect = BVH_intersect(sR);
-            // for(int i = 0; i < const_params.primNum; i++)
-            // {
-            //     if(intersect(i, sR)){
-            //         isIntersect = true;
-            //         break;
-            //     }
-            // }
+            isIntersect = false;
+            for(int i = 0; i < const_params.primNum; i++)
+            {
+                if(intersect(i, sR)){
+                    isIntersect = true;
+                    break;
+                }
+            }
+            if (verbose)
+                printf("After intersection.\n");
+
+            BVH_intersect(sR);
             if(isIntersect) continue;
+
 
             MatrixMulVector3D(w2o, dir_to_light, w_in);
             normalize3D(w_in);
@@ -168,7 +175,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
     float coeff = cos_theta / pdf;
 #endif
 
-    float3 indirL = traceRay(s, &newR, bsdf.type != 0 && bsdf.type != 4);
+    float3 indirL = traceRay(s, &newR, bsdf.type != 0 && bsdf.type != 4, verbose);
 
     L_out.x += coeff * indirL.x * f.x;
     L_out.y += coeff * indirL.y * f.y;
@@ -195,7 +202,7 @@ tracePixel(curandState* s, int x, int y, bool verbose)
         GPURay ray;
         generateRay(&ray, px, py);
 
-        float3 tmpSpec = traceRay(s, &ray, true);
+        float3 tmpSpec = traceRay(s, &ray, true, x == 500 && y == 300);
         spec.x += tmpSpec.x;
         spec.y += tmpSpec.y;
         spec.z += tmpSpec.z;
