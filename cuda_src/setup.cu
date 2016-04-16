@@ -51,6 +51,7 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_positions);
     cudaFree(gpu_normals);
     cudaFree(frameBuffer);
+    cudaFree(BVHPrimMap);
 }
 
 

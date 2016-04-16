@@ -48,11 +48,11 @@ traceRay(curandState* s, GPURay* ray, bool includeLe)
     GPUIntersection isect;
     isect.t = INF_FLOAT;
 
-    bool isIntersect = BVH_intersect(*ray, &isect);
-    // for(int i = 0; i < const_params.primNum; i++)
-    // {
-    //     isIntersect = intersect(i, *ray, &isect) || isIntersect;
-    // }
+    bool isIntersect = false; // BVH_intersect(*ray, &isect);
+    for(int i = 0; i < const_params.primNum; i++)
+    {
+        isIntersect = intersect(i, *ray, &isect) || isIntersect;
+    }
 
     if(!isIntersect)
         return L_out;
