@@ -90,7 +90,7 @@ class Application : public Renderer {
   void load(Collada::SceneInfo* sceneInfo);
 
     void transferToGPU();
- private:
+public:
 
   enum Mode {
     EDIT_MODE,

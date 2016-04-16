@@ -70,7 +70,7 @@ extern int test();
 
 int main( int argc, char** argv ) {
 
-  //test();
+  test();
 
   std::srand(std::time(0));
 
@@ -131,7 +131,7 @@ int main( int argc, char** argv ) {
 
   // load scene
     app.load(sceneInfo);
-
+    app.set_up_pathtracer();
 
   delete sceneInfo;
 
