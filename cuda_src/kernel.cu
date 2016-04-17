@@ -48,11 +48,11 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
     GPUIntersection isect;
     isect.t = INF_FLOAT;
 
-    bool isIntersect = false; //BVH_intersect(*ray, &isect);
-    for(int i = 0; i < const_params.primNum; i++)
-    {
-        isIntersect = intersect(i, *ray, &isect) || isIntersect;
-    }
+    bool isIntersect = BVH_intersect(*ray, &isect);
+    // for(int i = 0; i < const_params.primNum; i++)
+    // {
+    //     isIntersect = intersect(i, *ray, &isect) || isIntersect;
+    // }
 
     if(!isIntersect)
         return L_out;
@@ -110,21 +110,21 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
             readVector3D(dir_to_light, sR.d);
             sR.min_t = 0;
             sR.max_t = dist_to_light * 0.99;
-            if (verbose)
-                printf("Before intersection.\n");
+            // if (verbose)
+            //     printf("Before intersection.\n");
 
-            isIntersect = false;
-            for(int i = 0; i < const_params.primNum; i++)
-            {
-                if(intersect(i, sR)){
-                    isIntersect = true;
-                    break;
-                }
-            }
-            if (verbose)
-                printf("After intersection.\n");
+            // isIntersect = false;
+            // for(int i = 0; i < const_params.primNum; i++)
+            // {
+            //     if(intersect(i, sR)){
+            //         isIntersect = true;
+            //         break;
+            //     }
+            // }
+            // if (verbose)
+            //     printf("After intersection.\n");
 
-            BVH_intersect(sR);
+            isIntersect = BVH_intersect(sR);
             if(isIntersect) continue;
 
 

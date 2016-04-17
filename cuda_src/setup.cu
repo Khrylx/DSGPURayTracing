@@ -57,6 +57,7 @@ CUDAPathTracer::~CUDAPathTracer()
 
 void CUDAPathTracer::startRayTracing()
 {
+    cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
 
     int xTileNum = 40;
     int yTileNum = 40;
