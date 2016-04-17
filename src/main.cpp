@@ -141,6 +141,8 @@ int main( int argc, char** argv ) {
     app.load(sceneInfo);
     app.set_up_pathtracer();
   if (!viewerOn) {
+    app.loadCamera("camera.info");
+    // app.saveCamera();
     app.startGPURayTracing();
     app.pathtracer->save_image();
   }

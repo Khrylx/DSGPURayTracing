@@ -71,6 +71,10 @@ struct AppConfig {
 class Application : public Renderer {
  public:
 
+  void saveCamera();
+
+  void loadCamera(string fname);
+
   void startGPURayTracing();
 
   Application(AppConfig config);

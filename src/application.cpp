@@ -1,3 +1,7 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
 #include "application.h"
 
 #include "dynamic_scene/ambient_light.h"
@@ -15,6 +19,8 @@ using Collada::MaterialInfo;
 using Collada::PolymeshInfo;
 using Collada::SceneInfo;
 using Collada::SphereInfo;
+
+using namespace std;
 
 namespace CMU462 {
 
@@ -519,6 +525,8 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
           case 'c': case 'C':
             scene->collapse_selected_edge();
             break;
+          case 'm': case 'M':
+            break;
           default:
             break;
         }
@@ -771,5 +779,48 @@ void Application::startGPURayTracing() {
   delete cuPathTracer;
   mode = RENDER_MODE;
 }
+// void Camera::copy_placement(const Camera& other) {
+//   pos = other.pos;
+//   targetPos = other.targetPos;
+//   phi = other.phi;
+//   theta = other.theta;
+//   minR = other.minR;
+//   maxR = other.maxR;
+//   c2w = other.c2w;
+// }
+void Application::saveCamera() {
+  time_t rawtime;
+  time (&rawtime);
 
+  string filename = "camera_";
+  filename += string(ctime(&rawtime));
+  filename.erase(filename.end() - 1);
+  filename += string(".info");
+
+  ofstream cameraFile;
+  cameraFile.open(filename);
+  cameraFile << pathtracer->camera->pos << endl;
+  cameraFile << pathtracer->camera->targetPos << endl;
+  cameraFile << pathtracer->camera->phi << endl;
+  cameraFile << pathtracer->camera->theta << endl;
+  cameraFile << pathtracer->camera->minR << endl;
+  cameraFile << pathtracer->camera->maxR << endl;
+  cameraFile << pathtracer->camera->c2w << endl;
+  cameraFile.close();
+  fprintf(stderr, "[Camera Info] Saving to file: %s... ", filename.c_str());
+}
+
+void Application::loadCamera(string filename) {
+  ifstream fin;
+  fin.open(filename);
+  fin >> pathtracer->camera->pos;
+  fin >> pathtracer->camera->targetPos;
+  fin >> pathtracer->camera->phi;
+  fin >> pathtracer->camera->theta;
+  fin >> pathtracer->camera->minR;
+  fin >> pathtracer->camera->maxR;
+  fin >> pathtracer->camera->c2w;
+
+  fin.close();
+}
 } // namespace CMU462
