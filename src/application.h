@@ -93,6 +93,7 @@ class Application : public Renderer {
 
     void transferToGPU();
 public:
+  bool viewerOn = false;
 
   enum Mode {
     EDIT_MODE,

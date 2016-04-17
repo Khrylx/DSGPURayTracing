@@ -41,8 +41,28 @@ Application::~Application() {
 
 void Application::init() {
 
-  //textManager.init(use_hdpi);
-  text_color = Color(1.0, 1.0, 1.0);
+  if (viewerOn) {
+    textManager.init(use_hdpi);
+    text_color = Color(1.0, 1.0, 1.0);
+
+    show_coordinates = true;
+    show_hud = true;
+
+    // Lighting needs to be explicitly enabled.
+    glEnable(GL_LIGHTING);
+
+    // // Enable anti-aliasing and circular points.
+    glEnable( GL_LINE_SMOOTH );
+    glEnable( GL_POLYGON_SMOOTH );
+    glEnable(GL_POINT_SMOOTH);
+    glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+    glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
+    glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+
+    // Initialize styles (colors, line widths, etc.) that will be used
+    // to draw different types of mesh elements in various situations.
+    initialize_style();
+  }
 
   // Setup all the basic internal state to default values,
   // as well as some basic OpenGL state (like depth testing
@@ -53,23 +73,7 @@ void Application::init() {
   rightDown  = false;
   middleDown = false;
 
-  show_coordinates = true;
-  show_hud = true;
 
-  // Lighting needs to be explicitly enabled.
-  // glEnable(GL_LIGHTING);
-
-  // // Enable anti-aliasing and circular points.
-  // glEnable( GL_LINE_SMOOTH );
-  // glEnable( GL_POLYGON_SMOOTH );
-  // glEnable(GL_POINT_SMOOTH);
-  // glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-  // glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
-  // glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
-
-  // Initialize styles (colors, line widths, etc.) that will be used
-  // to draw different types of mesh elements in various situations.
-  // initialize_style();
 
   mode = EDIT_MODE;
   scene = nullptr;
@@ -606,7 +610,7 @@ void Application::to_edit_mode() {
 }
 
 void Application::set_up_pathtracer() {
-  // if (mode != EDIT_MODE) return;
+  if (mode != EDIT_MODE) return;
   pathtracer->set_camera(&camera);
   pathtracer->set_scene(scene->get_static_scene());
   pathtracer->set_frame_size(screenW, screenH);

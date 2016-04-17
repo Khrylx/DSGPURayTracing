@@ -74,9 +74,11 @@ int main( int argc, char** argv ) {
 
   std::srand(std::time(0));
 
+  bool viewerOn = false;
+
   // get the options
   AppConfig config; int opt;
-  while ( (opt = getopt(argc, argv, "s:l:t:m:e:h")) != -1 ) {  // for each option...
+  while ( (opt = getopt(argc, argv, "s:l:t:m:e:h:v")) != -1 ) {  // for each option...
     switch ( opt ) {
     case 's':
         config.pathtracer_ns_aa = atoi(optarg);
@@ -92,6 +94,9 @@ int main( int argc, char** argv ) {
         break;
     case 'e':
         config.pathtracer_envmap = load_exr(optarg);
+        break;
+    case 'v':
+        viewerOn = true;
         break;
     default:
         usage(argv[0]);
@@ -116,37 +121,40 @@ int main( int argc, char** argv ) {
   }
 
   // create viewer
-  // Viewer viewer = Viewer();
+  Viewer viewer = Viewer();
 
   // create application
   Application app (config);
-
-  // set renderer
-  // viewer.set_renderer(&app);
-
-
-
-  // init viewer
-  // viewer.init();
+  app.viewerOn = viewerOn;
+  if (viewerOn) {
+    // set renderer
+    viewer.set_renderer(&app);
+    // init viewer
+    viewer.init();
+  }
+  
 
   // load scene
-    printf("before init\n");
+  if (!viewerOn) {
     app.init();
-    printf("after init\n");
+  }
     app.load(sceneInfo);
-    printf("load\n");
     app.set_up_pathtracer();
-    printf("set up\n");
+  if (!viewerOn) {
     app.startGPURayTracing();
     app.pathtracer->save_image();
-    printf("save_image\n");
+  }
   delete sceneInfo;
 
   // NOTE (sky): are we copying everything to dynamic scene? If so:
   // TODO (sky): check and make sure the destructor is freeing everything
 
-  // start viewer
-  // viewer.start();
+  if (viewerOn)
+  {
+    // start viewer
+    viewer.start();
+  }
+  
 
   // TODO:
   // apparently the meshEdit renderer instance was not destroyed properly
