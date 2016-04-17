@@ -234,7 +234,6 @@ __device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray, GPUIntersect
 
     }
 
-    return false;
 }
 
 __device__ bool node_intersect(GPUBVHNode *node, GPURay &ray) {
@@ -243,17 +242,15 @@ __device__ bool node_intersect(GPUBVHNode *node, GPURay &ray) {
     }
     float t0 = -INF_FLOAT;
     float t1 = INF_FLOAT;
-    int tmp = 0;
+
     if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
         return false;
     }
-    //printf("%lf", t0);
+
     if (node->left == NULL && node->right == NULL) {
         // node is leaf
         for (int i = 0; i < node->range; i++) {
-            //printf("%d ", i);
             int primIndex = const_params.BVHPrimMap[node->start + i];
-
             if (intersect(primIndex, ray)) {
                 return true;
             }

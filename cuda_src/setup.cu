@@ -57,8 +57,6 @@ CUDAPathTracer::~CUDAPathTracer()
 
 void CUDAPathTracer::startRayTracing()
 {
-    cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
-
     int xTileNum = 40;
     int yTileNum = 40;
     int width = (screenW + xTileNum - 1) / xTileNum;
@@ -100,6 +98,8 @@ void CUDAPathTracer::init()
     loadBVH();
     createFrameBuffer();
     loadParameters();
+
+    cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
 
     //printInfo<<<1, 1>>>();
     //cudaDeviceSynchronize();
