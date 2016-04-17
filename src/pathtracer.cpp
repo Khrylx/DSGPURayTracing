@@ -98,9 +98,9 @@ void PathTracer::set_scene(Scene *scene) {
 
 void PathTracer::set_camera(Camera *camera) {
 
-  if (state != INIT) {
-    return;
-  }
+  // if (state != INIT) {
+  //   return;
+  // }
 
   this->camera = camera;
   if (has_valid_configuration()) {
@@ -645,7 +645,7 @@ void PathTracer::decrease_area_light_sample_count() {
 
 void PathTracer::save_image() {
 
-  if (state != DONE) return;
+  // if (state != DONE) return;
 
   time_t rawtime;
   time (&rawtime);

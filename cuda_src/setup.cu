@@ -57,8 +57,8 @@ CUDAPathTracer::~CUDAPathTracer()
 
 void CUDAPathTracer::startRayTracing()
 {
-    int xTileNum = 40;
-    int yTileNum = 40;
+    int xTileNum = 1;
+    int yTileNum = 1;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
     int blockDim = 256;
@@ -154,17 +154,14 @@ void CUDAPathTracer::loadCamera()
 void CUDAPathTracer::loadPrimitives()
 {
     vector<Primitive *>& primitives = pathTracer->primitives;
-
     int N = primitives.size();
     int types[N];
     int bsdfs[N];
-    float positions[9 * N];
-    float normals[9 * N];
+    float *positions = new float[9 * N];
+    float *normals = new float[9 * N];
 
     primNum = N;
-
     map<BSDF*, int> BSDFMap;
-
     for (int i = 0; i < N; i++) {
 
         primMap[primitives[i]] = i;
@@ -216,7 +213,6 @@ void CUDAPathTracer::loadPrimitives()
             normals[9 * i + 8] = mesh->normals[v3][2];
         }
     }
-
     GPUBSDF BSDFArray[BSDFMap.size()];
 
     for (auto itr = BSDFMap.begin(); itr != BSDFMap.end(); itr++) {
@@ -274,6 +270,8 @@ void CUDAPathTracer::loadPrimitives()
     cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
 
     //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
+    delete [] positions;
+    delete [] normals;
 
     cudaError_t err = cudaSuccess;
 

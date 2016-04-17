@@ -41,7 +41,7 @@ Application::~Application() {
 
 void Application::init() {
 
-  textManager.init(use_hdpi);
+  //textManager.init(use_hdpi);
   text_color = Color(1.0, 1.0, 1.0);
 
   // Setup all the basic internal state to default values,
@@ -57,19 +57,19 @@ void Application::init() {
   show_hud = true;
 
   // Lighting needs to be explicitly enabled.
-  glEnable(GL_LIGHTING);
+  // glEnable(GL_LIGHTING);
 
-  // Enable anti-aliasing and circular points.
-  glEnable( GL_LINE_SMOOTH );
-  glEnable( GL_POLYGON_SMOOTH );
-  glEnable(GL_POINT_SMOOTH);
-  glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-  glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
-  glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
+  // // Enable anti-aliasing and circular points.
+  // glEnable( GL_LINE_SMOOTH );
+  // glEnable( GL_POLYGON_SMOOTH );
+  // glEnable(GL_POINT_SMOOTH);
+  // glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+  // glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
+  // glHint(GL_POINT_SMOOTH_HINT,GL_NICEST);
 
   // Initialize styles (colors, line widths, etc.) that will be used
   // to draw different types of mesh elements in various situations.
-  initialize_style();
+  // initialize_style();
 
   mode = EDIT_MODE;
   scene = nullptr;
@@ -459,25 +459,26 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
       if (event == EVENT_PRESS) {
         switch(key) {
           case 'e': case 'E':
+            startGPURayTracing();
             //set_up_pathtracer();
-            cuPathTracer = new CUDAPathTracer(pathtracer);
-            transferToGPU();
+            // cuPathTracer = new CUDAPathTracer(pathtracer);
+            // transferToGPU();
 
-            pathtracer->state = PathTracer::RENDERING;
-            pathtracer->continueRaytracing = true;
+            // pathtracer->state = PathTracer::RENDERING;
+            // pathtracer->continueRaytracing = true;
 
-            pathtracer->sampleBuffer.clear();
-            pathtracer->frameBuffer.clear();
+            // pathtracer->sampleBuffer.clear();
+            // pathtracer->frameBuffer.clear();
 
-            pathtracer->timer.start();
-            cuPathTracer->startRayTracing();
-            pathtracer->timer.stop();
-            fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
+            // pathtracer->timer.start();
+            // cuPathTracer->startRayTracing();
+            // pathtracer->timer.stop();
+            // fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
 
 
-            cuPathTracer->updateHostSampleBuffer();
-            delete cuPathTracer;
-            mode = RENDER_MODE;
+            // cuPathTracer->updateHostSampleBuffer();
+            // delete cuPathTracer;
+            // mode = RENDER_MODE;
             break;
           case 'r': case 'R':
             //set_up_pathtracer();
@@ -605,7 +606,7 @@ void Application::to_edit_mode() {
 }
 
 void Application::set_up_pathtracer() {
-  if (mode != EDIT_MODE) return;
+  // if (mode != EDIT_MODE) return;
   pathtracer->set_camera(&camera);
   pathtracer->set_scene(scene->get_static_scene());
   pathtracer->set_frame_size(screenW, screenH);
@@ -744,6 +745,27 @@ void Application::draw_hud() {
   glEnable(GL_DEPTH_TEST);
 
   textManager.render();
+}
+
+void Application::startGPURayTracing() {
+  cuPathTracer = new CUDAPathTracer(pathtracer);
+  transferToGPU();
+
+  pathtracer->state = PathTracer::RENDERING;
+  pathtracer->continueRaytracing = true;
+
+  pathtracer->sampleBuffer.clear();
+  pathtracer->frameBuffer.clear();
+
+  pathtracer->timer.start();
+  cuPathTracer->startRayTracing();
+  pathtracer->timer.stop();
+  fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
+
+
+  cuPathTracer->updateHostSampleBuffer();
+  delete cuPathTracer;
+  mode = RENDER_MODE;
 }
 
 } // namespace CMU462

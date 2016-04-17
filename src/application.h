@@ -71,6 +71,8 @@ struct AppConfig {
 class Application : public Renderer {
  public:
 
+  void startGPURayTracing();
+
   Application(AppConfig config);
 
   ~Application();

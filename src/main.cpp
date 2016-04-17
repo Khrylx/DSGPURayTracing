@@ -116,30 +116,37 @@ int main( int argc, char** argv ) {
   }
 
   // create viewer
-  Viewer viewer = Viewer();
+  // Viewer viewer = Viewer();
 
   // create application
   Application app (config);
 
   // set renderer
-  viewer.set_renderer(&app);
+  // viewer.set_renderer(&app);
 
 
 
   // init viewer
-  viewer.init();
+  // viewer.init();
 
   // load scene
+    printf("before init\n");
+    app.init();
+    printf("after init\n");
     app.load(sceneInfo);
+    printf("load\n");
     app.set_up_pathtracer();
-
+    printf("set up\n");
+    app.startGPURayTracing();
+    app.pathtracer->save_image();
+    printf("save_image\n");
   delete sceneInfo;
 
   // NOTE (sky): are we copying everything to dynamic scene? If so:
   // TODO (sky): check and make sure the destructor is freeing everything
 
   // start viewer
-  viewer.start();
+  // viewer.start();
 
   // TODO:
   // apparently the meshEdit renderer instance was not destroyed properly
