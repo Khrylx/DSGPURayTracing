@@ -218,14 +218,13 @@ namespace CMU462 {
   std::ostream& operator<<( std::ostream& os, const Matrix3x3& A ) {
     for( int i = 0; i < 3; i++ )
     {
-       os << "[ ";
-
        for( int j = 0; j < 3; j++ )
        {
-          os << A(i,j) << " ";
+          os << A(i,j);
+          if (i <= 2 || j <= 2) {
+              os << " ";
+          }
        }
-
-       os << "]" << std::endl;
     }
 
     return os;

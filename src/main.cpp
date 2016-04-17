@@ -78,7 +78,8 @@ int main( int argc, char** argv ) {
 
   // get the options
   AppConfig config; int opt;
-  while ( (opt = getopt(argc, argv, "s:l:t:m:e:h:v")) != -1 ) {  // for each option...
+  string camFileName;
+  while ( (opt = getopt(argc, argv, "s:l:t:m:f:h:v")) != -1 ) {  // for each option...
     switch ( opt ) {
     case 's':
         config.pathtracer_ns_aa = atoi(optarg);
@@ -97,6 +98,9 @@ int main( int argc, char** argv ) {
         break;
     case 'v':
         viewerOn = true;
+        break;
+    case 'f':
+        camFileName = optarg;
         break;
     default:
         usage(argv[0]);
@@ -132,7 +136,7 @@ int main( int argc, char** argv ) {
     // init viewer
     viewer.init();
   }
-  
+
 
   // load scene
   if (!viewerOn) {
@@ -140,9 +144,14 @@ int main( int argc, char** argv ) {
   }
     app.load(sceneInfo);
     app.set_up_pathtracer();
+
+    if (!camFileName.empty()) {
+        app.loadCamera(camFileName);
+    }
+
+
   if (!viewerOn) {
-    app.loadCamera("camera.info");
-    // app.saveCamera();
+
     app.startGPURayTracing();
     app.pathtracer->save_image();
   }
@@ -156,7 +165,7 @@ int main( int argc, char** argv ) {
     // start viewer
     viewer.start();
   }
-  
+
 
   // TODO:
   // apparently the meshEdit renderer instance was not destroyed properly

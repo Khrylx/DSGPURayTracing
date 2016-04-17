@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stdio.h>
 
 #include "application.h"
 
@@ -526,6 +527,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             scene->collapse_selected_edge();
             break;
           case 'm': case 'M':
+            saveCamera();
             break;
           default:
             break;
@@ -812,15 +814,33 @@ void Application::saveCamera() {
 
 void Application::loadCamera(string filename) {
   ifstream fin;
-  fin.open(filename);
-  fin >> pathtracer->camera->pos;
-  fin >> pathtracer->camera->targetPos;
-  fin >> pathtracer->camera->phi;
-  fin >> pathtracer->camera->theta;
-  fin >> pathtracer->camera->minR;
-  fin >> pathtracer->camera->maxR;
-  fin >> pathtracer->camera->c2w;
+  char c;
+  Camera& cam = *(pathtracer->camera);
 
-  fin.close();
+  FILE * pFile;
+  pFile = fopen (filename.c_str(),"r");
+  if (pFile==NULL)
+  {
+      cout << "fail!" << endl;
+  }
+
+  fscanf(pFile, "%lf %lf %lf", &cam.pos[0], &cam.pos[1], &cam.pos[2]);
+  fscanf(pFile, "%lf %lf %lf", &cam.targetPos[0], &cam.targetPos[1], &cam.targetPos[2]);
+  fscanf(pFile, "%lf", &cam.phi);
+  fscanf(pFile, "%lf", &cam.theta);
+  fscanf(pFile, "%lf", &cam.minR);
+  fscanf(pFile, "%lf", &cam.maxR);
+  fscanf(pFile, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", &cam.c2w(0, 0), &cam.c2w(0, 1), &cam.c2w(0, 2),
+            &cam.c2w(1, 0), &cam.c2w(1, 1), &cam.c2w(1, 2), &cam.c2w(2, 0), &cam.c2w(2, 1), &cam.c2w(2, 2));
+
+  // cout << cam.pos << endl;
+  // cout << cam.targetPos << endl;
+  // cout << cam.phi << endl;
+  // cout << cam.theta << endl;
+  // cout << cam.minR << endl;
+  // cout << cam.maxR << endl;
+  // cout << cam.c2w << endl;
+
+  fclose(pFile);
 }
 } // namespace CMU462

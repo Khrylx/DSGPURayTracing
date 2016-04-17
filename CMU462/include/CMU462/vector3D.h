@@ -152,6 +152,7 @@ inline Vector3D cross( const Vector3D& u, const Vector3D& v ) {
 // prints components
 std::ostream& operator<<( std::ostream& os, const Vector3D& v );
 
+
 } // namespace CMU462
 
 #endif // CMU462_VECTOR3D_H
