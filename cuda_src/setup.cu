@@ -58,8 +58,8 @@ CUDAPathTracer::~CUDAPathTracer()
 void CUDAPathTracer::startRayTracing()
 {
 
-    int xTileNum = 10;
-    int yTileNum = 10;
+    int xTileNum = 40;
+    int yTileNum = 40;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
     int blockDim = 256;
@@ -73,14 +73,17 @@ void CUDAPathTracer::startRayTracing()
 
     cudaError_t err = cudaPeekAtLastError();
 
+    cudaDeviceSynchronize();
+    cudaThreadSynchronize();
+
+
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 
-    cudaThreadSynchronize();
-    cudaDeviceSynchronize();
+
 
 
 
