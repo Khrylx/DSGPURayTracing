@@ -76,11 +76,13 @@ int main( int argc, char** argv ) {
 
   bool viewerOn = false;
   bool useCPU = false;
+  int screenW = 600;
+  int screenH = 600;
 
   // get the options
   AppConfig config; int opt;
   string camFileName;
-  while ( (opt = getopt(argc, argv, "s:l:t:m:f:h:v c")) != -1 ) {  // for each option...
+  while ( (opt = getopt(argc, argv, "s:l:t:m:f:w:h:v c")) != -1 ) {  // for each option...
     switch ( opt ) {
     case 's':
         config.pathtracer_ns_aa = atoi(optarg);
@@ -99,6 +101,12 @@ int main( int argc, char** argv ) {
         break;
     case 'v':
         viewerOn = true;
+        break;
+    case 'w':
+        screenW = atoi(optarg);
+        break;
+    case 'h':
+        screenH = atoi(optarg);
         break;
     case 'f':
         camFileName = optarg;
@@ -147,6 +155,8 @@ int main( int argc, char** argv ) {
   // load scene
   if (!viewerOn) {
     app.init();
+    app.screenH = screenH;
+    app.screenW = screenW;
   }
     app.load(sceneInfo);
     app.set_up_pathtracer();
