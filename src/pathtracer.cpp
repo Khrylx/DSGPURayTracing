@@ -226,7 +226,7 @@ void PathTracer::build_accel() {
   // collect primitives //
   fprintf(stdout, "[PathTracer] Collecting primitives... "); fflush(stdout);
   timer.start();
-  
+
   for (SceneObject *obj : scene->objects) {
     const vector<Primitive *> &obj_prims = obj->get_primitives();
     primitives.reserve(primitives.size() + obj_prims.size());
@@ -654,6 +654,7 @@ void PathTracer::save_image() {
   time (&rawtime);
 
   string filename = "Screen Shot ";
+  filename += useCPU ? "CPU " : "GPU ";
   filename += string(ctime(&rawtime));
   filename.erase(filename.end() - 1);
   filename += string(".png");
@@ -665,6 +666,7 @@ void PathTracer::save_image() {
   for(size_t i = 0; i < h; ++i) {
     memcpy(frame_out + i * w, frame + (h - i - 1) * w, 4 * w);
   }
+
 
   fprintf(stderr, "[PathTracer] Saving to file: %s... ", filename.c_str());
   lodepng::encode(filename, (unsigned char*) frame_out, w, h);

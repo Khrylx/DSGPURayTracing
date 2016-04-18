@@ -134,6 +134,8 @@ int main( int argc, char** argv ) {
   // create application
   Application app (config);
   app.viewerOn = viewerOn;
+  app.pathtracer->useCPU = useCPU;
+
   if (viewerOn) {
     // set renderer
     viewer.set_renderer(&app);
