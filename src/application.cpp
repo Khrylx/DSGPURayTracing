@@ -302,7 +302,9 @@ void Application::init_camera(CameraInfo& cameraInfo,
                               const Matrix4x4& transform) {
   camera.configure(cameraInfo, screenW, screenH);
   canonicalCamera.configure(cameraInfo, screenW, screenH);
-  set_projection_matrix();
+
+  if (viewerOn)
+    set_projection_matrix();
 }
 
 void Application::reset_camera() {
@@ -493,7 +495,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             break;
           case 'r': case 'R':
             //set_up_pathtracer();
-            pathtracer->start_raytracing();
+            startCPURayTracing();
             mode = RENDER_MODE;
             break;
           case 'v': case 'V':
@@ -780,6 +782,11 @@ void Application::startGPURayTracing() {
   cuPathTracer->updateHostSampleBuffer();
   delete cuPathTracer;
   mode = RENDER_MODE;
+}
+
+void Application::startCPURayTracing() {
+
+    pathtracer->start_raytracing();
 }
 // void Camera::copy_placement(const Camera& other) {
 //   pos = other.pos;

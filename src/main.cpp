@@ -70,16 +70,17 @@ extern int test();
 
 int main( int argc, char** argv ) {
 
-  test();
+  //test();
 
   std::srand(std::time(0));
 
   bool viewerOn = false;
+  bool useCPU = false;
 
   // get the options
   AppConfig config; int opt;
   string camFileName;
-  while ( (opt = getopt(argc, argv, "s:l:t:m:f:h:v")) != -1 ) {  // for each option...
+  while ( (opt = getopt(argc, argv, "s:l:t:m:f:h:v c")) != -1 ) {  // for each option...
     switch ( opt ) {
     case 's':
         config.pathtracer_ns_aa = atoi(optarg);
@@ -101,6 +102,9 @@ int main( int argc, char** argv ) {
         break;
     case 'f':
         camFileName = optarg;
+        break;
+    case 'c':
+        useCPU = true;
         break;
     default:
         usage(argv[0]);
@@ -152,8 +156,26 @@ int main( int argc, char** argv ) {
 
   if (!viewerOn) {
 
-    app.startGPURayTracing();
-    app.pathtracer->save_image();
+      if(useCPU){
+          app.startCPURayTracing();
+
+          while (1) {
+              app.pathtracer->m.lock();
+              int state = app.pathtracer->state;
+              app.pathtracer->m.unlock();
+              if (state == PathTracer::DONE)
+                  break;
+
+          }
+      }
+
+      else{
+          app.startGPURayTracing();
+      }
+
+      app.pathtracer->save_image();
+
+
   }
   delete sceneInfo;
 

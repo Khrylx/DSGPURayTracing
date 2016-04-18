@@ -16,6 +16,7 @@
 #include "static_scene/sphere.h"
 #include "static_scene/triangle.h"
 #include "static_scene/light.h"
+#include <mutex>
 
 using namespace CMU462::StaticScene;
 
@@ -629,7 +630,9 @@ void PathTracer::worker_thread() {
   if (continueRaytracing && workerDoneCount == numWorkerThreads) {
     timer.stop();
     fprintf(stdout, "Done! (%.4fs)\n", timer.duration());
-    state = DONE;
+      m.lock();
+      state = DONE;
+      m.unlock();
   }
 }
 

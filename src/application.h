@@ -77,6 +77,8 @@ class Application : public Renderer {
 
   void startGPURayTracing();
 
+  void startCPURayTracing();
+
   Application(AppConfig config);
 
   ~Application();

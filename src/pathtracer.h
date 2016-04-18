@@ -210,6 +210,7 @@ class PathTracer {
 
   // Configurables //
 
+    std::mutex m;
   State state;          ///< current state
   Scene* scene;         ///< current scene
   Camera* camera;       ///< current camera
