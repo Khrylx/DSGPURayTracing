@@ -100,7 +100,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
         int num_light_samples = const_lights[i].type == 0 ? 1 : const_params.ns_area_light;
         float scale = 1.0 / num_light_samples;
 
-        for (int i=0; i<num_light_samples; i++) {
+        for (int j=0; j<num_light_samples; j++) {
 
             float3 light_L = sample_L(i, hit_p, dir_to_light, &dist_to_light, &pdf, s);
 
