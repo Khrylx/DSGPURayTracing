@@ -88,7 +88,7 @@ void CUDAPathTracer::startRayTracing()
 void CUDAPathTracer::startRayTracingPT()
 {
     int blockDim = 32;
-    int gridDim = 64;
+    int gridDim = 256;
 
     traceScenePT<<<gridDim, blockDim>>>();
 
@@ -130,6 +130,7 @@ void CUDAPathTracer::createFrameBuffer()
     screenW = pathTracer->frameBuffer.w;
 
     err = cudaMalloc((void**)&frameBuffer, 3 * screenW * screenH * sizeof(float));
+    cudaMemset(frameBuffer, 0, 3 * screenW * screenH * sizeof(float));
 
     if (err != cudaSuccess)
     {

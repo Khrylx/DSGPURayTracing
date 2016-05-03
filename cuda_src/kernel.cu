@@ -245,11 +245,42 @@ traceScene(int xStart, int yStart, int width, int height)
 
 __device__ int globalPoolNextRay = 0;
 
+
+
+
+__device__ float3
+tracePixelPT(curandState* s, int x, int y, bool verbose)
+{
+    float3 spec = make_float3(0.0, 0.0, 0.0);
+
+    int w = const_params.screenW;
+    int h = const_params.screenH;
+    int ns_aa = const_params.ns_aa;
+
+    float2 r = gridSampler(s);
+    float px = (x + r.x) / (float)w;
+    float py = (y + r.y) / (float)h;
+
+    GPURay ray;
+    generateRay(&ray, px, py);
+
+    float3 tmpSpec = traceRay(s, &ray, true, verbose);
+    spec.x += tmpSpec.x;
+    spec.y += tmpSpec.y;
+    spec.z += tmpSpec.z;
+
+
+    return make_float3(spec.x / ns_aa, spec.y / ns_aa, spec.z / ns_aa);
+}
+
+
 __global__ void
 traceScenePT()
 {
-    volatile int localPoolNextRay;
-    int globalPoolRayCount = const_params.screenW * const_params.screenH;
+    
+    int globalPoolRayCount = const_params.screenW * const_params.screenH * const_params.ns_aa;
+    __shared__ float3 spec[32];
+    __shared__ volatile int localPoolNextRay;
 
     while(true){
 
@@ -258,20 +289,35 @@ traceScenePT()
         }
 
         int myRayIndex = localPoolNextRay + threadIdx.x;
-        if (myRayIndex > globalPoolRayCount)
+        if (myRayIndex >= globalPoolRayCount)
             return;
 
-        int x = myRayIndex / const_params.screenW;
-        int y = myRayIndex % const_params.screenH;
+
+        int index = myRayIndex / const_params.ns_aa;
+        int x = index % const_params.screenW;
+        int y = index / const_params.screenW;
 
         curandState s;
         curand_init((unsigned int)myRayIndex, 0, 0, &s);
 
-        float3 spec = tracePixel(&s, x, y, false);
+        spec[threadIdx.x] = tracePixelPT(&s, x, y, false);
 
-        const_params.frameBuffer[3 * myRayIndex] = spec.x;
-        const_params.frameBuffer[3 * myRayIndex + 1] = spec.y;
-        const_params.frameBuffer[3 * myRayIndex + 2] = spec.z;
+        if(threadIdx.x == 0){
+            
+            for (int i = 1; i < 32; ++i)
+            {
+                spec[0].x += spec[i].x;
+                spec[0].y += spec[i].y;
+                spec[0].z += spec[i].z;
+            }
+
+            const_params.frameBuffer[3 * index] += spec[0].x;
+            const_params.frameBuffer[3 * index + 1] += spec[0].y;
+            const_params.frameBuffer[3 * index + 2] += spec[0].z;
+
+        }
+
+        
     }
 
 
