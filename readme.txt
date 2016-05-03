@@ -4,6 +4,7 @@
 Scene      res        s         GPU       CPU
 CBspheres  600x600    256       7.4796    149.6415
 CBlucy     600x600    256       290.6147  222.3286   
+CBdragon   600x600    256       372.2835
 dragon     600x600    256       107.2679  232.6374
 
 

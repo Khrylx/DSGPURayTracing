@@ -774,7 +774,8 @@ void Application::startGPURayTracing() {
   pathtracer->frameBuffer.clear();
 
   pathtracer->timer.start();
-  cuPathTracer->startRayTracing();
+  //cuPathTracer->startRayTracing();
+  cuPathTracer->startRayTracingPT();
   pathtracer->timer.stop();
   fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
 

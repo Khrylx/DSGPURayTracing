@@ -241,5 +241,38 @@ traceScene(int xStart, int yStart, int width, int height)
     // initialize random sampler state
     // need to pass to further functions
 
+}
+
+__device__ int globalPoolNextRay = 0;
+
+__global__ void
+traceScenePT()
+{
+    volatile int localPoolNextRay;
+    int globalPoolRayCount = const_params.screenW * const_params.screenH;
+
+    while(true){
+
+        if(threadIdx.x == 0){
+            localPoolNextRay = atomicAdd(&globalPoolNextRay, 32);
+        }
+
+        int myRayIndex = localPoolNextRay + threadIdx.x;
+        if (myRayIndex > globalPoolRayCount)
+            return;
+
+        int x = myRayIndex / const_params.screenW;
+        int y = myRayIndex % const_params.screenH;
+
+        curandState s;
+        curand_init((unsigned int)myRayIndex, 0, 0, &s);
+
+        float3 spec = tracePixel(&s, x, y, false);
+
+        const_params.frameBuffer[3 * myRayIndex] = spec.x;
+        const_params.frameBuffer[3 * myRayIndex + 1] = spec.y;
+        const_params.frameBuffer[3 * myRayIndex + 2] = spec.z;
+    }
+
 
 }

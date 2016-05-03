@@ -144,6 +144,8 @@ public:
 
     void startRayTracing();
 
+    void startRayTracingPT();
+
     void updateHostSampleBuffer();
 
 private:
