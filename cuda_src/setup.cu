@@ -26,7 +26,7 @@
 #include "kernel.cu"
 #include <map>
 
-#define TILE_DIM 1
+#define TILE_DIM 4
 
 /**
  * CUDA Kernel Device code
@@ -87,16 +87,25 @@ void CUDAPathTracer::startRayTracing()
 
 void CUDAPathTracer::startRayTracingPT()
 {
+    int xTileNum = TILE_DIM;
+    int yTileNum = TILE_DIM;
+    int width = (screenW + xTileNum - 1) / xTileNum;
+    int height = (screenH + yTileNum - 1) / yTileNum;
     int blockDim = 32;
     int gridDim = 256;
+    int zero = 0;
 
-    traceScenePT<<<gridDim, blockDim>>>();
+    for(int i = 0; i < xTileNum; i++)
+        for(int j = 0; j < yTileNum; j++)
+        {
+            traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, width, height);
+
+            cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(int));
+            cudaThreadSynchronize();
+
+        }
 
     cudaError_t err = cudaPeekAtLastError();
-
-    cudaDeviceSynchronize();
-    cudaThreadSynchronize();
-
 
     if (err != cudaSuccess)
     {

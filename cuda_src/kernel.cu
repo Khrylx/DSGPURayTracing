@@ -275,10 +275,10 @@ tracePixelPT(curandState* s, int x, int y, bool verbose)
 
 
 __global__ void
-traceScenePT()
+traceScenePT(int xStart, int yStart, int width, int height)
 {
     
-    int globalPoolRayCount = const_params.screenW * const_params.screenH * const_params.ns_aa;
+    int globalPoolRayCount = height * width * const_params.ns_aa;
     __shared__ float3 spec[32];
     __shared__ volatile int localPoolNextRay;
 
@@ -294,8 +294,9 @@ traceScenePT()
 
 
         int index = myRayIndex / const_params.ns_aa;
-        int x = index % const_params.screenW;
-        int y = index / const_params.screenW;
+        int x = index % width + xStart;
+        int y = index / height + yStart;
+        int bIndex = y * const_params.screenW + x;
 
         curandState s;
         curand_init((unsigned int)myRayIndex, 0, 0, &s);
@@ -311,9 +312,9 @@ traceScenePT()
                 spec[0].z += spec[i].z;
             }
 
-            const_params.frameBuffer[3 * index] += spec[0].x;
-            const_params.frameBuffer[3 * index + 1] += spec[0].y;
-            const_params.frameBuffer[3 * index + 2] += spec[0].z;
+            const_params.frameBuffer[3 * bIndex] += spec[0].x;
+            const_params.frameBuffer[3 * bIndex + 1] += spec[0].y;
+            const_params.frameBuffer[3 * bIndex + 2] += spec[0].z;
 
         }
 
