@@ -26,7 +26,7 @@
 #include "kernel.cu"
 #include <map>
 
-#define TILE_DIM 16
+#define TILE_DIM 1
 
 /**
  * CUDA Kernel Device code
@@ -91,7 +91,7 @@ void CUDAPathTracer::startRayTracingPT()
     int yTileNum = TILE_DIM;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
-    int blockDim = 32;
+    int blockDim = BLOCK_DIM;
     int gridDim = 256;
     int zero = 0;
 

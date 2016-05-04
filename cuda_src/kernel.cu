@@ -11,6 +11,8 @@
 #define ESP_N 5e-3
 #define EPS_K 1e-4
 
+#define BLOCK_DIM 64
+
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
@@ -274,14 +276,16 @@ traceScenePT(int xStart, int yStart, int width, int height)
 {
     
     int globalPoolRayCount = height * width * const_params.ns_aa;
-    __shared__ float3 spec[32];
+    __shared__ float3 spec[BLOCK_DIM];
+    __shared__ int bIndex[BLOCK_DIM];
     __shared__ volatile int localPoolNextRay;
 
     while(true){
 
         if(threadIdx.x == 0){
-            localPoolNextRay = atomicAdd(&globalPoolNextRay, 32);
+            localPoolNextRay = atomicAdd(&globalPoolNextRay, BLOCK_DIM);
         }
+        __syncthreads();
 
         int myRayIndex = localPoolNextRay + threadIdx.x;
         if (myRayIndex >= globalPoolRayCount)
@@ -291,26 +295,32 @@ traceScenePT(int xStart, int yStart, int width, int height)
         int index = myRayIndex / const_params.ns_aa;
         int x = index % width + xStart;
         int y = index / height + yStart;
-        int bIndex = y * const_params.screenW + x;
+
+        bIndex[threadIdx.x] = y * const_params.screenW + x;
 
         curandState s;
         curand_init((unsigned int)myRayIndex, 0, 0, &s);
 
         spec[threadIdx.x] = tracePixelPT(&s, x, y, false);
 
-        if(threadIdx.x == 0){
+        __syncthreads();
+
+        if(threadIdx.x == 0 || (threadIdx.x > 0 && bIndex[threadIdx.x - 1] != bIndex[threadIdx.x])){
             
-            for (int i = 1; i < 32; ++i)
+            for (int i = threadIdx.x + 1; i < BLOCK_DIM; ++i)
             {
-                spec[0].x += spec[i].x;
-                spec[0].y += spec[i].y;
-                spec[0].z += spec[i].z;
+                if (bIndex[i - 1] != bIndex[i]) break;
+                    
+                spec[threadIdx.x].x += spec[i].x;
+                spec[threadIdx.x].y += spec[i].y;
+                spec[threadIdx.x].z += spec[i].z;
             }
 
-            const_params.frameBuffer[3 * bIndex] += spec[0].x;
-            const_params.frameBuffer[3 * bIndex + 1] += spec[0].y;
-            const_params.frameBuffer[3 * bIndex + 2] += spec[0].z;
 
+
+            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x]], spec[threadIdx.x].x);
+            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 1], spec[threadIdx.x].y);
+            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec[threadIdx.x].z);
         }
 
         
