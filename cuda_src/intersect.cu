@@ -242,26 +242,24 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
     GPUBVHNode** stackPtr = stack;
     *stackPtr++ = NULL;
 
+    bool isIntersect = false;
+
     while(1){
 
         if (node == NULL) {
-            return false;
+            return isIntersect;
         }
 
         if (node->left == NULL && node->right == NULL) {
-            bool isIntersect = false;
             for (int j = 0; j < node->range; j++) {
                 int primIndex = const_params.BVHPrimMap[node->start + j];
                 bool res = intersect(primIndex, ray, i);
                 // bool res = false;
                 isIntersect = isIntersect || res;
             }
-            return isIntersect;
-        } else if (node->left == NULL) {
-            *stackPtr++ = node->left;
-        } else if (node->right == NULL) {
-            *stackPtr++ = node->right;
-        } else {
+            node = *--stackPtr;
+        }
+        else {
             float tminl = -INF_FLOAT;
             float tminr = -INF_FLOAT;
             float tmaxl = INF_FLOAT;
@@ -279,19 +277,17 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
                 GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
                 GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
 
-                hitl = node_intersect(first, ray, i);
-                if (!hitl || i->t > fmaxf(tminl, tminr)) {
-                    hitr = node_intersect(second, ray, i);
-                }
-                return hitl || hitr;
+                node = first;
+                *stackPtr++ = second;
             } else if (hitl) {
-                *stackPtr++ = node->left;
+                node = node->left;
             } else if (hitr) {
-                *stackPtr++ = node->right;
+                node = node->right;
+            }
+            else{
+                node = *--stackPtr;
             }
         }
-        node = *stackPtr--;
-
     }
     
 
@@ -336,7 +332,8 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
         float t1 = INF_FLOAT;
 
         if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
-            return false;
+            node = *--stackPtr;
+            continue;
         }
 
         if (node->left == NULL && node->right == NULL) {
@@ -347,21 +344,20 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                     return true;
                 }
             }
-            return false;
         } 
         else {
             if (node->left) *stackPtr++ = node->left;
             if (node->right) *stackPtr++ = node->right;
         }
-        node = *stackPtr--;
+        node = *--stackPtr;
     }
 
 }
 
-__device__ bool BVH_intersect(GPURay &ray, GPUIntersection *isect) {
-    return node_intersect(const_params.BVHRoot, ray, isect);
+__device__ inline bool BVH_intersect(GPURay &ray, GPUIntersection *isect) {
+    return node_intersect_iter(const_params.BVHRoot, ray, isect);
 }
 
-__device__ bool BVH_intersect(GPURay &ray) {
-    return node_intersect(const_params.BVHRoot, ray);
+__device__ inline bool BVH_intersect(GPURay &ray) {
+    return node_intersect_iter(const_params.BVHRoot, ray);
 }
