@@ -251,7 +251,6 @@ __device__ int globalPoolNextRay = 0;
 __device__ float3
 tracePixelPT(curandState* s, int x, int y, bool verbose)
 {
-    float3 spec = make_float3(0.0, 0.0, 0.0);
 
     int w = const_params.screenW;
     int h = const_params.screenH;
@@ -264,11 +263,7 @@ tracePixelPT(curandState* s, int x, int y, bool verbose)
     GPURay ray;
     generateRay(&ray, px, py);
 
-    float3 tmpSpec = traceRay(s, &ray, true, verbose);
-    spec.x += tmpSpec.x;
-    spec.y += tmpSpec.y;
-    spec.z += tmpSpec.z;
-
+    float3 spec = traceRay(s, &ray, true, verbose);
 
     return make_float3(spec.x / ns_aa, spec.y / ns_aa, spec.z / ns_aa);
 }

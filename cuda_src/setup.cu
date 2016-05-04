@@ -26,7 +26,7 @@
 #include "kernel.cu"
 #include <map>
 
-#define TILE_DIM 4
+#define TILE_DIM 16
 
 /**
  * CUDA Kernel Device code
