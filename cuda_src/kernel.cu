@@ -299,7 +299,7 @@ traceScenePT(int xStart, int yStart, int width, int height)
         bIndex[threadIdx.x] = y * const_params.screenW + x;
 
         curandState s;
-        curand_init((unsigned int)myRayIndex, 0, 0, &s);
+        curand_init((unsigned int)myRayIndex * (xStart * TILE_DIM + yStart), 0, 0, &s);
 
         spec[threadIdx.x] = tracePixelPT(&s, x, y, false);
 

@@ -23,10 +23,10 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
+#define TILE_DIM 32
+ 
 #include "kernel.cu"
 #include <map>
-
-#define TILE_DIM 1
 
 /**
  * CUDA Kernel Device code
@@ -117,6 +117,8 @@ void CUDAPathTracer::startRayTracingPT()
 
 void CUDAPathTracer::init()
 {
+
+    cudaDeviceReset();
     loadCamera();
     loadPrimitives();
     loadLights();
@@ -124,7 +126,7 @@ void CUDAPathTracer::init()
     createFrameBuffer();
     loadParameters();
 
-    cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
+    //cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
 
     //printInfo<<<1, 1>>>();
     //cudaDeviceSynchronize();
