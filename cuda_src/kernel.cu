@@ -329,3 +329,30 @@ traceScenePT(int xStart, int yStart, int width, int height)
 
 
 }
+
+__global__ void computeMorton() {
+    int primIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    if (primIndex >= const_bvhparams.numObjects) {
+        return;
+    }
+    float *primitive = const_params.positions + 9 * primIndex;
+    float centroid[3];
+    if (const_params.types[primIndex] == 0)  {// sphere
+        for (int i = 0; i < 3; i++) {
+            centroid[i] = primitive[i];
+        }
+    } else { // triangle
+        for (int i = 0; i < 3; i++) {
+            float minVal = min(primitive[i], primitive[3 + i]);
+            minVal = min(minVal, primitive[6 + i]);
+            float maxVal = max(primitive[i], primitive[3 + i]);
+            maxVal = max(maxVal, primitive[6 + i]);
+            centroid[i] = 0.5 * (minVal + maxVal);
+        }
+    }
+    for (int i = 0; i < 3; i ++) {
+        centroid[i] = (centroid[i] - const_bvhparams.sceneMin[i]) / const_bvhparams.sceneExtent[i];
+    }
+    const_bvhparams.sortedMortonCodes[primIndex] = morton3D(centroid[0], centroid[1], centroid[2]);
+    const_bvhparams.sortedObjectIDs[primIndex] = primIndex;
+}

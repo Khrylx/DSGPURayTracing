@@ -49,6 +49,36 @@ __device__ inline float illum(float3& s)
     return 0.2126 * s.x + 0.7152 * s.y + 0.0722 * s.z;
 }
 
+__device__ inline unsigned int expandBits(unsigned int v)
+{
+    v = (v * 0x00010001u) & 0xFF0000FFu;
+    v = (v * 0x00000101u) & 0x0F00F00Fu;
+    v = (v * 0x00000011u) & 0xC30C30C3u;
+    v = (v * 0x00000005u) & 0x49249249u;
+    return v;
+}
+
+__device__ unsigned int morton3D(float x, float y, float z)
+{
+    x = min(max(x * 1024.0f, 0.0f), 1023.0f);
+    y = min(max(y * 1024.0f, 0.0f), 1023.0f);
+    z = min(max(z * 1024.0f, 0.0f), 1023.0f);
+    unsigned int xx = expandBits((unsigned int)x);
+    unsigned int yy = expandBits((unsigned int)y);
+    unsigned int zz = expandBits((unsigned int)z);
+    return xx * 4 + yy * 2 + zz;
+}
+
+__device__ inline void GPUBBox_expand(GPUBBox *X, GPUBBox *S) {
+    for (int i = 0; i < 3; ++i)
+    {
+        float minVal = min(S->min[i], X->min[i]);
+        float maxVal = max(S->max[i], X->max[i]);
+        S->min[i] = minVal;
+        S->max[i] = maxVal;
+    }
+}
+
 __device__ inline float
 power(float X,float Y)
 {
