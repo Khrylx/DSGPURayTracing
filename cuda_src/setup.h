@@ -92,7 +92,7 @@ struct BVHParameters
     GPUBVHNode *leafNodes;
     GPUBVHNode *internalNodes;
     unsigned int*sortedMortonCodes;
-    int *sortedObjectIDs;
+    // int *sortedObjectIDs;
     
 };
 

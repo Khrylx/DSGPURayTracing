@@ -56,7 +56,6 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(frameBuffer);
     cudaFree(BVHPrimMap);
     cudaFree(gpu_sortedMortonCodes);
-    cudaFree(gpu_sortedObjectIDs);
     cudaFree(gpu_leafNodes);
     cudaFree(gpu_internalNodes);
 }
@@ -126,7 +125,8 @@ void CUDAPathTracer::init()
     loadCamera();
     loadPrimitives();
     loadLights();
-    loadBVH();
+    // loadBVH();
+    buildBVH();
     createFrameBuffer();
     loadParameters();
 
@@ -404,27 +404,27 @@ void CUDAPathTracer::buildBVH()
     Vector3D sceneExtent = sceneBox.extent;
 
     int numObjects = primitives.size();
-    GPUBVHNode *leafNodes;
-    GPUBVHNode *internalNodes;
-    unsigned int *sortedMortonCodes;
-    int *sortedObjectIDs;
+    // GPUBVHNode *leafNodes;
+    // GPUBVHNode *internalNodes;
+    // unsigned int *sortedMortonCodes;
+    // int *sortedObjectIDs;
     
-    cudaMalloc((void**)&leafNodes, numObjects * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&sortedMortonCodes, numObjects * sizeof(unsigned int));
-    cudaMalloc((void**)&sortedObjectIDs, numObjects * sizeof(int));
+    cudaMalloc((void**)&gpu_leafNodes, numObjects * sizeof(GPUBVHNode));
+    cudaMalloc((void**)&gpu_internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
+    cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned int));
+    cudaMalloc((void**)&BVHPrimMap, numObjects * sizeof(int));
 
-    gpu_sortedMortonCodes = sortedMortonCodes;
-    gpu_sortedObjectIDs = sortedObjectIDs;
-    gpu_leafNodes = leafNodes;
-    gpu_internalNodes = internalNodes;
+    // gpu_sortedMortonCodes = sortedMortonCodes;
+    // BVHPrimMap = sortedObjectIDs;
+    // gpu_leafNodes = leafNodes;
+    // gpu_internalNodes = internalNodes;
 
     BVHParameters tmpParams;
     tmpParams.numObjects = numObjects;
-    tmpParams.leafNodes = leafNodes;
+    tmpParams.leafNodes = gpu_leafNodes;
     tmpParams.internalNodes = internalNodes;
-    tmpParams.sortedMortonCodes = sortedMortonCodes;
-    tmpParams.sortedObjectIDs = sortedObjectIDs;
+    tmpParams.sortedMortonCodes = gpu_sortedMortonCodes;
+    tmpParams.sortedObjectIDs = BVHPrimMap;
     for (int i = 0; i < 3; ++i)
     {
         tmpParams.sceneMin[i] = sceneMin[i];
@@ -463,6 +463,8 @@ void CUDAPathTracer::buildBVH()
     // build bouding box
     numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
     buildBoundingBox<<<numBlocks, threadsPerBlock>>>();
+
+    BVHRoot = gpu_internalNodes;
 }
 
 // Load light
