@@ -356,3 +356,37 @@ __global__ void computeMorton() {
     const_bvhparams.sortedMortonCodes[primIndex] = morton3D(centroid[0], centroid[1], centroid[2]);
     const_bvhparams.sortedObjectIDs[primIndex] = primIndex;
 }
+
+__global__ void generateLeafNode() {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const_bvhparams.leafNodes[idx].start = idx;
+    const_bvhparams.leafNodes[idx].range = 1;
+    const_bvhparams.leafNodes[idx].l = NULL;
+    const_bvhparams.leafNodes[idx].r = NULL;
+    const_bvhparams.leafNodes[idx].parent = NULL;
+    const_bvhparams.leafNodes[idx].flag = 1;
+
+    // generate bounding box
+    float minVec[3];
+    float maxVec[3];
+    float *primitive = const_params.positions + 9 * idx;
+    if (const_params.types[idx] == 0) { // sphere
+        for (int i = 0; i < 3; i++) {
+            minVec[i] = primitive[i] - primitive[3];
+            maxVec[i] = primitive[i] + primitive[3];
+        }
+    } else { // triangle
+        for (int i = 0; i < 3; i++) {
+            float minVal = min(primitive[i], primitive[3 + i]);
+            minVal = min(minVal, primitive[6 + i]);
+            float maxVal = max(primitive[i], primitive[3 + i]);
+            maxVal = max(maxVal, primitive[6 + i]);
+            minVec[i] = minVal;
+            maxVec[i] = maxVal;
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        const_bvhparams.leafNodes[idx].min[i] = minVec[i];
+        const_bvhparams.leafNodes[idx].max[i] = maxVec[i];
+    }
+}
