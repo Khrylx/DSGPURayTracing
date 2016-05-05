@@ -493,6 +493,7 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.BVHPrimMap = BVHPrimMap;
     tmpParams.BVHRoot = BVHRoot;
 
+    cout << "primNum:" << primNum << endl;
     cudaError_t err = cudaSuccess;
 
     err = cudaMemcpyToSymbol(const_params, &tmpParams, sizeof(Parameters));
