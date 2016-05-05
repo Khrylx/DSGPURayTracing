@@ -18,8 +18,10 @@ struct GPUBBox
 
 struct GPUBVHNode
 {
-    GPUBVHNode* left;
-    GPUBVHNode* right;
+    GPUBVHNode *left;
+    GPUBVHNode *right;
+    GPUBVHNode *parent;
+    int flag;
     int start;
     int range;
     GPUBBox bbox;
@@ -82,6 +84,18 @@ struct Parameters
     GPUBVHNode* BVHRoot;
 };
 
+struct BVHParameters
+{
+    float sceneMin[3];
+    float sceneExtent[3];
+    int numObjects;
+    GPUBVHNode *leafNodes;
+    GPUBVHNode *internalNodes;
+    unsigned int*sortedMortonCodes;
+    int *sortedObjectIDs;
+    
+};
+
 struct GPURay
 {
     int depth;  ///< depth of the Ray
@@ -133,6 +147,8 @@ public:
     void loadLights();
 
     void loadBVH();
+
+    void buildBVH();
 
     void loadParameters();
 

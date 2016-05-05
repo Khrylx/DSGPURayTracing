@@ -17,6 +17,7 @@ __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
 __constant__  Parameters const_params;
+__constant__  BVHParameters const_bvhparams;
 
 #include "helper.cu"
 #include "light.cu"

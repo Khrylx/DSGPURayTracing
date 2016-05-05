@@ -385,6 +385,54 @@ void CUDAPathTracer::loadBVH()
     // cout << "=========================" << endl;
 }
 
+void CUDAPathTracer::buildBVH()
+{
+    vector<Primitive*> &primitives = pathTracer->primitives;
+    
+    //  can be parallelized?
+    BBox sceneBox;
+    for (size_t i = 0; i < pathTracer->primitives.size(); i++) {
+        sceneBox.expand(pathTracer->primitives[i]->get_bbox());
+    }
+    Vector3D sceneMin = sceneBox.min;
+    Vector3D sceneExtent = sceneBox.extent;
+
+    int numObjects = primitives.size();
+    GPUBVHNode *leafNodes;
+    GPUBVHNode *internalNodes;
+    unsigned int *sortedMortonCodes;
+    int *sortedObjectIDs;
+    
+    cudaMalloc((void**)&leafNodes, numObjects * sizeof(GPUBVHNode));
+    cudaMalloc((void**)&internalNodes, numObjects * sizeof(GPUBVHNode));
+    cudaMalloc((void**)&sortedMortonCodes, numObjects * sizeof(unsigned int));
+    cudaMalloc((void**)&sortedObjectIDs, numObjects * sizeof(int));
+
+    BVHParameters tmpParams;
+    tmpParams.numObjects = numObjects;
+    tmpParams.leafNodes = leafNodes;
+    tmpParams.internalNodes = internalNodes;
+    tmpParams.sortedMortonCodes = sortedMortonCodes;
+    tmpParams.sortedObjectIDs = sortedObjectIDs;
+    for (int i = 0; i < 3; ++i)
+    {
+        tmpParams.sceneMin[i] = sceneMin[i];
+        tmpParams.sceneExtent[i] = sceneExtent[i];
+    }
+
+    cudaError_t err = cudaSuccess;
+
+    err = cudaMemcpyToSymbol(const_bvhparams, &tmpParams, sizeof(BVHParameters));
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    
+}
+
 // Load light
 void CUDAPathTracer::toGPULight(SceneLight* l, GPULight *gpuLight) {
     gpuLight->type = l->getType();
