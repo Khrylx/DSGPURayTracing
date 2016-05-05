@@ -26,6 +26,8 @@
 #include "kernel.cu"
 #include <map>
 
+#include <thrust/sort.h>
+
 #define TILE_DIM 1
 
 /**
@@ -430,7 +432,17 @@ void CUDAPathTracer::buildBVH()
         exit(EXIT_FAILURE);
     }
 
-    
+    int threadsPerBlock = 256;
+    int numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock;
+
+    // assign morton code to each primitive
+    computeMorton<<<numBlocks, threadsPerBlock>>>();
+
+    // sort primitive according to morton code
+    //wrap raw pointer with a device_ptr to use with Thrust functions
+    unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
+    int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
+    thrust::sort_by_key(keys, keys + numObjects, data);
 }
 
 // Load light
