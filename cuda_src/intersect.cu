@@ -246,48 +246,52 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
 
     while(1){
 
+        while(node){
+            if (node->left == NULL && node->right == NULL) {
+                break;
+            }
+            else {
+                float tminl = -INF_FLOAT;
+                float tminr = -INF_FLOAT;
+                float tmaxl = INF_FLOAT;
+                float tmaxr = INF_FLOAT;
+
+                GPURay nray = ray;
+                float eps[3] = {EPS_K, EPS_K, EPS_K};
+                addVector3D(eps, nray.d);
+                normalize3D(nray.d);
+
+                bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl, tmaxl);
+                bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr, tmaxr);
+
+                if (hitl && hitr) {
+                    GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
+                    GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
+
+                    node = first;
+                    *stackPtr++ = second;
+                } else if (hitl) {
+                    node = node->left;
+                } else if (hitr) {
+                    node = node->right;
+                }
+                else{
+                    node = *--stackPtr;
+                }
+            }
+        }
+        
         if (node == NULL) {
             return isIntersect;
         }
 
-        if (node->left == NULL && node->right == NULL) {
-            for (int j = 0; j < node->range; j++) {
-                int primIndex = const_params.BVHPrimMap[node->start + j];
-                bool res = intersect(primIndex, ray, i);
-                // bool res = false;
-                isIntersect = isIntersect || res;
-            }
-            node = *--stackPtr;
+        for (int j = 0; j < node->range; j++) {
+            int primIndex = const_params.BVHPrimMap[node->start + j];
+            bool res = intersect(primIndex, ray, i);
+            // bool res = false;
+            isIntersect = isIntersect || res;
         }
-        else {
-            float tminl = -INF_FLOAT;
-            float tminr = -INF_FLOAT;
-            float tmaxl = INF_FLOAT;
-            float tmaxr = INF_FLOAT;
-
-            GPURay nray = ray;
-            float eps[3] = {EPS_K, EPS_K, EPS_K};
-            addVector3D(eps, nray.d);
-            normalize3D(nray.d);
-
-            bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl, tmaxl);
-            bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr, tmaxr);
-
-            if (hitl && hitr) {
-                GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
-                GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
-
-                node = first;
-                *stackPtr++ = second;
-            } else if (hitl) {
-                node = node->left;
-            } else if (hitr) {
-                node = node->right;
-            }
-            else{
-                node = *--stackPtr;
-            }
-        }
+        node = *--stackPtr;
     }
     
 
@@ -325,29 +329,36 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
     *stackPtr++ = NULL;
 
     while(1){
+        
+        while(node){
+            float t0 = -INF_FLOAT;
+            float t1 = INF_FLOAT;
+
+            if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
+                node = *--stackPtr;
+                continue;
+            }
+
+            if (node->left == NULL && node->right == NULL) {
+                // node is leaf
+                break;
+            } 
+            else {
+                if (node->left) *stackPtr++ = node->left;
+                if (node->right) *stackPtr++ = node->right;
+            }
+            node = *--stackPtr;
+        }
+
         if (node == NULL) {
             return false;
         }
-        float t0 = -INF_FLOAT;
-        float t1 = INF_FLOAT;
 
-        if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
-            node = *--stackPtr;
-            continue;
-        }
-
-        if (node->left == NULL && node->right == NULL) {
-            // node is leaf
-            for (int i = 0; i < node->range; i++) {
-                int primIndex = const_params.BVHPrimMap[node->start + i];
-                if (intersect(primIndex, ray)) {
-                    return true;
-                }
+        for (int i = 0; i < node->range; i++) {
+            int primIndex = const_params.BVHPrimMap[node->start + i];
+            if (intersect(primIndex, ray)) {
+                return true;
             }
-        } 
-        else {
-            if (node->left) *stackPtr++ = node->left;
-            if (node->right) *stackPtr++ = node->right;
         }
         node = *--stackPtr;
     }
