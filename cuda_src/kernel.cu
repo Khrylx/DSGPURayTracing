@@ -390,3 +390,39 @@ __global__ void generateLeafNode() {
         const_bvhparams.leafNodes[idx].max[i] = maxVec[i];
     }
 }
+
+__global__ void generateInternalNode() {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    float2 range = determinRange(const_bvhparams.sortedMortonCodes, const_bvhparams.numObjects, idx);
+    int first = range.x;
+    int last = range.y;
+
+    int split = findSplit(const_bvhparams.sortedMortonCodes, first, last);
+
+    GPUBVHNode *childA;
+    if (split == first) {
+        childA = const_bvhparams.leafNodes + split;
+    } else {
+        childA = const_bvhparams.internalNodes + split;
+    }
+
+    GPUBVHNode *childB;
+    if (split + 1 == last) {
+        childB = const_bvhparams.leafNodes + (split + 1);
+    } else {
+        childB = const_bvhparams.internalNodes + (split + 1);
+    }
+
+    GPUBVHNode *node = &const_bvhparams.internalNodes[idx];
+    node->left = childA;
+    node->right = childB;
+    node->start = first;
+    node->range = last - first + 1;
+    childA->parent = const_bvhparams.internalNodes + idx;
+    childB->parent = const_bvhparams.internalNodes + idx;
+}
+
+__global__  void buildBoudingBox() {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    propogateBBox(const_bvhparams.leafNodes + idx);
+}

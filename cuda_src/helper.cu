@@ -330,6 +330,60 @@ gpuAdd(float *A, float *B, float *C)
     *C = *A + *B;
 }
 
+float2 determineRange(unsigned int* sortedMortonCodes, int numObjects, int i) {
+    float2 range;
+    int d = sign(delta(i, i + 1, sortedMortonCodes, numObjects) - delta(i, i - 1, sortedMortonCodes, numObjects));
+
+    int deltaMin = delta(i, i - d, sortedMortonCodes, numObjects);
+    int lMax = 2;
+    while (delta(i, i + lMax * d, sortedMortonCodes, numObjects) > deltaMin) {
+        lMax = lMax << 1;
+    }
+    int l = 0;
+    int t = lMax / 2;
+    while (t >= 1) {
+        if (delta(i, i + (l + t) * d, sortedMortonCodes, numObjects) > deltaMin) {
+            l += t;
+        }
+        t = t / 2;
+    }
+    int j = i + l * d;
+    
+    range.x = min(i, j);
+    range.y = max(i, j);
+
+    return range;
+}
+
+__device__ int delta(int i, int j, unsigned int *sortedMortonCodes, int numObjects) {
+    if (i < 0 || i >= numObjects || j < 0 || j >= numObjects) {
+        return 0;
+    }
+    if (sortedMortonCodes[i] == sortedMortonCodes[j]) {
+        return __clz((unsigned int)i ^ (unsigned int)j);
+    }
+    return __clz(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
+}
+
+__device__ inline int sign(int val) {
+    return (0 < val) - (val < 0);
+}
+
+__device__ inline void propogateBBox(GPUBVHNode *node) {
+    if (atomicAdd(node->flag, 1) == 0) {
+        return;
+    }
+
+    if (node->left != NULL && node->right != NULL) {
+        GPUBBox_expand(node->left->bbox, node->bbox);
+        GPUBBox_expand(node->right->bbox, node->bbox);
+    }
+
+    if (node->parent != NULL) {
+        propogateBBox(node->parent);
+    }
+}
+
 __global__ void
 vectorAdd(float *A, float *B, float *C, int numElements)
 {

@@ -131,6 +131,11 @@ class CUDAPathTracer{
     float* gpu_normals;  // size: 9 * N.  *** normals for triangle
     float* frameBuffer;
 
+    unisigned int *gpu_sortedMortonCodes;
+    int *gpu_sortedObjectIDs;
+    GPUBVHNode *gpu_leafNodes;
+    GPUBVHNode *gpu_internalNodes;
+
     int* BVHPrimMap;
     GPUBVHNode* BVHRoot;
 

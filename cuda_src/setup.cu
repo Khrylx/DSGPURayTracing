@@ -55,6 +55,10 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_normals);
     cudaFree(frameBuffer);
     cudaFree(BVHPrimMap);
+    cudaFree(gpu_sortedMortonCodes);
+    cudaFree(gpu_sortedObjectIDs);
+    cudaFree(gpu_leafNodes);
+    cudaFree(gpu_internalNodes);
 }
 
 
@@ -406,9 +410,14 @@ void CUDAPathTracer::buildBVH()
     int *sortedObjectIDs;
     
     cudaMalloc((void**)&leafNodes, numObjects * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&internalNodes, numObjects * sizeof(GPUBVHNode));
+    cudaMalloc((void**)&internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
     cudaMalloc((void**)&sortedMortonCodes, numObjects * sizeof(unsigned int));
     cudaMalloc((void**)&sortedObjectIDs, numObjects * sizeof(int));
+
+    gpu_sortedMortonCodes = sortedMortonCodes;
+    gpu_sortedObjectIDs = sortedObjectIDs;
+    gpu_leafNodes = leafNodes;
+    gpu_internalNodes = internalNodes;
 
     BVHParameters tmpParams;
     tmpParams.numObjects = numObjects;
@@ -443,6 +452,17 @@ void CUDAPathTracer::buildBVH()
     unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
     int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
     thrust::sort_by_key(keys, keys + numObjects, data);
+
+    // generate leaf nodes
+    generateLeafNode<<<numBlocks, threadsPerBlock>>>();
+
+    // generate internal nodes
+    numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock;
+    generateInternalNode<<<numBlocks, threadsPerBlock>>>();
+
+    // build bouding box
+    numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
+    buildBoundingBox<<<numBlocks, threadsPerBlock>>>();
 }
 
 // Load light
