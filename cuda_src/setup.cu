@@ -23,7 +23,7 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
-#define TILE_DIM 32
+#define TILE_DIM 1
  
 #include "kernel.cu"
 #include <map>
@@ -126,7 +126,7 @@ void CUDAPathTracer::init()
     createFrameBuffer();
     loadParameters();
 
-    //cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
+    cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 24);
 
     //printInfo<<<1, 1>>>();
     //cudaDeviceSynchronize();
