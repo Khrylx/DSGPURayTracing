@@ -361,8 +361,8 @@ __global__ void generateLeafNode() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const_bvhparams.leafNodes[idx].start = idx;
     const_bvhparams.leafNodes[idx].range = 1;
-    const_bvhparams.leafNodes[idx].l = NULL;
-    const_bvhparams.leafNodes[idx].r = NULL;
+    const_bvhparams.leafNodes[idx].left = NULL;
+    const_bvhparams.leafNodes[idx].right = NULL;
     const_bvhparams.leafNodes[idx].parent = NULL;
     const_bvhparams.leafNodes[idx].flag = 1;
 
@@ -386,14 +386,14 @@ __global__ void generateLeafNode() {
         }
     }
     for (int i = 0; i < 3; i++) {
-        const_bvhparams.leafNodes[idx].min[i] = minVec[i];
-        const_bvhparams.leafNodes[idx].max[i] = maxVec[i];
+        const_bvhparams.leafNodes[idx].bbox.min[i] = minVec[i];
+        const_bvhparams.leafNodes[idx].bbox.max[i] = maxVec[i];
     }
 }
 
 __global__ void generateInternalNode() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    float2 range = determinRange(const_bvhparams.sortedMortonCodes, const_bvhparams.numObjects, idx);
+    float2 range = determineRange(const_bvhparams.sortedMortonCodes, const_bvhparams.numObjects, idx);
     int first = range.x;
     int last = range.y;
 
@@ -422,7 +422,7 @@ __global__ void generateInternalNode() {
     childB->parent = const_bvhparams.internalNodes + idx;
 }
 
-__global__  void buildBoudingBox() {
+__global__  void buildBoundingBox() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     propogateBBox(const_bvhparams.leafNodes + idx);
 }

@@ -422,7 +422,7 @@ void CUDAPathTracer::buildBVH()
     BVHParameters tmpParams;
     tmpParams.numObjects = numObjects;
     tmpParams.leafNodes = gpu_leafNodes;
-    tmpParams.internalNodes = internalNodes;
+    tmpParams.internalNodes = gpu_internalNodes;
     tmpParams.sortedMortonCodes = gpu_sortedMortonCodes;
     tmpParams.sortedObjectIDs = BVHPrimMap;
     for (int i = 0; i < 3; ++i)
