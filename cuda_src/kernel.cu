@@ -294,7 +294,7 @@ traceScenePT(int xStart, int yStart, int width, int height)
 
         int index = myRayIndex / const_params.ns_aa;
         int x = index % width + xStart;
-        int y = index / height + yStart;
+        int y = index / width + yStart;
 
         bIndex[threadIdx.x] = y * const_params.screenW + x;
 

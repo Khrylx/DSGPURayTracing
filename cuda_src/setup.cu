@@ -23,7 +23,7 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
-#define TILE_DIM 32
+#define TILE_DIM 1
  
 #include "kernel.cu"
 #include <map>
@@ -91,6 +91,7 @@ void CUDAPathTracer::startRayTracingPT()
     int yTileNum = TILE_DIM;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
+
     int blockDim = BLOCK_DIM;
     int gridDim = 256;
     int zero = 0;
@@ -98,7 +99,10 @@ void CUDAPathTracer::startRayTracingPT()
     for(int i = 0; i < xTileNum; i++)
         for(int j = 0; j < yTileNum; j++)
         {
-            traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, width, height);
+            int tmp_width = min(screenW - i * width, width);
+            int tmp_height = min(screenH - j * height, height);
+
+            traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, tmp_width, tmp_height);
 
             cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(int));
             cudaThreadSynchronize();
