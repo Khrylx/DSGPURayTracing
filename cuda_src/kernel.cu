@@ -130,8 +130,8 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
             // if (verbose)
             //     printf("After intersection.\n");
 
-            isIntersect = BVH_intersect(sR);
-            if(isIntersect) continue;
+            //isIntersect = BVH_intersect(sR);
+            //if(isIntersect) continue;
 
 
             MatrixMulVector3D(w2o, dir_to_light, w_in);

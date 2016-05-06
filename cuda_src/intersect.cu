@@ -1,5 +1,5 @@
 
-__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0, float& t1) {
+__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0) {
 
     float rx = r.o[0] / r.d[0];
     float ry = r.o[1] / r.d[1];
@@ -13,7 +13,7 @@ __device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0, 
 
     t0 = fmin_fmax(x0,x1,fmin_fmax(y0,y1,
                 fmin_fmax(z0,z1,0)));
-    t1 = fmax_fmin(x0,x1,fmax_fmin(y0,y1,
+    float t1 = fmax_fmin(x0,x1,fmax_fmin(y0,y1,
                 fmax_fmin(z0,z1,r.max_t)));
 
     return t0 <= t1;
@@ -223,16 +223,14 @@ __device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray, GPUIntersect
     } else {
         float tminl = -INF_FLOAT;
         float tminr = -INF_FLOAT;
-        float tmaxl = INF_FLOAT;
-        float tmaxr = INF_FLOAT;
 
         GPURay nray = ray;
         float eps[3] = {EPS_K, EPS_K, EPS_K};
         addVector3D(eps, nray.d);
         normalize3D(nray.d);
 
-        bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl, tmaxl);
-        bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr, tmaxr);
+        bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl);
+        bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr);
 
         if (hitl && hitr) {
             GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
@@ -263,6 +261,13 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
 
     bool isIntersect = false;
 
+    GPURay nray = ray;
+    float eps[3] = {EPS_K, EPS_K, EPS_K};
+    addVector3D(eps, nray.d);
+    //normalize3D(nray.d);
+
+    float tminl, tminr;
+
     while(1){
 
         while(node){
@@ -270,20 +275,11 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
                 break;
             }
             else {
-                float tminl = -INF_FLOAT;
-                float tminr = -INF_FLOAT;
-                float tmaxl = INF_FLOAT;
-                float tmaxr = INF_FLOAT;
-
-                GPURay nray = ray;
-                float eps[3] = {EPS_K, EPS_K, EPS_K};
-                addVector3D(eps, nray.d);
-                normalize3D(nray.d);
-
+                
                 GPUBBox bbox = node->left->bbox;
-                bool hitl = bboxIntersect(&bbox, nray, tminl, tmaxl);
+                bool hitl = bboxIntersect(&bbox, nray, tminl);
                 bbox = node->right->bbox;
-                bool hitr = bboxIntersect(&bbox, nray, tminr, tmaxr);
+                bool hitr = bboxIntersect(&bbox, nray, tminr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
@@ -323,10 +319,9 @@ __device__ bool node_intersect(GPUBVHNode *node, GPURay &ray) {
     if (node == NULL) {
         return false;
     }
-    float t0 = -INF_FLOAT;
-    float t1 = INF_FLOAT;
+    float t0;
 
-    if (!bboxIntersect(&(node->bbox), ray, t0, t1)) {
+    if (!bboxIntersect(&(node->bbox), ray, t0)) {
         return false;
     }
 
@@ -349,6 +344,11 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
     GPUBVHNode** stackPtr = stack;
     *stackPtr++ = NULL;
 
+    GPURay nray = ray;
+    float eps[3] = {EPS_K, EPS_K, EPS_K};
+    addVector3D(eps, nray.d);
+
+    float tminl, tminr;
 
     while(1){
 
@@ -357,21 +357,11 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                 break;
             }
             else {
-                float tminl = -INF_FLOAT;
-                float tminr = -INF_FLOAT;
-                float tmaxl = INF_FLOAT;
-                float tmaxr = INF_FLOAT;
-
-                GPURay nray = ray;
-                float eps[3] = {EPS_K, EPS_K, EPS_K};
-                addVector3D(eps, nray.d);
-                normalize3D(nray.d);
-
 
                 GPUBBox bbox = node->left->bbox;
-                bool hitl = bboxIntersect(&bbox, nray, tminl, tmaxl);
+                bool hitl = bboxIntersect(&bbox, nray, tminl);
                 bbox = node->right->bbox;
-                bool hitr = bboxIntersect(&bbox, nray, tminr, tmaxr);
+                bool hitr = bboxIntersect(&bbox, nray, tminr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;

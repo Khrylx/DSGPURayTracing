@@ -21,16 +21,16 @@
 #include <iostream>
 #include <time.h>
 
-// For the CUDA runtime routines (prefixed with "cuda_")
-#include <thrust/sort.h>
-#include <thrust/device_ptr.h>
-
-
 #include <cuda_runtime.h>
+// For the CUDA runtime routines (prefixed with "cuda_")
+
 
 #define TILE_DIM 1
  
 #include "kernel.cu"
+
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
 #include <map>
 
 /**
@@ -134,8 +134,8 @@ void CUDAPathTracer::init()
     loadCamera();
     loadPrimitives();
     loadLights();
-    // loadBVH();
-    buildBVH();
+    loadBVH();
+    //buildBVH();
     createFrameBuffer();
     loadParameters();
 
