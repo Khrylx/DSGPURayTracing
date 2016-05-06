@@ -21,14 +21,17 @@
 #include <iostream>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
+
+
 #include <cuda_runtime.h>
 
 #include "kernel.cu"
 #include <map>
 
-#include <thrust/sort.h>
 
-#define TILE_DIM 1
+#define TILE_DIM 16
 
 /**
  * CUDA Kernel Device code
@@ -36,7 +39,7 @@
  * Computes the vector addition of A and B into C. The 3 vectors have the same
  * number of elements numElements.
  */
-using namespace std;
+//using namespace std;
 
 extern __global__ void printInfo();
 
@@ -393,6 +396,7 @@ void CUDAPathTracer::loadBVH()
 
 void CUDAPathTracer::buildBVH()
 {
+    printf("build bvh\n");
     vector<Primitive*> &primitives = pathTracer->primitives;
     
     //  can be parallelized?
@@ -408,7 +412,7 @@ void CUDAPathTracer::buildBVH()
     // GPUBVHNode *internalNodes;
     // unsigned int *sortedMortonCodes;
     // int *sortedObjectIDs;
-    
+    printf("cudaMalloc\n");
     cudaMalloc((void**)&gpu_leafNodes, numObjects * sizeof(GPUBVHNode));
     cudaMalloc((void**)&gpu_internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
     cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned int));
@@ -425,12 +429,15 @@ void CUDAPathTracer::buildBVH()
     tmpParams.internalNodes = gpu_internalNodes;
     tmpParams.sortedMortonCodes = gpu_sortedMortonCodes;
     tmpParams.sortedObjectIDs = BVHPrimMap;
+    tmpParams.types = gpu_types;
+    tmpParams.positions = gpu_positions;
+
     for (int i = 0; i < 3; ++i)
     {
         tmpParams.sceneMin[i] = sceneMin[i];
         tmpParams.sceneExtent[i] = sceneExtent[i];
     }
-
+    printf("memcpyToSymbol\n");
     cudaError_t err = cudaSuccess;
 
     err = cudaMemcpyToSymbol(const_bvhparams, &tmpParams, sizeof(BVHParameters));
@@ -443,28 +450,77 @@ void CUDAPathTracer::buildBVH()
 
     int threadsPerBlock = 256;
     int numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock;
-
+    printf("computeMorton\n");
     // assign morton code to each primitive
+
     computeMorton<<<numBlocks, threadsPerBlock>>>();
+    cudaThreadSynchronize();
+
+    err = cudaPeekAtLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
     // sort primitive according to morton code
     //wrap raw pointer with a device_ptr to use with Thrust functions
-    unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
-    int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
+    // unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
+    // int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
+    printf("thrustSort\n");
+    thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast(gpu_sortedMortonCodes);
+    thrust::device_ptr<int> data = thrust::device_pointer_cast(BVHPrimMap);
     thrust::sort_by_key(keys, keys + numObjects, data);
+    err = cudaPeekAtLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
+    printf("generateLeaf\n");
     // generate leaf nodes
     generateLeafNode<<<numBlocks, threadsPerBlock>>>();
+    cudaThreadSynchronize();
+    err = cudaPeekAtLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
+    printf("generateInternal\n");
     // generate internal nodes
     numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock;
     generateInternalNode<<<numBlocks, threadsPerBlock>>>();
+    cudaThreadSynchronize();
+    err = cudaPeekAtLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
+    printf("buildBoundingBox\n");
     // build bouding box
     numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
     buildBoundingBox<<<numBlocks, threadsPerBlock>>>();
+    cudaThreadSynchronize();
+
+    err = cudaPeekAtLastError();
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
     BVHRoot = gpu_internalNodes;
+
+    // printTREE<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
+    printf("build BVH done\n");
 }
 
 // Load light

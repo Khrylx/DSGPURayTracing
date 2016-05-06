@@ -58,7 +58,7 @@ __device__ inline unsigned int expandBits(unsigned int v)
     return v;
 }
 
-__device__ unsigned int morton3D(float x, float y, float z)
+__device__ inline unsigned int morton3D(float x, float y, float z)
 {
     x = min(max(x * 1024.0f, 0.0f), 1023.0f);
     y = min(max(y * 1024.0f, 0.0f), 1023.0f);
@@ -335,9 +335,9 @@ __device__ int delta(int i, int j, unsigned int *sortedMortonCodes, int numObjec
         return 0;
     }
     if (sortedMortonCodes[i] == sortedMortonCodes[j]) {
-        return __clz((unsigned int)i ^ (unsigned int)j);
+        return ::__clz((unsigned int)i ^ (unsigned int)j);
     }
-    return __clz(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
+    return ::__clz(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
 }
 
 __device__ inline int sign(int val) {
@@ -369,7 +369,7 @@ __device__ inline float2 determineRange(unsigned int* sortedMortonCodes, int num
     return range;
 }
 
-int findSplit( unsigned int* sortedMortonCodes,
+__device__ inline int findSplit( unsigned int* sortedMortonCodes,
                   int           first,
                   int           last)
 {
@@ -384,7 +384,7 @@ int findSplit( unsigned int* sortedMortonCodes,
     // Calculate the number of highest bits that are the same
     // for all objects, using the count-leading-zeros intrinsic.
     
-    int commonPrefix = __clz(firstCode ^ lastCode);
+    int commonPrefix = ::__clz(firstCode ^ lastCode);
     
     // Use binary search to find where the next bit differs.
     // Specifically, we are looking for the highest object that
@@ -401,7 +401,7 @@ int findSplit( unsigned int* sortedMortonCodes,
         if (newSplit < last)
         {
             unsigned int splitCode = sortedMortonCodes[newSplit];
-            int splitPrefix = __clz(firstCode ^ splitCode);
+            int splitPrefix = ::__clz(firstCode ^ splitCode);
             if (splitPrefix > commonPrefix)
                 split = newSplit; // accept proposal
         }
@@ -412,18 +412,26 @@ int findSplit( unsigned int* sortedMortonCodes,
 }
 
 __device__ inline void propogateBBox(GPUBVHNode *node) {
-    if (atomicAdd(&node->flag, 1) == 0) {
-        return;
-    }
+    
+    while(1)
+    {
+        if (node == NULL)
+        {
+            return;
+        }
 
-    if (node->left != NULL && node->right != NULL) {
-        GPUBBox_expand(&node->left->bbox, &node->bbox);
-        GPUBBox_expand(&node->right->bbox, &node->bbox);
-    }
+        if (atomicAdd(&node->flag, 1) == 0) {
+            return;
+        }
 
-    if (node->parent != NULL) {
-        propogateBBox(node->parent);
+        if (node->left != NULL && node->right != NULL) {
+            GPUBBox_expand(&(node->left->bbox), &(node->bbox));
+            GPUBBox_expand(&(node->right->bbox), &(node->bbox));
+        }
+
+        node = node->parent;
     }
+    
 }
 
 __global__ void

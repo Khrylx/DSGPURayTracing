@@ -330,14 +330,21 @@ traceScenePT(int xStart, int yStart, int width, int height)
 
 }
 
+__global__ void printMorton() {
+    printf("hhh %d\n", const_bvhparams.numObjects);
+    for (int i = 0; i < const_bvhparams.numObjects; i++) {
+        printf("idx: %d, morton: %u\n", i, const_bvhparams.sortedMortonCodes[i]);
+    }
+}
+
 __global__ void computeMorton() {
     int primIndex = blockIdx.x * blockDim.x + threadIdx.x;
     if (primIndex >= const_bvhparams.numObjects) {
         return;
     }
-    float *primitive = const_params.positions + 9 * primIndex;
+    float *primitive = const_bvhparams.positions + 9 * primIndex;
     float centroid[3];
-    if (const_params.types[primIndex] == 0)  {// sphere
+    if (const_bvhparams.types[primIndex] == 0)  {// sphere
         for (int i = 0; i < 3; i++) {
             centroid[i] = primitive[i];
         }
@@ -350,15 +357,28 @@ __global__ void computeMorton() {
             centroid[i] = 0.5 * (minVal + maxVal);
         }
     }
+
     for (int i = 0; i < 3; i ++) {
         centroid[i] = (centroid[i] - const_bvhparams.sceneMin[i]) / const_bvhparams.sceneExtent[i];
+        if (centroid[i] != centroid[i]) {
+            centroid[i] = 0;
+        }
+        if (centroid[i] < 0 || centroid[i] >= 1)
+        {
+            centroid[i] = 0;
+        }
     }
+
     const_bvhparams.sortedMortonCodes[primIndex] = morton3D(centroid[0], centroid[1], centroid[2]);
+    // const_bvhparams.sortedMortonCodes[primIndex] = const_bvhparams.numObjects - primIndex;
     const_bvhparams.sortedObjectIDs[primIndex] = primIndex;
 }
 
 __global__ void generateLeafNode() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= const_bvhparams.numObjects) {
+        return;
+    }
     const_bvhparams.leafNodes[idx].start = idx;
     const_bvhparams.leafNodes[idx].range = 1;
     const_bvhparams.leafNodes[idx].left = NULL;
@@ -369,8 +389,8 @@ __global__ void generateLeafNode() {
     // generate bounding box
     float minVec[3];
     float maxVec[3];
-    float *primitive = const_params.positions + 9 * idx;
-    if (const_params.types[idx] == 0) { // sphere
+    float *primitive = const_bvhparams.positions + 9 * const_bvhparams.sortedObjectIDs[idx];
+    if (const_bvhparams.types[const_bvhparams.sortedObjectIDs[idx]] == 0) { // sphere
         for (int i = 0; i < 3; i++) {
             minVec[i] = primitive[i] - primitive[3];
             maxVec[i] = primitive[i] + primitive[3];
@@ -393,6 +413,12 @@ __global__ void generateLeafNode() {
 
 __global__ void generateInternalNode() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= const_bvhparams.numObjects - 1) {
+        return;
+    }
+    if (idx == 0) {
+        const_bvhparams.internalNodes[0].parent = NULL;
+    }
     float2 range = determineRange(const_bvhparams.sortedMortonCodes, const_bvhparams.numObjects, idx);
     int first = range.x;
     int last = range.y;
@@ -418,11 +444,39 @@ __global__ void generateInternalNode() {
     node->right = childB;
     node->start = first;
     node->range = last - first + 1;
+    node->flag = 0;
     childA->parent = const_bvhparams.internalNodes + idx;
     childB->parent = const_bvhparams.internalNodes + idx;
+    for (int i = 0; i < 3; i++) {
+        node->bbox.min[i] = INF_FLOAT;
+        node->bbox.max[i] = -INF_FLOAT;
+    }
 }
 
 __global__  void buildBoundingBox() {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= const_bvhparams.numObjects) {
+        return;
+    }
     propogateBBox(const_bvhparams.leafNodes + idx);
+}
+
+__device__ void traverseTREE(GPUBVHNode *node) {
+    if (node == NULL) {
+        return;
+    }
+    printf("(%d, %d), min: %f, %f, %f, max: %f, %f, %f\n", node->start, node->range, node->bbox.min[0], node->bbox.min[1], node->bbox.min[2], node->bbox.max[0], node->bbox.max[1], node->bbox.max[2]);
+    traverseTREE(node->left);
+    traverseTREE(node->right);
+}
+
+__global__  void printTREE() {
+    traverseTREE(const_bvhparams.internalNodes);
+}
+
+__global__  void printBBox() {
+    for (int i = 0; i < const_bvhparams.numObjects; i++) {
+        GPUBVHNode *node = const_bvhparams.leafNodes + i;
+        printf("%d | min: %f, %f, %f, max: %f, %f, %f\n", i, node->bbox.min[0], node->bbox.min[1], node->bbox.min[2], node->bbox.max[0], node->bbox.max[1], node->bbox.max[2]);
+    }
 }
