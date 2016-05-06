@@ -4,6 +4,16 @@
 #include <cuda_runtime.h>
 #define Pi 3.1415926
 
+__device__ inline int clz64(unsigned long long val) {
+    unsigned int left = val >> 32;
+    if (left == 0) {
+        unsigned int right = (unsigned int) (val & 0xFFFFFFFFu);
+        return 32 + ::__clz(right);
+    } else {
+        return ::__clz(left);
+    }
+}
+
 __device__ inline float2 gridSampler(curandState *s) {
     float2 rt;
     rt.x = curand_uniform(s);
@@ -335,9 +345,9 @@ __device__ int delta(int i, int j, unsigned long long *sortedMortonCodes, int nu
         return 0;
     }
     if (sortedMortonCodes[i] == sortedMortonCodes[j]) {
-        return ::__clz((unsigned long long)i ^ (unsigned long long)j);
+        return clz64((unsigned long long)i ^ (unsigned long long)j);
     }
-    return ::__clz(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
+    return clz64(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
 }
 
 __device__ inline int sign(int val) {
@@ -384,7 +394,7 @@ __device__ inline int findSplit( unsigned long long* sortedMortonCodes,
     // Calculate the number of highest bits that are the same
     // for all objects, using the count-leading-zeros intrinsic.
     
-    int commonPrefix = ::__clz(firstCode ^ lastCode);
+    int commonPrefix = clz64(firstCode ^ lastCode);
     
     // Use binary search to find where the next bit differs.
     // Specifically, we are looking for the highest object that
@@ -401,7 +411,7 @@ __device__ inline int findSplit( unsigned long long* sortedMortonCodes,
         if (newSplit < last)
         {
             unsigned long long splitCode = sortedMortonCodes[newSplit];
-            int splitPrefix = ::__clz(firstCode ^ splitCode);
+            int splitPrefix = clz64(firstCode ^ splitCode);
             if (splitPrefix > commonPrefix)
                 split = newSplit; // accept proposal
         }

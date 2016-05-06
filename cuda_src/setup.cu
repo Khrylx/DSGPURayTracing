@@ -501,6 +501,26 @@ void CUDAPathTracer::buildBVH()
         exit(EXIT_FAILURE);
     }
 
+
+    // printf("Print Morton Codes\n");
+    // printMorton<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
+    // printf("Leaves\n");
+    // printLeaf<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+    
+    // printf("Internals\n");
+    // printInternal<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
+    // printTREE<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
     printf("buildBoundingBox\n");
     // build bouding box
     numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
@@ -515,10 +535,6 @@ void CUDAPathTracer::buildBVH()
     }
 
     BVHRoot = gpu_internalNodes;
-
-    // printTREE<<<1, 1>>>();
-    // cudaThreadSynchronize();
-    // cudaDeviceSynchronize();
 
     printf("build BVH done\n");
 }

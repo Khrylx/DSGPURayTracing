@@ -470,6 +470,18 @@ __device__ void traverseTREE(GPUBVHNode *node) {
     traverseTREE(node->right);
 }
 
+__global__ void printLeaf() {
+    for (int i = 0; i < const_bvhparams.numObjects; i++) {
+        printf("(%d, %d)\n", const_bvhparams.leafNodes[i].start, const_bvhparams.leafNodes[i].range);
+    }
+}
+
+__global__ void printInternal() {
+    for (int i = 0; i < const_bvhparams.numObjects - 1; i++) {
+        printf("(%d, %d)\n", const_bvhparams.internalNodes[i].start, const_bvhparams.internalNodes[i].range);
+    }
+}
+
 __global__  void printTREE() {
     traverseTREE(const_bvhparams.internalNodes);
 }
