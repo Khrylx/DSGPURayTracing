@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <time.h>
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <thrust/sort.h>
@@ -453,8 +454,11 @@ void CUDAPathTracer::buildBVH()
     printf("computeMorton\n");
     // assign morton code to each primitive
 
+    clock_t start = clock();
     computeMorton<<<numBlocks, threadsPerBlock>>>();
     cudaThreadSynchronize();
+    clock_t finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -468,9 +472,13 @@ void CUDAPathTracer::buildBVH()
     // unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
     // int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
     printf("thrustSort\n");
+    start = clock();
     thrust::device_ptr<unsigned long long> keys = thrust::device_pointer_cast(gpu_sortedMortonCodes);
     thrust::device_ptr<int> data = thrust::device_pointer_cast(BVHPrimMap);
     thrust::sort_by_key(keys, keys + numObjects, data);
+    finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
     {
@@ -480,8 +488,13 @@ void CUDAPathTracer::buildBVH()
 
     printf("generateLeaf\n");
     // generate leaf nodes
+
+    start = clock();
     generateLeafNode<<<numBlocks, threadsPerBlock>>>();
     cudaThreadSynchronize();
+    finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
     {
@@ -491,9 +504,12 @@ void CUDAPathTracer::buildBVH()
 
     printf("generateInternal\n");
     // generate internal nodes
+    start = clock();
     numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock;
     generateInternalNode<<<numBlocks, threadsPerBlock>>>();
     cudaThreadSynchronize();
+    finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
     {
@@ -519,9 +535,12 @@ void CUDAPathTracer::buildBVH()
 
     printf("buildBoundingBox\n");
     // build bouding box
+    start = clock();
     numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
     buildBoundingBox<<<numBlocks, threadsPerBlock>>>();
     cudaThreadSynchronize();
+    finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -537,6 +556,8 @@ void CUDAPathTracer::buildBVH()
     cudaFree(gpu_sortedMortonCodes);
 
     BVHRoot = gpu_internalNodes;
+
+    
 
     printf("build BVH done\n");
 }
