@@ -76,8 +76,8 @@ int main( int argc, char** argv ) {
 
   bool viewerOn = false;
   bool useCPU = false;
-  int screenW = 600;
-  int screenH = 600;
+  int screenW = 1000;
+  int screenH = 1000;
 
   // get the options
   AppConfig config; int opt;

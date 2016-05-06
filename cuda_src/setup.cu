@@ -28,11 +28,10 @@
 
 #include <cuda_runtime.h>
 
+#define TILE_DIM 1
+ 
 #include "kernel.cu"
 #include <map>
-
-
-#define TILE_DIM 1
 
 /**
  * CUDA Kernel Device code
@@ -100,6 +99,7 @@ void CUDAPathTracer::startRayTracingPT()
     int yTileNum = TILE_DIM;
     int width = (screenW + xTileNum - 1) / xTileNum;
     int height = (screenH + yTileNum - 1) / yTileNum;
+
     int blockDim = BLOCK_DIM;
     int gridDim = 256;
     int zero = 0;
@@ -107,7 +107,10 @@ void CUDAPathTracer::startRayTracingPT()
     for(int i = 0; i < xTileNum; i++)
         for(int j = 0; j < yTileNum; j++)
         {
-            traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, width, height);
+            int tmp_width = min(screenW - i * width, width);
+            int tmp_height = min(screenH - j * height, height);
+
+            traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, tmp_width, tmp_height);
 
             cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(int));
             cudaThreadSynchronize();
@@ -126,6 +129,8 @@ void CUDAPathTracer::startRayTracingPT()
 
 void CUDAPathTracer::init()
 {
+
+    cudaDeviceReset();
     loadCamera();
     loadPrimitives();
     loadLights();
@@ -668,6 +673,7 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.BVHPrimMap = BVHPrimMap;
     tmpParams.BVHRoot = BVHRoot;
 
+    cout << "primNum:" << primNum << endl;
     cudaError_t err = cudaSuccess;
 
     err = cudaMemcpyToSymbol(const_params, &tmpParams, sizeof(Parameters));

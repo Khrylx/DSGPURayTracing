@@ -11,9 +11,9 @@ if(APPLE)
     LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
     SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
 elseif(LINUX)
-	list(APPEND CUDA_NVCC_FLAGS "-std=c++11 -O3")
-	LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
-	SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
+       list(APPEND CUDA_NVCC_FLAGS "-std=c++11 -O3")
+       LIST(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
+       SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
 endif()
 
 file(GLOB GPUSRC

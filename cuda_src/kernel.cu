@@ -13,6 +13,7 @@
 
 #define BLOCK_DIM 64
 
+
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
 __constant__  GPULight const_lights[MAX_NUM_LIGHT];
@@ -295,12 +296,12 @@ traceScenePT(int xStart, int yStart, int width, int height)
 
         int index = myRayIndex / const_params.ns_aa;
         int x = index % width + xStart;
-        int y = index / height + yStart;
+        int y = index / width + yStart;
 
         bIndex[threadIdx.x] = y * const_params.screenW + x;
 
         curandState s;
-        curand_init((unsigned int)myRayIndex, 0, 0, &s);
+        curand_init((unsigned int)myRayIndex * (xStart * TILE_DIM + yStart + 1), 0, 0, &s);
 
         spec[threadIdx.x] = tracePixelPT(&s, x, y, false);
 
