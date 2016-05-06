@@ -416,7 +416,7 @@ void CUDAPathTracer::buildBVH()
     printf("cudaMalloc\n");
     cudaMalloc((void**)&gpu_leafNodes, numObjects * sizeof(GPUBVHNode));
     cudaMalloc((void**)&gpu_internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned long long));
+    cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned int));
     cudaMalloc((void**)&BVHPrimMap, numObjects * sizeof(int));
 
     // gpu_sortedMortonCodes = sortedMortonCodes;
@@ -473,7 +473,7 @@ void CUDAPathTracer::buildBVH()
     // int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
     printf("thrustSort\n");
     start = clock();
-    thrust::device_ptr<unsigned long long> keys = thrust::device_pointer_cast(gpu_sortedMortonCodes);
+    thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast(gpu_sortedMortonCodes);
     thrust::device_ptr<int> data = thrust::device_pointer_cast(BVHPrimMap);
     thrust::sort_by_key(keys, keys + numObjects, data);
     finish = clock();

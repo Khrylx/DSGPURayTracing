@@ -91,7 +91,7 @@ struct BVHParameters
     int numObjects;
     GPUBVHNode *leafNodes;
     GPUBVHNode *internalNodes;
-    unsigned long long*sortedMortonCodes;
+    unsigned int*sortedMortonCodes;
     int *sortedObjectIDs;
     int *types;
     float *positions;
@@ -133,7 +133,7 @@ class CUDAPathTracer{
     float* gpu_normals;  // size: 9 * N.  *** normals for triangle
     float* frameBuffer;
 
-    unsigned long long *gpu_sortedMortonCodes;
+    unsigned int *gpu_sortedMortonCodes;
     int *gpu_sortedObjectIDs;
     GPUBVHNode *gpu_leafNodes;
     GPUBVHNode *gpu_internalNodes;

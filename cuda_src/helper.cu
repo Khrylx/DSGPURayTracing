@@ -340,21 +340,23 @@ gpuAdd(float *A, float *B, float *C)
     *C = *A + *B;
 }
 
-__device__ int delta(int i, int j, unsigned long long *sortedMortonCodes, int numObjects) {
+__device__ int delta(int i, int j, unsigned int *sortedMortonCodes, int numObjects) {
     if (i < 0 || i >= numObjects || j < 0 || j >= numObjects) {
         return 0;
     }
-    if (sortedMortonCodes[i] == sortedMortonCodes[j]) {
+    unsigned long long mortonCodeI = ((unsigned long long)sortedMortonCodes[i]) << 32 | (unsigned long long)i;
+    unsigned long long mortonCodeJ = ((unsigned long long)sortedMortonCodes[j]) << 32 | (unsigned long long)j;
+    if (mortonCodeI == mortonCodeJ) {
         return clz64((unsigned long long)i ^ (unsigned long long)j);
     }
-    return clz64(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
+    return clz64(mortonCodeI ^ mortonCodeJ);
 }
 
 __device__ inline int sign(int val) {
     return (0 < val) - (val < 0);
 }
 
-__device__ inline float2 determineRange(unsigned long long* sortedMortonCodes, int numObjects, int i) {
+__device__ inline float2 determineRange(unsigned int* sortedMortonCodes, int numObjects, int i) {
     float2 range;
     int d = sign(delta(i, i + 1, sortedMortonCodes, numObjects) - delta(i, i - 1, sortedMortonCodes, numObjects));
 
@@ -379,14 +381,14 @@ __device__ inline float2 determineRange(unsigned long long* sortedMortonCodes, i
     return range;
 }
 
-__device__ inline int findSplit( unsigned long long* sortedMortonCodes,
+__device__ inline int findSplit( unsigned int* sortedMortonCodes,
                   int           first,
                   int           last)
 {
     // Identical Morton codes => split the range in the middle.
     
-    unsigned long long firstCode = sortedMortonCodes[first];
-    unsigned long long lastCode = sortedMortonCodes[last];
+    unsigned long long firstCode = (unsigned long long)sortedMortonCodes[first] << 32 | (unsigned long long)first;
+    unsigned long long lastCode = (unsigned long long)sortedMortonCodes[last] << 32 | (unsigned long long)last;
     
     if (firstCode == lastCode)
         return (first + last) >> 1;
@@ -410,7 +412,7 @@ __device__ inline int findSplit( unsigned long long* sortedMortonCodes,
         
         if (newSplit < last)
         {
-            unsigned long long splitCode = sortedMortonCodes[newSplit];
+            unsigned long long splitCode = (unsigned long long)sortedMortonCodes[newSplit] << 32 | (unsigned long long)newSplit;
             int splitPrefix = clz64(firstCode ^ splitCode);
             if (splitPrefix > commonPrefix)
                 split = newSplit; // accept proposal
