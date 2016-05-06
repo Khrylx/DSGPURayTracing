@@ -333,7 +333,7 @@ traceScenePT(int xStart, int yStart, int width, int height)
 __global__ void printMorton() {
     printf("hhh %d\n", const_bvhparams.numObjects);
     for (int i = 0; i < const_bvhparams.numObjects; i++) {
-        printf("idx: %d, morton: %u\n", i, const_bvhparams.sortedMortonCodes[i]);
+        printf("idx: %d, morton: %llu\n", i, const_bvhparams.sortedMortonCodes[i]);
     }
 }
 
@@ -369,7 +369,7 @@ __global__ void computeMorton() {
         }
     }
 
-    const_bvhparams.sortedMortonCodes[primIndex] = morton3D(centroid[0], centroid[1], centroid[2]);
+    const_bvhparams.sortedMortonCodes[primIndex] = ((unsigned long long)morton3D(centroid[0], centroid[1], centroid[2]) << 32) | (unsigned long long)primIndex;
     // const_bvhparams.sortedMortonCodes[primIndex] = const_bvhparams.numObjects - primIndex;
     const_bvhparams.sortedObjectIDs[primIndex] = primIndex;
 }

@@ -330,12 +330,12 @@ gpuAdd(float *A, float *B, float *C)
     *C = *A + *B;
 }
 
-__device__ int delta(int i, int j, unsigned int *sortedMortonCodes, int numObjects) {
+__device__ int delta(int i, int j, unsigned long long *sortedMortonCodes, int numObjects) {
     if (i < 0 || i >= numObjects || j < 0 || j >= numObjects) {
         return 0;
     }
     if (sortedMortonCodes[i] == sortedMortonCodes[j]) {
-        return ::__clz((unsigned int)i ^ (unsigned int)j);
+        return ::__clz((unsigned long long)i ^ (unsigned long long)j);
     }
     return ::__clz(sortedMortonCodes[i] ^ sortedMortonCodes[j]);
 }
@@ -344,7 +344,7 @@ __device__ inline int sign(int val) {
     return (0 < val) - (val < 0);
 }
 
-__device__ inline float2 determineRange(unsigned int* sortedMortonCodes, int numObjects, int i) {
+__device__ inline float2 determineRange(unsigned long long* sortedMortonCodes, int numObjects, int i) {
     float2 range;
     int d = sign(delta(i, i + 1, sortedMortonCodes, numObjects) - delta(i, i - 1, sortedMortonCodes, numObjects));
 
@@ -369,14 +369,14 @@ __device__ inline float2 determineRange(unsigned int* sortedMortonCodes, int num
     return range;
 }
 
-__device__ inline int findSplit( unsigned int* sortedMortonCodes,
+__device__ inline int findSplit( unsigned long long* sortedMortonCodes,
                   int           first,
                   int           last)
 {
     // Identical Morton codes => split the range in the middle.
     
-    unsigned int firstCode = sortedMortonCodes[first];
-    unsigned int lastCode = sortedMortonCodes[last];
+    unsigned long long firstCode = sortedMortonCodes[first];
+    unsigned long long lastCode = sortedMortonCodes[last];
     
     if (firstCode == lastCode)
         return (first + last) >> 1;
@@ -400,7 +400,7 @@ __device__ inline int findSplit( unsigned int* sortedMortonCodes,
         
         if (newSplit < last)
         {
-            unsigned int splitCode = sortedMortonCodes[newSplit];
+            unsigned long long splitCode = sortedMortonCodes[newSplit];
             int splitPrefix = ::__clz(firstCode ^ splitCode);
             if (splitPrefix > commonPrefix)
                 split = newSplit; // accept proposal
