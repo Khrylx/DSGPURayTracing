@@ -14,6 +14,17 @@ __device__ inline int clz64(unsigned long long val) {
     }
 }
 
+// Fast min-max from "Understanding the Efficiency of Ray Traversal on GPUs"
+__device__ __inline__ int   min_min   (int a, int b, int c) { int v; asm("vmin.s32.s32.s32.min %0, %1, %2, %3;" : "=r"(v) : "r"(a), "r"(b), "r"(c)); return v; }
+__device__ __inline__ int   min_max   (int a, int b, int c) { int v; asm("vmin.s32.s32.s32.max %0, %1, %2, %3;" : "=r"(v) : "r"(a), "r"(b), "r"(c)); return v; }
+__device__ __inline__ int   max_min   (int a, int b, int c) { int v; asm("vmax.s32.s32.s32.min %0, %1, %2, %3;" : "=r"(v) : "r"(a), "r"(b), "r"(c)); return v; }
+__device__ __inline__ int   max_max   (int a, int b, int c) { int v; asm("vmax.s32.s32.s32.max %0, %1, %2, %3;" : "=r"(v) : "r"(a), "r"(b), "r"(c)); return v; }
+__device__ __inline__ float fmin_fmin (float a, float b, float c) { return __int_as_float(min_min(__float_as_int(a), __float_as_int(b), __float_as_int(c))); }
+__device__ __inline__ float fmin_fmax (float a, float b, float c) { return __int_as_float(min_max(__float_as_int(a), __float_as_int(b), __float_as_int(c))); }
+__device__ __inline__ float fmax_fmin (float a, float b, float c) { return __int_as_float(max_min(__float_as_int(a), __float_as_int(b), __float_as_int(c))); }
+__device__ __inline__ float fmax_fmax (float a, float b, float c) { return __int_as_float(max_max(__float_as_int(a), __float_as_int(b), __float_as_int(c))); }
+
+
 __device__ inline float2 gridSampler(curandState *s) {
     float2 rt;
     rt.x = curand_uniform(s);
@@ -23,11 +34,11 @@ __device__ inline float2 gridSampler(curandState *s) {
 
 __device__ inline float3 UniformHemisphereSampler(curandState *s) {
     float2 tmp = gridSampler(s);
-    double r1 = tmp.x;
-    double r2 = tmp.y;
+    float r1 = tmp.x;
+    float r2 = tmp.y;
 
-    double sin_theta = sqrt(1 - r1 * r1);
-    double phi = 2 * PI * r2;
+    float sin_theta = sqrt(1 - r1 * r1);
+    float phi = 2 * PI * r2;
 
     float3 rt;
     rt.x = sin_theta * cos(phi);
@@ -110,7 +121,7 @@ norm3D(const float *X)
 __device__ inline void
 normalize3D(float *X)
 {
-    double norm = sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
+    float norm = sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
     X[0] /= norm;
     X[1] /= norm;
     X[2] /= norm;

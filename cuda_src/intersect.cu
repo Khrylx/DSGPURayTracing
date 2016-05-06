@@ -1,13 +1,20 @@
-__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0, float& t1) {
-    for (int i = 0; i < 3; ++i) {
-        if (r.d[i] != 0.0) {
-            double tx1 = (bbox->min[i] - r.o[i]) / r.d[i];
-            double tx2 = (bbox->max[i] - r.o[i]) / r.d[i];
 
-            t0 = fmaxf(t0, fminf(tx1, tx2));
-            t1 = fminf(t1, fmaxf(tx1, tx2));
-        }
-    }
+__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0, float& t1) {
+
+    float rx = r.o[0] / r.d[0];
+    float ry = r.o[1] / r.d[1];
+    float rz = r.o[2] / r.d[2];
+    float x0 = bbox->min[0] / r.d[0] - rx;
+    float x1 = bbox->max[0] / r.d[0] - rx;
+    float y0 = bbox->min[1] / r.d[1] - ry;
+    float y1 = bbox->max[1] / r.d[1] - ry;
+    float z0 = bbox->min[2] / r.d[2] - rz;
+    float z1 = bbox->max[2] / r.d[2] - rz;
+
+    t0 = fmin_fmax(x0,x1,fmin_fmax(y0,y1,
+                fmin_fmax(z0,z1,0)));
+    t1 = fmax_fmin(x0,x1,fmax_fmin(y0,y1,
+                fmax_fmin(z0,z1,r.max_t)));
 
     return t0 <= t1;
 }
@@ -116,7 +123,7 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     return true;
 }
 
-__device__ inline bool sphereTest(int primIndex, GPURay& ray, double& t1, double& t2) {
+__device__ inline bool sphereTest(int primIndex, GPURay& ray, float& t1, float& t2) {
     float* primitive = const_params.positions + 9 * primIndex;
     float* o = primitive;
     float r = primitive[3];
@@ -124,9 +131,9 @@ __device__ inline bool sphereTest(int primIndex, GPURay& ray, double& t1, double
 
     float m[3];
     subVector3D(o, ray.o, m);
-    double b = VectorDot3D(m, ray.d);
-    double c = VectorDot3D(m, m) - r2;
-    double delta = b * b - c;
+    float b = VectorDot3D(m, ray.d);
+    float c = VectorDot3D(m, m) - r2;
+    float delta = b * b - c;
     if (delta < 0) {
         return false;
     }
@@ -142,13 +149,13 @@ __device__ inline bool sphereTest(int primIndex, GPURay& ray, double& t1, double
 }
 
 __device__ inline bool sphereIntersect(int primIndex, GPURay& r) {
-    double tmp;
+    float tmp;
     return sphereTest(primIndex, r, tmp, tmp);
 }
 
 __device__ inline bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
-    double t1;
-    double t2;
+    float t1;
+    float t2;
     bool res = sphereTest(primIndex, r, t1, t2);
     if (!res) {
         return false;
@@ -158,7 +165,7 @@ __device__ inline bool sphereIntersect(int primIndex, GPURay& r, GPUIntersection
 
     float* primitive = const_params.positions + 9 * primIndex;
     float* o = primitive;
-    double t = t1;
+    float t = t1;
     if (t1 <= r.min_t) {
         t = t2;
     }
@@ -273,8 +280,10 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
                 addVector3D(eps, nray.d);
                 normalize3D(nray.d);
 
-                bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl, tmaxl);
-                bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr, tmaxr);
+                GPUBBox bbox = node->left->bbox;
+                bool hitl = bboxIntersect(&bbox, nray, tminl, tmaxl);
+                bbox = node->right->bbox;
+                bool hitr = bboxIntersect(&bbox, nray, tminr, tmaxr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
@@ -358,8 +367,11 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                 addVector3D(eps, nray.d);
                 normalize3D(nray.d);
 
-                bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl, tmaxl);
-                bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr, tmaxr);
+
+                GPUBBox bbox = node->left->bbox;
+                bool hitl = bboxIntersect(&bbox, nray, tminl, tmaxl);
+                bbox = node->right->bbox;
+                bool hitr = bboxIntersect(&bbox, nray, tminr, tmaxr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
