@@ -31,7 +31,7 @@
 #include <map>
 
 
-#define TILE_DIM 16
+#define TILE_DIM 1
 
 /**
  * CUDA Kernel Device code
@@ -58,7 +58,7 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_normals);
     cudaFree(frameBuffer);
     cudaFree(BVHPrimMap);
-    cudaFree(gpu_sortedMortonCodes);
+    // cudaFree(gpu_sortedMortonCodes); free at the end of setup
     cudaFree(gpu_leafNodes);
     cudaFree(gpu_internalNodes);
 }
@@ -511,13 +511,9 @@ void CUDAPathTracer::buildBVH()
     // printLeaf<<<1, 1>>>();
     // cudaThreadSynchronize();
     // cudaDeviceSynchronize();
-    
+
     // printf("Internals\n");
     // printInternal<<<1, 1>>>();
-    // cudaThreadSynchronize();
-    // cudaDeviceSynchronize();
-
-    // printTREE<<<1, 1>>>();
     // cudaThreadSynchronize();
     // cudaDeviceSynchronize();
 
@@ -533,6 +529,12 @@ void CUDAPathTracer::buildBVH()
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
+
+    // printTREE<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
+    cudaFree(gpu_sortedMortonCodes);
 
     BVHRoot = gpu_internalNodes;
 
