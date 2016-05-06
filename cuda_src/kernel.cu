@@ -12,7 +12,7 @@
 #define EPS_K 1e-4
 
 #define BLOCK_DIM 64
-
+#define LEAF_NUMBER 4
 
 __constant__  GPUCamera const_camera;
 __constant__  GPUBSDF const_bsdfs[MAX_NUM_BSDF];
@@ -334,7 +334,7 @@ traceScenePT(int xStart, int yStart, int width, int height)
 __global__ void printMorton() {
     printf("hhh %d\n", const_bvhparams.numObjects);
     for (int i = 0; i < const_bvhparams.numObjects; i++) {
-        printf("idx: %d, morton: %llu\n", i, const_bvhparams.sortedMortonCodes[i]);
+        printf("idx: %d, morton: %u\n", i, const_bvhparams.sortedMortonCodes[i]);
     }
 }
 
@@ -452,6 +452,18 @@ __global__ void generateInternalNode() {
     for (int i = 0; i < 3; i++) {
         node->bbox.min[i] = INF_FLOAT;
         node->bbox.max[i] = -INF_FLOAT;
+    }
+}
+
+__global__ void treeCollapse() {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= const_bvhparams.numObjects - 1) {
+        return;
+    }
+    GPUBVHNode *node = &const_bvhparams.internalNodes[idx];
+    if (node->range <= LEAF_NUMBER) {
+        node->left = NULL;
+        node->right = NULL;
     }
 }
 

@@ -554,6 +554,14 @@ void CUDAPathTracer::buildBVH()
         exit(EXIT_FAILURE);
     }
 
+    printf("tree collapse\n");
+    start = clock();
+    numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock; 
+    treeCollapse<<<numBlocks, threadsPerBlock>>>();
+    cudaThreadSynchronize();
+    finish = clock();
+    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+
     // printTREE<<<1, 1>>>();
     // cudaThreadSynchronize();
     // cudaDeviceSynchronize();
