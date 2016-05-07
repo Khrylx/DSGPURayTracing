@@ -1,3 +1,5 @@
+//#define SPECULATIVE
+
 
 __device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float* divR, float* invR, float& t0) {
 
@@ -64,13 +66,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     float* normals = const_params.normals + 9 * primIndex;
 
     float* v1 = primitive;
-    float* v2 = primitive + 3;
-    float* v3 = primitive + 6;
+    float* e1 = primitive + 3;
+    float* e2 = primitive + 6;
 
-    float e1[3], e2[3];
+    //float e1[3], e2[3];
     float pvec[3], qvec[3];
-    subVector3D(v2, v1, e1);
-    subVector3D(v3, v1, e2);
+    //subVector3D(v2, v1, e1);
+    //subVector3D(v3, v1, e2);
     VectorCross3D(r.d, e2, pvec);
 
     float det = VectorDot3D(e1, pvec);
@@ -267,19 +269,36 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray, GPUIntersecti
     divR[2] = nray.o[2] * invR[2];
 
     float tminl, tminr;
+    GPUBVHNode* node2;
+#ifdef SPECULATIVE
+    GPUBVHNode* postponedNode = NULL;
+#endif
 
     while(1){
 
+#ifdef SPECULATIVE
+        bool searching = true;
+#endif
         while(node){
+
             if (node->left == NULL && node->right == NULL) {
+
+#ifdef SPECULATIVE
+                if(searching){
+                    searching = false;
+                    postponedNode = node;
+                    node = *--stackPtr;
+                }   
+#else
                 break;
+#endif
             }
             else {
-                
+
                 bool hitl = bboxIntersect(&(node->left->bbox), nray, divR, invR, tminl);
                 bool hitr = bboxIntersect(&(node->right->bbox), nray, divR, invR, tminr);
 
-                GPUBVHNode* node2 = node->right;
+                node2 = node->right;
                 node = node->left;
                 if(!hitr) node2 = NULL;
                 if(!hitl){
@@ -299,19 +318,45 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray, GPUIntersecti
                     *stackPtr++ = node2;
                 }
             }
-        }
-        
-        if (node == NULL) {
+#ifdef SPECULATIVE
+            if (!__any(searching))
+               break;
+#endif
+        } 
+
+#ifdef SPECULATIVE       
+        if (node == NULL && postponedNode == NULL) {
             return isIntersect;
         }
 
+        while(postponedNode->left == NULL && postponedNode->right == NULL)
+        {
+            for (int j = 0; j < postponedNode->range; j++) {
+                int primIndex = const_params.BVHPrimMap[postponedNode->start + j];
+                bool res = intersect(primIndex, ray, i);
+                // bool res = false;
+                isIntersect = isIntersect || res;
+            }
+
+            if (node == NULL || node->left || node->right)  break;
+
+            postponedNode = node;
+            node = *--stackPtr;
+        }
+        postponedNode = NULL;
+
+#else
+        if (node == NULL) {
+            return isIntersect;
+        }
         for (int j = 0; j < node->range; j++) {
-            int primIndex = const_params.BVHPrimMap[node->start + j];
-            bool res = intersect(primIndex, ray, i);
-            // bool res = false;
-            isIntersect = isIntersect || res;
+                int primIndex = const_params.BVHPrimMap[node->start + j];
+                bool res = intersect(primIndex, ray, i);
+                // bool res = false;
+                isIntersect = isIntersect || res;
         }
         node = *--stackPtr;
+#endif
     }
     
 
@@ -360,12 +405,28 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
 
     float tminl, tminr;
     GPUBVHNode* node2;
+#ifdef SPECULATIVE
+    GPUBVHNode* postponedNode = NULL;
+#endif
 
     while(1){
 
+#ifdef SPECULATIVE
+        bool searching = true;
+#endif
         while(node){
+
             if (node->left == NULL && node->right == NULL) {
+
+#ifdef SPECULATIVE
+                if(searching){
+                    searching = false;
+                    postponedNode = node;
+                    node = *--stackPtr;
+                }   
+#else
                 break;
+#endif
             }
             else {
 
@@ -392,8 +453,32 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                     *stackPtr++ = node2;
                 }
             }
+#ifdef SPECULATIVE
+            if (!__any(searching))
+               break;
+#endif
         }
-        
+
+#ifdef SPECULATIVE
+        if (node == NULL && postponedNode == NULL) {
+            return false;
+        }
+
+        while(postponedNode)
+        {
+            for (int j = 0; j < postponedNode->range; j++) {
+            int primIndex = const_params.BVHPrimMap[postponedNode->start + j];
+            if(intersect(primIndex, ray))
+                return true;
+            }
+            
+            if (node == NULL || node->left || node->right)  break;
+
+            postponedNode = node;
+            node = *--stackPtr;
+        }
+        postponedNode = NULL;
+#else
         if (node == NULL) {
             return false;
         }
@@ -404,6 +489,9 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                 return true;
         }
         node = *--stackPtr;
+#endif
+
+                
     }
 }
 

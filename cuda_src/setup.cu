@@ -24,7 +24,7 @@
 #include <cuda_runtime.h>
 // For the CUDA runtime routines (prefixed with "cuda_")
 
-#define PARALLEL_BUILD_BVH
+//#define PARALLEL_BUILD_BVH
 
 #define TILE_DIM 1
  
@@ -475,16 +475,26 @@ void CUDAPathTracer::buildBVH()
         exit(EXIT_FAILURE);
     }
 
+
+    cudaEvent_t begin, stop;
+    cudaEventCreate(&begin);
+    cudaEventCreate(&stop);
+
     int threadsPerBlock = 256;
     int numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock;
     printf("computeMorton\n");
     // assign morton code to each primitive
 
-    clock_t start = clock();
+    float totalms = 0;
+
+    cudaEventRecord(begin);
     computeMorton<<<numBlocks, threadsPerBlock>>>();
-    cudaThreadSynchronize();
-    clock_t finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -498,12 +508,15 @@ void CUDAPathTracer::buildBVH()
     // unsigned int* keys = thrust::raw_pointer_cast(const_bvhparams.sortedMortonCodes);
     // int* data = thrust::raw_pointer_cast(const_bvhparams.sortedObjectIDs);
     printf("thrustSort\n");
-    start = clock();
+    cudaEventRecord(begin);
     thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast(gpu_sortedMortonCodes);
     thrust::device_ptr<int> data = thrust::device_pointer_cast(BVHPrimMap);
     thrust::sort_by_key(keys, keys + numObjects, data);
-    finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -515,11 +528,13 @@ void CUDAPathTracer::buildBVH()
     printf("generateLeaf\n");
     // generate leaf nodes
 
-    start = clock();
+    cudaEventRecord(begin);
     generateLeafNode<<<numBlocks, threadsPerBlock>>>();
-    cudaThreadSynchronize();
-    finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -530,12 +545,15 @@ void CUDAPathTracer::buildBVH()
 
     printf("generateInternal\n");
     // generate internal nodes
-    start = clock();
+    cudaEventRecord(begin);
     numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock;
     generateInternalNode<<<numBlocks, threadsPerBlock>>>();
-    cudaThreadSynchronize();
-    finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
+
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
     {
@@ -561,12 +579,14 @@ void CUDAPathTracer::buildBVH()
 
     printf("buildBoundingBox\n");
     // build bouding box
-    start = clock();
+    cudaEventRecord(begin);
     numBlocks = (numObjects + threadsPerBlock - 1) / threadsPerBlock; 
     buildBoundingBox<<<numBlocks, threadsPerBlock>>>();
-    cudaThreadSynchronize();
-    finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
 
     err = cudaPeekAtLastError();
     if (err != cudaSuccess)
@@ -580,20 +600,22 @@ void CUDAPathTracer::buildBVH()
     // cudaDeviceSynchronize();
 
     printf("tree collapse\n");
-    start = clock();
+    cudaEventRecord(begin);
     numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock; 
     treeCollapse<<<numBlocks, threadsPerBlock>>>();
-    cudaThreadSynchronize();
-    finish = clock();
-    printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, begin, stop);
+    printf("%f\n", milliseconds / 1000);
+    totalms += milliseconds;
 
     cudaFree(gpu_sortedMortonCodes);
 
     BVHRoot = gpu_internalNodes;
 
-    
-
     printf("build BVH done\n");
+
+    printf("Total build BVH time:%f\n", totalms / 1000);
 }
 
 // Load light

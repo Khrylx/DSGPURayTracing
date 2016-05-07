@@ -6,6 +6,7 @@
 #define MAX_NUM_BSDF 20
 
 #define RUSSIAN_ROULETTE
+//#define SHADOW_RAY
 
 #define INF_FLOAT 1e20
 #define ESP_N 5e-3
@@ -24,6 +25,8 @@ __constant__  BVHParameters const_bvhparams;
 #include "light.cu"
 #include "intersect.cu"
 #include "bsdf.cu"
+
+
 
 
 __device__ void
@@ -130,10 +133,10 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
             // }
             // if (verbose)
             //     printf("After intersection.\n");
-
-            //isIntersect = BVH_intersect(sR);
-            //if(isIntersect) continue;
-
+#ifdef SHADOW_RAY
+            isIntersect = BVH_intersect(sR);
+            if(isIntersect) continue;
+#endif
 
             MatrixMulVector3D(w2o, dir_to_light, w_in);
             normalize3D(w_in);
@@ -356,9 +359,9 @@ __global__ void computeMorton() {
         }
     } else { // triangle
         for (int i = 0; i < 3; i++) {
-            float minVal = min(0, primitive[3 + i]);
+            float minVal = min(0.0, primitive[3 + i]);
             minVal = min(minVal, primitive[6 + i]);
-            float maxVal = max(0, primitive[3 + i]);
+            float maxVal = max(0.0, primitive[3 + i]);
             maxVal = max(maxVal, primitive[6 + i]);
             centroid[i] = primitive[i] + 0.5 * (minVal + maxVal);
         }
@@ -404,9 +407,9 @@ __global__ void generateLeafNode() {
         }
     } else { // triangle
         for (int i = 0; i < 3; i++) {
-            float minVal = min(0, primitive[3 + i]);
+            float minVal = min(0.0, primitive[3 + i]);
             minVal = min(minVal, primitive[6 + i]);
-            float maxVal = max(0, primitive[3 + i]);
+            float maxVal = max(0.0, primitive[3 + i]);
             maxVal = max(maxVal, primitive[6 + i]);
             minVec[i] = minVal + primitive[i];
             maxVec[i] = maxVal + primitive[i];
