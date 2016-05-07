@@ -30,9 +30,26 @@
 <p>We aim to develop a fast Distributed GPU ray tracer that has the following features:  </p>
 
 <ol>
-<li><p><strong>Very Fast Ray Traversal</strong><br>
-Even for scene with 100K+ triangles, our ray tracer can achieve a throughput of 200+ Mrays/s on GTX 680 for primary ray.
-And we can render a 1000x1000 picture of the scene with ambient occlusion at 60 FPS, while its CPU counterpart stays with 0.30 FPS.  </p></li>
+<li>
+<strong>Very Fast Ray Traversal</strong><br>
+Even for scenes with 100K+ triangles, our ray tracer can achieve a throughput of 200+ Mrays/s on GTX 680 for primary ray.
+And we can render a 1000x1000 picture of the scene with ambient occlusion at 60 FPS, while its CPU counterpart stays with 0.30 FPS.<br>
+</li>
+</ol>
+
+<p>We made a lot of efforts to improve the efficiency of ray traversal:</p>
+
+<ul>
+<li>We used persistent threads to achieve better SIMD utilization.</li>
+<li>We used per-ray stack for ray traversal.</li>
+<li>We used while-while structure for node traversal and primitive intersection test.</li>
+<li>We optimized ray-triangle intersection and ray-box intersection.</li>
+<li>We also tried out speculative method, i.e., delay the primitive intersection test until all lanes find a leaf.</li>
+</ul>
+
+<p>After all these optimizations, over ray tracer is 20x faster than original one.</p>
+
+<ol>
 <li><p><strong>Very Fast Parallel BVH build</strong><br>
 We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second. We use Morton codes to encode each primitive such that we can know the exact position of each node in the array. Therefore, we can build the BVH tree in fully parallel.</p></li>
 <li><p><strong>Distributed Ray Tracing across Clusters</strong> 
