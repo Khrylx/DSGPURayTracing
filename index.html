@@ -51,12 +51,13 @@ We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build tak
 We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs.</p></li>
 <li>
 <p><strong>Versatile</strong><br>
-Our ray tracer support almost all the functionalities of its CPU counterpart:  </p>
+Our ray tracer support most functionalities of its CPU counterpart:  </p>
 
 <ul>
 <li>Monte Carlo sampling<br>
 </li>
-<li>Multiple types of BSDFs: refraction, Fresnel reflection, e.g.</li>
+<li>Multiple types of BSDFs: refraction, glass, Fresnel reflection, e.g.</li>
+<li>Multiple types of Lights: point, directional, area, hemisphere, e.g.</li>
 </ul>
 </li>
 </ol>
