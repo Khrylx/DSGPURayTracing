@@ -37,13 +37,14 @@ We made a lot of efforts to improve the efficiency of ray traversal:</p>
 <li>We used while-while structure for node traversal and primitive intersection test.</li>
 <li>We optimized ray-triangle intersection and ray-box intersection.</li>
 <li>We also tried out speculative method, i.e., delay the primitive intersection test until all lanes find a leaf.<br>
-After all these optimizations, over ray tracer is 20x faster than original one.</li>
+After all these optimizations, over ray tracer is 20x faster than original one. And we are still working on optimizing
+ray-triangle test to decrease memory bandwidth consumed.</li>
 </ul>
 </li>
 <li><p><strong>Very Fast Parallel BVH build</strong><br>
 We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second. We use Morton codes to encode each primitive such that we can know the exact position of each node in the array. Therefore, we can build the BVH tree in fully parallel.</p></li>
 <li><p><strong>Distributed Ray Tracing across Clusters</strong><br>
-We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs.</p></li>
+We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs. We also implemented load-balancing algorithm to cope with heterogenous nodes.</p></li>
 <li>
 <p><strong>Versatile</strong><br>
 Our ray tracer support most functionalities of its CPU counterpart:  </p>
@@ -63,7 +64,7 @@ Our ray tracer support most functionalities of its CPU counterpart:  </p>
 <h2>
 <a id="ray-tracing" class="anchor" href="#ray-tracing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ray Tracing</h2>
 
-<p>The table illustrates the GPU acceleration of Ray Tracing.
+<p>The table illustrates the GPU acceleration of Ray Tracing on a <strong>Single GPU</strong>.
 FPS represents how many times tracer can sample each pixel for an 1000x1000-pixel scene in one second.
 Rendering time is calculated using FPS for 256 samples per pixel.</p>
 
