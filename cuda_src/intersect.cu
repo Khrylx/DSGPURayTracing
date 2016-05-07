@@ -38,11 +38,6 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 
     float invDet = 1 / det;
 
-    float t = VectorDot3D(e2, qvec) * invDet;
-    if (t <= r.min_t || t >= r.max_t) {
-        return false;
-    }
-
     float tvec[3];
     subVector3D(r.o, v1, tvec);
 
@@ -50,8 +45,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
     if (u < 0 || u > 1) return false;
 
     VectorCross3D(tvec, e1, qvec);
-    float v = VectorDot3D(r.d, qvec) * invDet;
 
+    float t = VectorDot3D(e2, qvec) * invDet;
+    if (t <= r.min_t || t >= r.max_t) {
+        return false;
+    }
+
+    float v = VectorDot3D(r.d, qvec) * invDet;
     if (v < 0 || u + v > 1) return false;
 
     return true;
@@ -80,12 +80,6 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
 
     float invDet = 1 / det;
 
-    float t = VectorDot3D(e2, qvec) * invDet;    
-    if (t <= r.min_t || t >= r.max_t || t >= isect->t) {
-        return false;
-    }
-
-
     float tvec[3];
     subVector3D(r.o, v1, tvec);
 
@@ -93,8 +87,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     if (u < 0 || u > 1) return false;
 
     VectorCross3D(tvec, e1, qvec);
-    float v = VectorDot3D(r.d, qvec) * invDet;
 
+    float t = VectorDot3D(e2, qvec) * invDet;    
+    if (t <= r.min_t || t >= r.max_t || t >= isect->t) {
+        return false;
+    }
+
+    float v = VectorDot3D(r.d, qvec) * invDet;
     if (v < 0 || u + v > 1) return false;
 
     r.max_t = t;
