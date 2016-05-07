@@ -78,6 +78,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
     //     case 3: L_out = make_float3(0.0, 0.0, 1.0); break;
     //     default: break;
     // }
+    // return make_float3(1.0, 0.0, 0.0);
 
     float hit_p[3];
     addScaledVector3D(ray->o, ray->d, isect.t, hit_p);

@@ -1,15 +1,12 @@
 
-__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float& t0) {
+__device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float* divR, float* invR, float& t0) {
 
-    float rx = r.o[0] / r.d[0];
-    float ry = r.o[1] / r.d[1];
-    float rz = r.o[2] / r.d[2];
-    float x0 = bbox->min[0] / r.d[0] - rx;
-    float x1 = bbox->max[0] / r.d[0] - rx;
-    float y0 = bbox->min[1] / r.d[1] - ry;
-    float y1 = bbox->max[1] / r.d[1] - ry;
-    float z0 = bbox->min[2] / r.d[2] - rz;
-    float z1 = bbox->max[2] / r.d[2] - rz;
+    float x0 = bbox->min[0] * invR[0] - divR[0];
+    float x1 = bbox->max[0] * invR[0] - divR[0];
+    float y0 = bbox->min[1] * invR[1] - divR[1];
+    float y1 = bbox->max[1] * invR[1] - divR[1];
+    float z0 = bbox->min[2] * invR[2] - divR[2];
+    float z1 = bbox->max[2] * invR[2] - divR[2];
 
     t0 = fmin_fmax(x0,x1,fmin_fmax(y0,y1,
                 fmin_fmax(z0,z1,0)));
@@ -40,6 +37,12 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
     }
 
     float invDet = 1 / det;
+
+    float t = VectorDot3D(e2, qvec) * invDet;
+    if (t <= r.min_t || t >= r.max_t) {
+        return false;
+    }
+
     float tvec[3];
     subVector3D(r.o, v1, tvec);
 
@@ -51,13 +54,7 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 
     if (v < 0 || u + v > 1) return false;
 
-    float t = VectorDot3D(e2, qvec) * invDet;    
-
-    if (t > r.min_t && t < r.max_t) {
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
 // primitive and normals are shift pointers to the primitive and normal we selected
@@ -82,6 +79,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     }
 
     float invDet = 1 / det;
+
+    float t = VectorDot3D(e2, qvec) * invDet;    
+    if (t <= r.min_t || t >= r.max_t || t >= isect->t) {
+        return false;
+    }
+
+
     float tvec[3];
     subVector3D(r.o, v1, tvec);
 
@@ -93,12 +97,6 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
 
     if (v < 0 || u + v > 1) return false;
 
-    float t = VectorDot3D(e2, qvec) * invDet;    
-
-    if (t <= r.min_t || t >= r.max_t || t >= isect->t) {
-        return false;
-    }
-
     r.max_t = t;
 
     isect->bsdfIndex = const_params.bsdfIndexes[primIndex];
@@ -109,16 +107,14 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     float *n2 = normals + 3;
     float *n3 = normals + 6;
 
-    float n[3];
     for (int i = 0; i < 3; ++i)
     {
-        n[i] = (1 - u - v) * n1[i] + u * n2[i] + v * n3[i];
+        isect->n[i] = (1 - u - v) * n1[i] + u * n2[i] + v * n3[i];
     }
-    if (VectorDot3D(r.d, n) > 0)
+    if (VectorDot3D(r.d, isect->n) > 0)
     {
-        negVector3D(n, n);
+        negVector3D(isect->n, isect->n);
     }
-    readVector3D(n, isect->n);
 
     return true;
 }
@@ -206,52 +202,52 @@ __device__ inline bool intersect(int primIndex, GPURay& r, GPUIntersection *isec
 }
 
 // intersect with BVHNode
-__device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray, GPUIntersection *i) {
-    if (node->left == NULL && node->right == NULL) {
-        bool isIntersect = false;
-        for (int j = 0; j < node->range; j++) {
-            int primIndex = const_params.BVHPrimMap[node->start + j];
-            bool res = intersect(primIndex, ray, i);
-            // bool res = false;
-            isIntersect = isIntersect || res;
-        }
-        return isIntersect;
-    } else if (node->left == NULL) {
-        return node_intersect(node->right, ray, i);
-    } else if (node->right == NULL) {
-        return node_intersect(node->left, ray, i);
-    } else {
-        float tminl = -INF_FLOAT;
-        float tminr = -INF_FLOAT;
+// __device__ bool node_intersect(const GPUBVHNode *node, GPURay &ray, GPUIntersection *i) {
+//     if (node->left == NULL && node->right == NULL) {
+//         bool isIntersect = false;
+//         for (int j = 0; j < node->range; j++) {
+//             int primIndex = const_params.BVHPrimMap[node->start + j];
+//             bool res = intersect(primIndex, ray, i);
+//             // bool res = false;
+//             isIntersect = isIntersect || res;
+//         }
+//         return isIntersect;
+//     } else if (node->left == NULL) {
+//         return node_intersect(node->right, ray, i);
+//     } else if (node->right == NULL) {
+//         return node_intersect(node->left, ray, i);
+//     } else {
+//         float tminl = -INF_FLOAT;
+//         float tminr = -INF_FLOAT;
 
-        GPURay nray = ray;
-        float eps[3] = {EPS_K, EPS_K, EPS_K};
-        addVector3D(eps, nray.d);
-        normalize3D(nray.d);
+//         GPURay nray = ray;
+//         float eps[3] = {EPS_K, EPS_K, EPS_K};
+//         addVector3D(eps, nray.d);
+//         normalize3D(nray.d);
 
-        bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl);
-        bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr);
+//         bool hitl = bboxIntersect(&(node->left->bbox), nray, tminl);
+//         bool hitr = bboxIntersect(&(node->right->bbox), nray, tminr);
 
-        if (hitl && hitr) {
-            GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
-            GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
+//         if (hitl && hitr) {
+//             GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
+//             GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
 
-            hitl = node_intersect(first, ray, i);
-            if (!hitl || i->t > fmaxf(tminl, tminr)) {
-                hitr = node_intersect(second, ray, i);
-            }
-            return hitl || hitr;
-        } else if (hitl) {
-            return node_intersect(node->left, ray, i);
-        } else if (hitr) {
-            return node_intersect(node->right, ray, i);
-        }
+//             hitl = node_intersect(first, ray, i);
+//             if (!hitl || i->t > fmaxf(tminl, tminr)) {
+//                 hitr = node_intersect(second, ray, i);
+//             }
+//             return hitl || hitr;
+//         } else if (hitl) {
+//             return node_intersect(node->left, ray, i);
+//         } else if (hitr) {
+//             return node_intersect(node->right, ray, i);
+//         }
 
-        return false;
+//         return false;
 
-    }
+//     }
 
-}
+// }
 
 __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUIntersection *i) {
     
@@ -264,7 +260,13 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
     GPURay nray = ray;
     float eps[3] = {EPS_K, EPS_K, EPS_K};
     addVector3D(eps, nray.d);
-    //normalize3D(nray.d);
+    float invR[3], divR[3];
+    invR[0] = 1 / nray.d[0];
+    invR[1] = 1 / nray.d[1];
+    invR[2] = 1 / nray.d[2];
+    divR[0] = nray.o[0] * invR[0];
+    divR[1] = nray.o[1] * invR[1];
+    divR[2] = nray.o[2] * invR[2];
 
     float tminl, tminr;
 
@@ -276,10 +278,8 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
             }
             else {
                 
-                GPUBBox bbox = node->left->bbox;
-                bool hitl = bboxIntersect(&bbox, nray, tminl);
-                bbox = node->right->bbox;
-                bool hitr = bboxIntersect(&bbox, nray, tminr);
+                bool hitl = bboxIntersect(&(node->left->bbox), nray, divR, invR, tminl);
+                bool hitr = bboxIntersect(&(node->right->bbox), nray, divR, invR, tminr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
@@ -315,29 +315,29 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
 }
 
 
-__device__ bool node_intersect(GPUBVHNode *node, GPURay &ray) {
-    if (node == NULL) {
-        return false;
-    }
-    float t0;
+// __device__ bool node_intersect(GPUBVHNode *node, GPURay &ray) {
+//     if (node == NULL) {
+//         return false;
+//     }
+//     float t0;
 
-    if (!bboxIntersect(&(node->bbox), ray, t0)) {
-        return false;
-    }
+//     if (!bboxIntersect(&(node->bbox), ray, t0)) {
+//         return false;
+//     }
 
-    if (node->left == NULL && node->right == NULL) {
-        // node is leaf
-        for (int i = 0; i < node->range; i++) {
-            int primIndex = const_params.BVHPrimMap[node->start + i];
-            if (intersect(primIndex, ray)) {
-                return true;
-            }
-        }
-        return false;
-    } else {
-        return node_intersect(node->left, ray) || node_intersect(node->right, ray);
-    }
-}
+//     if (node->left == NULL && node->right == NULL) {
+//         // node is leaf
+//         for (int i = 0; i < node->range; i++) {
+//             int primIndex = const_params.BVHPrimMap[node->start + i];
+//             if (intersect(primIndex, ray)) {
+//                 return true;
+//             }
+//         }
+//         return false;
+//     } else {
+//         return node_intersect(node->left, ray) || node_intersect(node->right, ray);
+//     }
+// }
 
 __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
     GPUBVHNode* stack[64];
@@ -347,6 +347,13 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
     GPURay nray = ray;
     float eps[3] = {EPS_K, EPS_K, EPS_K};
     addVector3D(eps, nray.d);
+    float invR[3], divR[3];
+    invR[0] = 1 / nray.d[0];
+    invR[1] = 1 / nray.d[1];
+    invR[2] = 1 / nray.d[2];
+    divR[0] = nray.o[0] * invR[0];
+    divR[1] = nray.o[1] * invR[1];
+    divR[2] = nray.o[2] * invR[2];
 
     float tminl, tminr;
 
@@ -358,10 +365,8 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
             }
             else {
 
-                GPUBBox bbox = node->left->bbox;
-                bool hitl = bboxIntersect(&bbox, nray, tminl);
-                bbox = node->right->bbox;
-                bool hitr = bboxIntersect(&bbox, nray, tminr);
+                bool hitl = bboxIntersect(&(node->left->bbox), nray, divR, invR, tminl);
+                bool hitr = bboxIntersect(&(node->right->bbox), nray, divR, invR, tminr);
 
                 if (hitl && hitr) {
                     GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
