@@ -34,7 +34,7 @@
 Even for scene with 100K+ triangles, our ray tracer can achieve a throughput of 200+ Mrays/s on GTX 680 for primary ray.
 And we can render a 1000x1000 picture of the scene with ambient occlusion at 60 FPS, while its CPU counterpart stays with 0.30 FPS.  </p></li>
 <li><p><strong>Very Fast Parallel BVH build</strong><br>
-We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second.</p></li>
+We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second. We use Morton codes to encode each primitive such that we can know the exact position of each node in the array. Therefore, we can build the BVH tree in fully parallel.</p></li>
 <li><p><strong>Distributed Ray Tracing across Clusters</strong> 
 We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs.</p></li>
 <li>
@@ -54,6 +54,10 @@ Our ray tracer support almost all the functionalities of its CPU counterpart:  <
 
 <h2>
 <a id="ray-tracing" class="anchor" href="#ray-tracing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ray Tracing</h2>
+
+<p>The table illustrates the GPU acceleration of Ray Tracing.
+FPS represents how many times tracer can sample each pixel for an 1000x1000-pixel scene in one second.
+Rendering time is calculated using FPS for 256 samples per pixel.</p>
 
 <p><img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/GPU%20Ray%20Tracing%20table.png?raw=true" alt=""></p>
 
