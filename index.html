@@ -32,7 +32,7 @@ And we can render a 1000x1000 picture of the scene with ambient occlusion at 50 
 We made a lot of efforts to improve the efficiency of ray traversal:</p>
 
 <ul>
-<li>We used persistent threads to achieve better SIMD utilization.</li>
+<li>We used persistent threads to achieve better work distribution.</li>
 <li>We used per-ray stack for ray traversal.</li>
 <li>We used while-while structure for node traversal and primitive intersection test.</li>
 <li>We optimized ray-triangle intersection and ray-box intersection.</li>
