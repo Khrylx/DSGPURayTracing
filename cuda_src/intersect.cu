@@ -53,7 +53,7 @@ __device__ inline bool triangleIntersectWoop(int primIndex, GPURay& r) {
 __device__ inline bool triangleIntersectWoop(int primIndex, GPURay& r, GPUIntersection *isect) {
 
 
-    float3* normals = const_params.normals + 3 * primIndex;
+    float* normals = const_params.normals + 9 * primIndex;
     float4* woopPositions = const_params.woopPositions + 3 * primIndex;
     float4 v0 = woopPositions[0];
     float4 v1 = woopPositions[1];
@@ -83,14 +83,14 @@ __device__ inline bool triangleIntersectWoop(int primIndex, GPURay& r, GPUInters
     isect->t = t;
     isect->pIndex = primIndex;
 
-    float3 n1 = normals[0];
-    float3 n2 = normals[1];
-    float3 n3 = normals[2];
+    float *n1 = normals;
+    float *n2 = normals + 3;
+    float *n3 = normals + 6;
 
-    isect->n[0] = (1 - u - v) * n1.x + u * n2.x + v * n3.x;
-    isect->n[1] = (1 - u - v) * n1.y + u * n2.y + v * n3.y;
-    isect->n[2] = (1 - u - v) * n1.z + u * n2.z + v * n3.z;
-
+    for (int i = 0; i < 3; ++i)
+    {
+        isect->n[i] = (1 - u - v) * n1[i] + u * n2[i] + v * n3[i];
+    }
     if (VectorDot3D(r.d, isect->n) > 0)
     {
         negVector3D(isect->n, isect->n);
@@ -146,7 +146,7 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
 
     float* primitive = const_params.positions + 9 * primIndex;
-    float3* normals = const_params.normals + 3 * primIndex;
+    float* normals = const_params.normals + 9 * primIndex;
 
     float* v1 = primitive;
     float* e1 = primitive + 3;
@@ -186,14 +186,14 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     isect->t = t;
     isect->pIndex = primIndex;
 
-    float3 n1 = normals[0];
-    float3 n2 = normals[1];
-    float3 n3 = normals[2];
+    float *n1 = normals;
+    float *n2 = normals + 3;
+    float *n3 = normals + 6;
 
-    isect->n[0] = (1 - u - v) * n1.x + u * n2.x + v * n3.x;
-    isect->n[1] = (1 - u - v) * n1.y + u * n2.y + v * n3.y;
-    isect->n[2] = (1 - u - v) * n1.z + u * n2.z + v * n3.z;
-    
+    for (int i = 0; i < 3; ++i)
+    {
+        isect->n[i] = (1 - u - v) * n1[i] + u * n2[i] + v * n3[i];
+    }
     if (VectorDot3D(r.d, isect->n) > 0)
     {
         negVector3D(isect->n, isect->n);

@@ -95,7 +95,7 @@ class CUDAPathTracer{
     int* gpu_bsdfIndexes; // size: N.  ***  index for bsdf
     float* gpu_positions; // size: 9 * N.  *** for triangle, 9 floats representing all 3 vertices;
                           // for sphere, first 3 floats represent origin, 4th float represent radius
-    
+    float* gpu_normals;  // size: 9 * N.  *** normals for triangle
     float* frameBuffer;
 
     unsigned int *gpu_sortedMortonCodes;

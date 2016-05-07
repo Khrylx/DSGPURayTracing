@@ -43,7 +43,7 @@ struct Parameters
     int* types;
     int* bsdfIndexes;
     float* positions;
-    float3* normals;
+    float* normals;
     float4* woopPositions;
 
     float* frameBuffer;
@@ -83,7 +83,6 @@ struct BVHParameters
 
 
 float4* gpu_woopPositions; 
-float3* gpu_normals; 
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 {
@@ -248,8 +247,8 @@ void CUDAPathTracer::loadPrimitives()
     int N = primitives.size();
     int types[N];
     int bsdfs[N];
-    float* positions = new float[9 * N];
-    float3* normals = new float3[3 * N];
+    float *positions = new float[9 * N];
+    float *normals = new float[9 * N];
     float4* woopPositions = new float4[3 * N];
 
     primNum = N;
@@ -286,17 +285,23 @@ void CUDAPathTracer::loadPrimitives()
             positions[9 * i] = mesh->positions[v1][0];
             positions[9 * i + 1] = mesh->positions[v1][1];
             positions[9 * i + 2] = mesh->positions[v1][2];
-            normals[3 * i] = make_float3(mesh->normals[v1][0], mesh->normals[v1][1], mesh->normals[v1][2]);
+            normals[9 * i] = mesh->normals[v1][0];
+            normals[9 * i + 1] = mesh->normals[v1][1];
+            normals[9 * i + 2] = mesh->normals[v1][2];
 
             positions[9 * i + 3] = mesh->positions[v2][0] - positions[9 * i];
             positions[9 * i + 4] = mesh->positions[v2][1] - positions[9 * i + 1];
             positions[9 * i + 5] = mesh->positions[v2][2] - positions[9 * i + 2];
-            normals[3 * i + 1] = make_float3(mesh->normals[v2][0], mesh->normals[v2][1], mesh->normals[v2][2]);
+            normals[9 * i + 3] = mesh->normals[v2][0];
+            normals[9 * i + 4] = mesh->normals[v2][1];
+            normals[9 * i + 5] = mesh->normals[v2][2];
 
             positions[9 * i + 6] = mesh->positions[v3][0] - positions[9 * i];
             positions[9 * i + 7] = mesh->positions[v3][1] - positions[9 * i + 1];
             positions[9 * i + 8] = mesh->positions[v3][2] - positions[9 * i + 2];
-            normals[3 * i + 2] = make_float3(mesh->normals[v3][0], mesh->normals[v3][1], mesh->normals[v3][2]);
+            normals[9 * i + 6] = mesh->normals[v3][0];
+            normals[9 * i + 7] = mesh->normals[v3][1];
+            normals[9 * i + 8] = mesh->normals[v3][2];
 
             Matrix4x4 mtx;
             Vector3D c0(positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5]);
@@ -365,13 +370,13 @@ void CUDAPathTracer::loadPrimitives()
     cudaMalloc((void**)&gpu_types, N * sizeof(int));
     cudaMalloc((void**)&gpu_bsdfIndexes, N * sizeof(int));
     cudaMalloc((void**)&gpu_positions, 9 * N * sizeof(float));
-    cudaMalloc((void**)&gpu_normals, 3 * N * sizeof(float3));
+    cudaMalloc((void**)&gpu_normals, 9 * N * sizeof(float));
     cudaMalloc((void**)&gpu_woopPositions, 3 * N * sizeof(float4));
 
     cudaMemcpy(gpu_types, types, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_bsdfIndexes, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_normals, normals, 3 * N * sizeof(float3),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_woopPositions, woopPositions, 3 * N * sizeof(float4), cudaMemcpyHostToDevice);
 
     //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
