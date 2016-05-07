@@ -87,9 +87,12 @@ void *process(void *vargp) {
 			break;
 		}
 		printf("thread(%d) read: %d\n", pthread_self(), val);
-		sprintf(buf, "%d\n", val);
-		rio_writen(connfd, buf, strlen(buf));
-		rio_readlineb(&rio, buf, MAXLINE);
+		memset(buf, 0, MAXLINE);
+		float* floatBuf = (float*)buf;
+		floatBuf[0] = val;
+		// sprintf(buf, "%d\n", val);
+		rio_writen(connfd, buf, MAXLINE);
+		rio_readnb(&rio, buf, MAXLINE);
 		printf("thread(%d) result: %s\n", pthread_self(), buf);
 	}
 	close(connfd);

@@ -20,11 +20,15 @@ int main(int argc, char *argv[])
 	Rio_readinitb(&rio, clientfd);
 	printf("Connected to server\n");
 
-	while(rio_readlineb(&rio, buf, MAXLINE) > 0) {
-		printf("client read: %s\n", buf);
+	while(rio_readnb(&rio, buf, MAXLINE) > 0) {
+		float *floatBuf = (float*)buf;
+		// printf("client read: %s\n", buf);
+		printf("client read: %f\n", floatBuf[0]);
 		sleep(1);
-		sprintf(tmpBuf, "processed %s", buf);
-		rio_writen(clientfd, tmpBuf, strlen(tmpBuf));
+		// sprintf(tmpBuf, "processed %s", buf);
+		sprintf(tmpBuf, "processed %f", floatBuf[0]);
+
+		rio_writen(clientfd, tmpBuf, MAXLINE);
 	}
 	close(clientfd);
 	return 0;
