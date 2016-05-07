@@ -20,11 +20,6 @@
 
     <section class="main-content">
       <h1>
-<a id="check-point" class="anchor" href="#check-point" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Check Point</h1>
-
-<p><a href="https://github.com/Khrylx/DSGPURayTracing/wiki">https://github.com/Khrylx/DSGPURayTracing/wiki</a></p>
-
-<h1>
 <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h1>
 
 <p>We aim to develop a fast Distributed GPU ray tracer that has the following features:  </p>
@@ -41,13 +36,13 @@ We made a lot of efforts to improve the efficiency of ray traversal:</p>
 <li>We used per-ray stack for ray traversal.</li>
 <li>We used while-while structure for node traversal and primitive intersection test.</li>
 <li>We optimized ray-triangle intersection and ray-box intersection.</li>
-<li>We also tried out speculative method, i.e., delay the primitive intersection test until all lanes find a leaf.
+<li>We also tried out speculative method, i.e., delay the primitive intersection test until all lanes find a leaf.<br>
 After all these optimizations, over ray tracer is 20x faster than original one.</li>
 </ul>
 </li>
 <li><p><strong>Very Fast Parallel BVH build</strong><br>
 We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second. We use Morton codes to encode each primitive such that we can know the exact position of each node in the array. Therefore, we can build the BVH tree in fully parallel.</p></li>
-<li><p><strong>Distributed Ray Tracing across Clusters</strong> 
+<li><p><strong>Distributed Ray Tracing across Clusters</strong><br>
 We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs.</p></li>
 <li>
 <p><strong>Versatile</strong><br>
@@ -89,6 +84,11 @@ Rendering time is calculated using FPS for 256 samples per pixel.</p>
 <p><img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/Screen%20Shot%20GPU%20Sat%20May%20%207%2010:56:18%202016.png?raw=true" alt=""></p>
 
 <p><img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/Screen%20Shot%20GPU%20Sat%20May%20%207%2011:23:08%202016.png?raw=true" alt=""></p>
+
+<h1>
+<a id="check-point" class="anchor" href="#check-point" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Check Point</h1>
+
+<p><a href="https://github.com/Khrylx/DSGPURayTracing/wiki">https://github.com/Khrylx/DSGPURayTracing/wiki</a></p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/Khrylx/DSGPURayTracing">Distributed GPU Ray Tracing</a> is maintained by <a href="https://github.com/Khrylx">Khrylx</a>.</span>
