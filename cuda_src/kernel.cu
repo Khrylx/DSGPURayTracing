@@ -279,7 +279,7 @@ traceScenePT(int xStart, int yStart, int width, int height)
 {
     
     int globalPoolRayCount = height * width * const_params.ns_aa;
-    __shared__ float3 spec[BLOCK_DIM];
+    float3 spec;
     __shared__ int bIndex[BLOCK_DIM];
     __shared__ volatile int localPoolNextRay;
 
@@ -304,27 +304,31 @@ traceScenePT(int xStart, int yStart, int width, int height)
         curandState s;
         curand_init((unsigned int)myRayIndex * (xStart * TILE_DIM + yStart + 1), 0, 0, &s);
 
-        spec[threadIdx.x] = tracePixelPT(&s, x, y, false);
+        spec = tracePixelPT(&s, x, y, false);
 
-        __syncthreads();
+        // __syncthreads();
 
-        if(threadIdx.x == 0 || (threadIdx.x > 0 && bIndex[threadIdx.x - 1] != bIndex[threadIdx.x])){
+        // if(threadIdx.x == 0 || (threadIdx.x > 0 && bIndex[threadIdx.x - 1] != bIndex[threadIdx.x])){
             
-            for (int i = threadIdx.x + 1; i < BLOCK_DIM; ++i)
-            {
-                if (bIndex[i - 1] != bIndex[i]) break;
+        //     for (int i = threadIdx.x + 1; i < BLOCK_DIM; ++i)
+        //     {
+        //         if (bIndex[i - 1] != bIndex[i]) break;
                     
-                spec[threadIdx.x].x += spec[i].x;
-                spec[threadIdx.x].y += spec[i].y;
-                spec[threadIdx.x].z += spec[i].z;
-            }
+        //         spec[threadIdx.x].x += spec[i].x;
+        //         spec[threadIdx.x].y += spec[i].y;
+        //         spec[threadIdx.x].z += spec[i].z;
+        //     }
 
 
 
-            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x]], spec[threadIdx.x].x);
-            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 1], spec[threadIdx.x].y);
-            atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec[threadIdx.x].z);
-        }
+        //     atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x]], spec[threadIdx.x].x);
+        //     atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 1], spec[threadIdx.x].y);
+        //     atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec[threadIdx.x].z);
+        // }
+
+        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x]], spec.x);
+        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 1], spec.y);
+        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec.z);
 
         
     }
@@ -352,11 +356,11 @@ __global__ void computeMorton() {
         }
     } else { // triangle
         for (int i = 0; i < 3; i++) {
-            float minVal = min(primitive[i], primitive[3 + i]);
+            float minVal = min(0, primitive[3 + i]);
             minVal = min(minVal, primitive[6 + i]);
-            float maxVal = max(primitive[i], primitive[3 + i]);
+            float maxVal = max(0, primitive[3 + i]);
             maxVal = max(maxVal, primitive[6 + i]);
-            centroid[i] = 0.5 * (minVal + maxVal);
+            centroid[i] = primitive[i] + 0.5 * (minVal + maxVal);
         }
     }
 
@@ -400,12 +404,12 @@ __global__ void generateLeafNode() {
         }
     } else { // triangle
         for (int i = 0; i < 3; i++) {
-            float minVal = min(primitive[i], primitive[3 + i]);
+            float minVal = min(0, primitive[3 + i]);
             minVal = min(minVal, primitive[6 + i]);
-            float maxVal = max(primitive[i], primitive[3 + i]);
+            float maxVal = max(0, primitive[3 + i]);
             maxVal = max(maxVal, primitive[6 + i]);
-            minVec[i] = minVal;
-            maxVec[i] = maxVal;
+            minVec[i] = minVal + primitive[i];
+            maxVec[i] = maxVal + primitive[i];
         }
     }
     for (int i = 0; i < 3; i++) {

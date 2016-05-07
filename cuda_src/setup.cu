@@ -239,16 +239,16 @@ void CUDAPathTracer::loadPrimitives()
             normals[9 * i + 1] = mesh->normals[v1][1];
             normals[9 * i + 2] = mesh->normals[v1][2];
 
-            positions[9 * i + 3] = mesh->positions[v2][0];
-            positions[9 * i + 4] = mesh->positions[v2][1];
-            positions[9 * i + 5] = mesh->positions[v2][2];
+            positions[9 * i + 3] = mesh->positions[v2][0] - positions[9 * i];
+            positions[9 * i + 4] = mesh->positions[v2][1] - positions[9 * i + 1];
+            positions[9 * i + 5] = mesh->positions[v2][2] - positions[9 * i + 2];
             normals[9 * i + 3] = mesh->normals[v2][0];
             normals[9 * i + 4] = mesh->normals[v2][1];
             normals[9 * i + 5] = mesh->normals[v2][2];
 
-            positions[9 * i + 6] = mesh->positions[v3][0];
-            positions[9 * i + 7] = mesh->positions[v3][1];
-            positions[9 * i + 8] = mesh->positions[v3][2];
+            positions[9 * i + 6] = mesh->positions[v3][0] - positions[9 * i];
+            positions[9 * i + 7] = mesh->positions[v3][1] - positions[9 * i + 1];
+            positions[9 * i + 8] = mesh->positions[v3][2] - positions[9 * i + 2];
             normals[9 * i + 6] = mesh->normals[v3][0];
             normals[9 * i + 7] = mesh->normals[v3][1];
             normals[9 * i + 8] = mesh->normals[v3][2];

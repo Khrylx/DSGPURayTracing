@@ -22,13 +22,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
     float* primitive = const_params.positions + 9 * primIndex;
 
     float* v1 = primitive;
-    float* v2 = primitive + 3;
-    float* v3 = primitive + 6;
+    float* e1 = primitive + 3;
+    float* e2 = primitive + 6;
 
-    float e1[3], e2[3];
+    //float e1[3], e2[3];
     float pvec[3], qvec[3];
-    subVector3D(v2, v1, e1);
-    subVector3D(v3, v1, e2);
+    //subVector3D(v2, v1, e1);
+    //subVector3D(v3, v1, e2);
     VectorCross3D(r.d, e2, pvec);
 
     float det = VectorDot3D(e1, pvec);
@@ -45,14 +45,14 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
     if (u < 0 || u > 1) return false;
 
     VectorCross3D(tvec, e1, qvec);
+    float v = VectorDot3D(r.d, qvec) * invDet;
+    if (v < 0 || u + v > 1) return false;
 
+    
     float t = VectorDot3D(e2, qvec) * invDet;
     if (t <= r.min_t || t >= r.max_t) {
         return false;
     }
-
-    float v = VectorDot3D(r.d, qvec) * invDet;
-    if (v < 0 || u + v > 1) return false;
 
     return true;
 }
@@ -87,14 +87,13 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     if (u < 0 || u > 1) return false;
 
     VectorCross3D(tvec, e1, qvec);
+    float v = VectorDot3D(r.d, qvec) * invDet;
+    if (v < 0 || u + v > 1) return false;
 
     float t = VectorDot3D(e2, qvec) * invDet;    
     if (t <= r.min_t || t >= r.max_t || t >= isect->t) {
         return false;
     }
-
-    float v = VectorDot3D(r.d, qvec) * invDet;
-    if (v < 0 || u + v > 1) return false;
 
     r.max_t = t;
 
@@ -248,7 +247,7 @@ __device__ inline bool intersect(int primIndex, GPURay& r, GPUIntersection *isec
 
 // }
 
-__device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUIntersection *i) {
+__device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray, GPUIntersection *i) {
     
     GPUBVHNode* stack[64];
     GPUBVHNode** stackPtr = stack;
@@ -280,19 +279,24 @@ __device__ bool node_intersect_iter(const GPUBVHNode *node, GPURay &ray, GPUInte
                 bool hitl = bboxIntersect(&(node->left->bbox), nray, divR, invR, tminl);
                 bool hitr = bboxIntersect(&(node->right->bbox), nray, divR, invR, tminr);
 
-                if (hitl && hitr) {
-                    GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
-                    GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
-
-                    node = first;
-                    *stackPtr++ = second;
-                } else if (hitl) {
-                    node = node->left;
-                } else if (hitr) {
-                    node = node->right;
+                GPUBVHNode* node2 = node->right;
+                node = node->left;
+                if(!hitr) node2 = NULL;
+                if(!hitl){
+                    node = node2;
+                    node2 = NULL;
                 }
-                else{
+
+                if (node == NULL){
                     node = *--stackPtr;
+                }
+                else if (node2){
+                    if(tminr < tminl){
+                        GPUBVHNode* tmp = node;
+                        node = node2;
+                        node2 = tmp;
+                    }
+                    *stackPtr++ = node2;
                 }
             }
         }
@@ -355,6 +359,7 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
     divR[2] = nray.o[2] * invR[2];
 
     float tminl, tminr;
+    GPUBVHNode* node2;
 
     while(1){
 
@@ -367,19 +372,24 @@ __device__ bool node_intersect_iter(GPUBVHNode *node, GPURay &ray) {
                 bool hitl = bboxIntersect(&(node->left->bbox), nray, divR, invR, tminl);
                 bool hitr = bboxIntersect(&(node->right->bbox), nray, divR, invR, tminr);
 
-                if (hitl && hitr) {
-                    GPUBVHNode* first = (tminl <= tminr) ? node->left : node->right;
-                    GPUBVHNode* second = (tminl <= tminr) ? node->right : node->left;
-
-                    node = first;
-                    *stackPtr++ = second;
-                } else if (hitl) {
-                    node = node->left;
-                } else if (hitr) {
-                    node = node->right;
+                node2 = node->right;
+                node = node->left;
+                if(!hitr) node2 = NULL;
+                if(!hitl){
+                    node = node2;
+                    node2 = NULL;
                 }
-                else{
+
+                if (node == NULL){
                     node = *--stackPtr;
+                }
+                else if (node2){
+                    if(tminr < tminl){
+                        GPUBVHNode* tmp = node;
+                        node = node2;
+                        node2 = tmp;
+                    }
+                    *stackPtr++ = node2;
                 }
             }
         }
