@@ -25,97 +25,32 @@
 <p><a href="https://github.com/Khrylx/DSGPURayTracing/wiki">https://github.com/Khrylx/DSGPURayTracing/wiki</a></p>
 
 <h1>
-<a id="project-proposal" class="anchor" href="#project-proposal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Project Proposal</h1>
+<a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h1>
 
-<h2>
-<a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h2>
-
-<p>The project aims at accelerating the computationally intensive ray tracing algorithm. To achieve this end,
-we will utilize the computing power of both GPU and distributed machines. We are going to build BVH on GPU to allow faster ray-triangle intersection test. For machines on clusters, they all build the same BVH but will process different parts of the image. We will treat patches of the image as jobs and use some workload balance strategy.</p>
-
-<h2>
-<a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h2>
-
-<p>Ray tracing is one of the most researched fields in Computer Graphics. It is a great technique to produce optical effects such as reflection, refraction, scattering and dispersion phenomena. Its capability of producing a very high degree of visual realism, which is usually higher than that of typical scanline rendering methods, comes with a greater computational cost. So most of the research is focused on how to make it more time efficient. There are many ways to achieve this goal. In this project, we will focus on taking advantage of parallel computing power.</p>
-
-<p>One way to make ray tracing faster is to use GPU. This is due to the parallel nature of ray tracing. The most computationally intensive part of ray tracing is the ray-primitive intersection test. Intersection tests of different rays are independent of one another, which leaves much room for parallel acceleration. GPU provide huge amount of parallel executing threads to exploit the parallelism in ray tracing. </p>
-
-<p>Compared to network latency, the computation time of ray tracing is much higher. So it hints us to use distributed machines to accelerate ray tracing. Different patches of the image are independent of one another. So we treat a single patch as a unit of work, and send the work to different machines using load balancing algorithm.</p>
-
-<h2>
-<a id="the-challenge" class="anchor" href="#the-challenge" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The challenge</h2>
-
-<p>There are several challenges in this project:</p>
+<p>We aim to develop a fast Distributed GPU ray tracer that has the following features:  </p>
 
 <ol>
-<li>Constructing and traversing BVH on GPU is much more complex than CPU because GPU is not good at logic control.</li>
-<li>Debugging and tuning GPU code is much trickier. It maybe easy to implement a GPU version that has 4x speedup, but it's hard to make it achieve 20x speedup.</li>
-<li>Different machines need to communicate to be set up with the same configuration. And they need to cooperate with each other to get the final solution. Implementing these communicating interfaces can be time consuming. </li>
-</ol>
-
-<h2>
-<a id="resources" class="anchor" href="#resources" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Resources</h2>
-
-<p>We are using the path tracer code of 15-462 assignment as the start code, its CPU version is done by Ye Yuan last semester. 
-We will refer to multiple papers, which will be in the reference section.</p>
-
-<h2>
-<a id="goals-and-deliverables" class="anchor" href="#goals-and-deliverables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals and Deliverables</h2>
-
-<h3>
-<a id="goals-to-achieve" class="anchor" href="#goals-to-achieve" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals to achieve</h3>
-
-<ol>
-<li>Implement fast GPU-based ray tracing.</li>
-<li>Implement distributed ray tracing.</li>
-</ol>
-
-<h3>
-<a id="extra-goals" class="anchor" href="#extra-goals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Extra goals</h3>
-
-<ol>
-<li>Achieve near real time ray tracing on complex scenes (5-10 fps).</li>
-</ol>
-
-<h3>
-<a id="deliverables" class="anchor" href="#deliverables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Deliverables</h3>
-
-<ol>
-<li>Images showing rendering results.</li>
-<li>Speedup graphs.</li>
-</ol>
-
-<h2>
-<a id="platform-choice" class="anchor" href="#platform-choice" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Platform Choice</h2>
-
-<p>We will be using C++ as programming language because it's most convenient for CUDA programming. 
-And we will develop the program on Linux and OS X, so we can potentially use clusters as distributed machines.</p>
-
-<h2>
-<a id="schedule" class="anchor" href="#schedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Schedule</h2>
+<li><p><strong>Very Fast Ray Traversal</strong><br>
+Even for scene with 100K+ triangles, our ray tracer can achieve a throughput of 200+ Mrays/s on GTX 680 for primary ray.
+And we can render a 1000x1000 picture of the scene with ambient occlusion at 60 FPS, while its CPU counterpart stays with 0.30 FPS.  </p></li>
+<li><p><strong>Very Fast Parallel BVH build</strong><br>
+We can build BVH of scenes with 240K+ triangles in 8 ms, while the CPU build takes nearly 2 second.</p></li>
+<li><p><strong>Distributed Ray Tracing across Clusters</strong> 
+We implemented a server client mechanism for the system, which allows us to render large scenes with multiple machines and GPUs.</p></li>
+<li>
+<p><strong>Versatile</strong><br>
+Our ray tracer support almost all the functionalities of its CPU counterpart:  </p>
 
 <ul>
-<li>Week1: project proposal, literature review, choosing methods to use.</li>
-<li>Week2-3: implement GPU-based ray tracing.</li>
-<li>Week4-5: implement distributed ray tracing.</li>
-<li>Week6: make results and write final report. </li>
+<li>Monte Carlo sampling<br>
+</li>
+<li>Multiple types of BSDFs: refraction, Fresnel reflection, e.g.</li>
 </ul>
-
-<h2>
-<a id="reference" class="anchor" href="#reference" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reference</h2>
-
-<ol>
-<li>Real time Ray Tracing on GPU with BVH-based Packet Traversal (2007)
-Johannes G¨unther,    Stefan Popov,   Hans-Peter Seidel,  Philipp Slusallek</li>
-<li>Real Time Ray Tracing using CUDA
-Min Shih1, Yung-Feng Chiu1, Ying-Chieh Chen1, Chun-Fa Chang2</li>
-<li>Ray Tracing on Programmable Graphics Hardware (2002)
-Timothy J. Purcell      Ian Buck      William R. Mark      Pat Harrahan</li>
-<li>Stackless KD-Tree Traversal for High Performance GPU Ray Tracing (2007)
-Stefan Popov, Johannes Günther, Hans-Peter Seidel, Philipp Slusallek</li>
-<li>Fast Ray Sorting and Breadth-First Packet Traversal for GPU Ray Tracing (2010)
-Kirill Garanzha, Charles Loop</li>
+</li>
 </ol>
+
+<h1>
+<a id="results" class="anchor" href="#results" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Results</h1>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/Khrylx/DSGPURayTracing">Distributed GPU Ray Tracing</a> is maintained by <a href="https://github.com/Khrylx">Khrylx</a>.</span>
