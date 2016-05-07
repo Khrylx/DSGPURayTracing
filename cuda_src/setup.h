@@ -63,41 +63,6 @@ struct GPUBSDF{
     float ior;
 };
 
-struct Parameters
-{
-    int screenW;
-    int screenH;
-    int max_ray_depth; ///< maximum allowed ray depth (applies to all rays)
-    int ns_aa;         ///< number of camera rays in one pixel (along one axis)
-    int ns_area_light; ///< number samples per area light source
-    int lightNum;
-    int primNum;
-
-    int* types;
-    int* bsdfIndexes;
-    float* positions;
-    float* normals;
-
-    float* frameBuffer;
-
-    int* BVHPrimMap;
-    GPUBVHNode* BVHRoot;
-};
-
-struct BVHParameters
-{
-    float sceneMin[3];
-    float sceneExtent[3];
-    int numObjects;
-    GPUBVHNode *leafNodes;
-    GPUBVHNode *internalNodes;
-    unsigned int*sortedMortonCodes;
-    int *sortedObjectIDs;
-    int *types;
-    float *positions;
-    
-};
-
 struct GPURay
 {
     int depth;  ///< depth of the Ray
@@ -130,7 +95,7 @@ class CUDAPathTracer{
     int* gpu_bsdfIndexes; // size: N.  ***  index for bsdf
     float* gpu_positions; // size: 9 * N.  *** for triangle, 9 floats representing all 3 vertices;
                           // for sphere, first 3 floats represent origin, 4th float represent radius
-    float* gpu_normals;  // size: 9 * N.  *** normals for triangle
+    
     float* frameBuffer;
 
     unsigned int *gpu_sortedMortonCodes;

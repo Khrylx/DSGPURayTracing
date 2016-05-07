@@ -21,13 +21,52 @@
 #include <iostream>
 #include <time.h>
 
-#include <cuda_runtime.h>
-// For the CUDA runtime routines (prefixed with "cuda_")
 
+// For the CUDA runtime routines (prefixed with "cuda_")
+#include <cuda_runtime.h>
 //#define PARALLEL_BUILD_BVH
 
 #define TILE_DIM 1
- 
+
+#include "setup.h" 
+
+struct Parameters
+{
+    int screenW;
+    int screenH;
+    int max_ray_depth; ///< maximum allowed ray depth (applies to all rays)
+    int ns_aa;         ///< number of camera rays in one pixel (along one axis)
+    int ns_area_light; ///< number samples per area light source
+    int lightNum;
+    int primNum;
+
+    int* types;
+    int* bsdfIndexes;
+    float* positions;
+    float3* normals;
+    float4* woopPositions;
+
+    float* frameBuffer;
+
+    int* BVHPrimMap;
+    GPUBVHNode* BVHRoot;
+};
+
+struct BVHParameters
+{
+    float sceneMin[3];
+    float sceneExtent[3];
+    int numObjects;
+    GPUBVHNode *leafNodes;
+    GPUBVHNode *internalNodes;
+    unsigned int*sortedMortonCodes;
+    int *sortedObjectIDs;
+    int *types;
+    float *positions;
+    
+};
+
+
 #include "kernel.cu"
 
 #include <thrust/sort.h>
@@ -42,7 +81,9 @@
  */
 //using namespace std;
 
-extern __global__ void printInfo();
+
+float4* gpu_woopPositions; 
+float3* gpu_normals; 
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 {
@@ -56,6 +97,7 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_bsdfIndexes);
     cudaFree(gpu_positions);
     cudaFree(gpu_normals);
+    cudaFree(gpu_woopPositions);
     cudaFree(frameBuffer);
     cudaFree(BVHPrimMap);
 #ifdef PARALLEL_BUILD_BVH
@@ -107,7 +149,7 @@ void CUDAPathTracer::startRayTracingPT()
 
     int blockDim = BLOCK_DIM;
     int gridDim = 256;
-    int zero = 0;
+    unsigned long long zero = 0;
 
     for(int i = 0; i < xTileNum; i++)
         for(int j = 0; j < yTileNum; j++)
@@ -117,7 +159,7 @@ void CUDAPathTracer::startRayTracingPT()
 
             traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, tmp_width, tmp_height);
 
-            cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(int));
+            cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(unsigned long long));
             cudaThreadSynchronize();
 
         }
@@ -206,8 +248,9 @@ void CUDAPathTracer::loadPrimitives()
     int N = primitives.size();
     int types[N];
     int bsdfs[N];
-    float *positions = new float[9 * N];
-    float *normals = new float[9 * N];
+    float* positions = new float[9 * N];
+    float3* normals = new float3[3 * N];
+    float4* woopPositions = new float4[3 * N];
 
     primNum = N;
     map<BSDF*, int> BSDFMap;
@@ -243,23 +286,34 @@ void CUDAPathTracer::loadPrimitives()
             positions[9 * i] = mesh->positions[v1][0];
             positions[9 * i + 1] = mesh->positions[v1][1];
             positions[9 * i + 2] = mesh->positions[v1][2];
-            normals[9 * i] = mesh->normals[v1][0];
-            normals[9 * i + 1] = mesh->normals[v1][1];
-            normals[9 * i + 2] = mesh->normals[v1][2];
+            normals[3 * i] = make_float3(mesh->normals[v1][0], mesh->normals[v1][1], mesh->normals[v1][2]);
 
             positions[9 * i + 3] = mesh->positions[v2][0] - positions[9 * i];
             positions[9 * i + 4] = mesh->positions[v2][1] - positions[9 * i + 1];
             positions[9 * i + 5] = mesh->positions[v2][2] - positions[9 * i + 2];
-            normals[9 * i + 3] = mesh->normals[v2][0];
-            normals[9 * i + 4] = mesh->normals[v2][1];
-            normals[9 * i + 5] = mesh->normals[v2][2];
+            normals[3 * i + 1] = make_float3(mesh->normals[v2][0], mesh->normals[v2][1], mesh->normals[v2][2]);
 
             positions[9 * i + 6] = mesh->positions[v3][0] - positions[9 * i];
             positions[9 * i + 7] = mesh->positions[v3][1] - positions[9 * i + 1];
             positions[9 * i + 8] = mesh->positions[v3][2] - positions[9 * i + 2];
-            normals[9 * i + 6] = mesh->normals[v3][0];
-            normals[9 * i + 7] = mesh->normals[v3][1];
-            normals[9 * i + 8] = mesh->normals[v3][2];
+            normals[3 * i + 2] = make_float3(mesh->normals[v3][0], mesh->normals[v3][1], mesh->normals[v3][2]);
+
+            Matrix4x4 mtx;
+            Vector3D c0(positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5]);
+            Vector3D c1(positions[9 * i + 6], positions[9 * i + 7], positions[9 * i + 8]);
+            Vector3D c2 = cross(c0, c1);
+            Vector3D c3(positions[9 * i], positions[9 * i + 1], positions[9 * i + 2]);
+
+            mtx[0] = Vector4D(c0);
+            mtx[1] = Vector4D(c1);
+            mtx[2] = Vector4D(c2);
+            mtx[3] = Vector4D(c3, 1.0);
+
+            mtx = mtx.inv();
+
+            woopPositions[3 * i] = make_float4(mtx(2,0), mtx(2,1), mtx(2,2), -mtx(2,3));
+            woopPositions[3 * i + 1] = make_float4(mtx(0,0), mtx(0,1), mtx(0,2), mtx(0,3));
+            woopPositions[3 * i + 2] = make_float4(mtx(1,0), mtx(1,1), mtx(1,2), mtx(1,3));
         }
     }
     GPUBSDF BSDFArray[BSDFMap.size()];
@@ -311,16 +365,19 @@ void CUDAPathTracer::loadPrimitives()
     cudaMalloc((void**)&gpu_types, N * sizeof(int));
     cudaMalloc((void**)&gpu_bsdfIndexes, N * sizeof(int));
     cudaMalloc((void**)&gpu_positions, 9 * N * sizeof(float));
-    cudaMalloc((void**)&gpu_normals, 9 * N * sizeof(float));
+    cudaMalloc((void**)&gpu_normals, 3 * N * sizeof(float3));
+    cudaMalloc((void**)&gpu_woopPositions, 3 * N * sizeof(float4));
 
     cudaMemcpy(gpu_types, types, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_bsdfIndexes, bsdfs, N * sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_positions, positions, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_normals, normals, 9 * N * sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_normals, normals, 3 * N * sizeof(float3),cudaMemcpyHostToDevice);
+    cudaMemcpy(gpu_woopPositions, woopPositions, 3 * N * sizeof(float4), cudaMemcpyHostToDevice);
 
     //cudaMalloc((void**)&gpu_bsdfs, BSDFMap.size() * sizeof(GPUBSDF));
     delete [] positions;
     delete [] normals;
+    delete [] woopPositions;
 
     cudaError_t err = cudaSuccess;
 
@@ -723,6 +780,7 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.frameBuffer = frameBuffer;
     tmpParams.BVHPrimMap = BVHPrimMap;
     tmpParams.BVHRoot = BVHRoot;
+    tmpParams.woopPositions = gpu_woopPositions;
 
     cout << "primNum:" << primNum << endl;
     cudaError_t err = cudaSuccess;

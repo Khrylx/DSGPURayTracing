@@ -520,21 +520,21 @@ printInfo()
     printf("%lf %lf %lf\n", camera.pos[0], camera.pos[1], camera.pos[2] );
 
 
-    float* positions = const_params.positions;
-    float* normals = const_params.normals;
+    // float* positions = const_params.positions;
+    // float* normals = const_params.normals;
 
-    printf("+++++++++++++++++++++++\n");
-    for (int i = 0; i < const_params.primNum; i++) {
-        printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_bsdfs[const_params.bsdfIndexes[i]].type);
+    // printf("+++++++++++++++++++++++\n");
+    // for (int i = 0; i < const_params.primNum; i++) {
+    //     printf("%d %d %d\n\n",const_params.types[i] ,const_params.bsdfIndexes[i], const_bsdfs[const_params.bsdfIndexes[i]].type);
 
-        printf("%lf %lf %lf\n", positions[9 * i], positions[9 * i + 1], positions[9 * i + 2] );
-        printf("%lf %lf %lf\n", positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5] );
-        printf("%lf %lf %lf\n", positions[9 * i + 6], positions[9 * i + 7], positions[9 * i + 8] );
-        printf("=======================\n");
-        printf("%lf %lf %lf\n", normals[9 * i], normals[9 * i + 1], normals[9 * i + 2] );
-        printf("%lf %lf %lf\n", normals[9 * i + 3], normals[9 * i + 4], normals[9 * i + 5] );
-        printf("%lf %lf %lf\n", normals[9 * i + 6], normals[9 * i + 7], normals[9 * i + 8] );
-        printf("+++++++++++++++++++++++\n\n");
-    }
+    //     printf("%lf %lf %lf\n", positions[9 * i], positions[9 * i + 1], positions[9 * i + 2] );
+    //     printf("%lf %lf %lf\n", positions[9 * i + 3], positions[9 * i + 4], positions[9 * i + 5] );
+    //     printf("%lf %lf %lf\n", positions[9 * i + 6], positions[9 * i + 7], positions[9 * i + 8] );
+    //     printf("=======================\n");
+    //     printf("%lf %lf %lf\n", normals[9 * i], normals[9 * i + 1], normals[9 * i + 2] );
+    //     printf("%lf %lf %lf\n", normals[9 * i + 3], normals[9 * i + 4], normals[9 * i + 5] );
+    //     printf("%lf %lf %lf\n", normals[9 * i + 6], normals[9 * i + 7], normals[9 * i + 8] );
+    //     printf("+++++++++++++++++++++++\n\n");
+    // }
 
 }

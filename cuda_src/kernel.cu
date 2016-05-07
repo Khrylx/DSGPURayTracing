@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <curand_kernel.h>
-#include "setup.h"
 
 #define MAX_NUM_LIGHT 20
 #define MAX_NUM_BSDF 20
@@ -81,7 +80,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
     //     case 3: L_out = make_float3(0.0, 0.0, 1.0); break;
     //     default: break;
     // }
-    // return make_float3(1.0, 0.0, 0.0);
+    //if(ray->depth == 1) return make_float3(1.0, 0.0, 0.0);
 
     float hit_p[3];
     addScaledVector3D(ray->o, ray->d, isect.t, hit_p);
@@ -251,7 +250,7 @@ traceScene(int xStart, int yStart, int width, int height)
 
 }
 
-__device__ int globalPoolNextRay = 0;
+__device__ unsigned long long globalPoolNextRay = 0;
 
 
 
@@ -281,35 +280,41 @@ __global__ void
 traceScenePT(int xStart, int yStart, int width, int height)
 {
     
-    int globalPoolRayCount = height * width * const_params.ns_aa;
+    unsigned long long globalPoolRayCount = height * (unsigned long long)width * const_params.ns_aa;
     float3 spec;
-    __shared__ int bIndex[BLOCK_DIM];
-    __shared__ volatile int localPoolNextRay;
+    int bIndex;
+    __shared__ volatile unsigned long long localPoolNextRay;
+    int localPoolRayCount = 0;
 
     while(true){
 
-        if(threadIdx.x == 0){
-            localPoolNextRay = atomicAdd(&globalPoolNextRay, BLOCK_DIM);
+        if(localPoolRayCount == 0 && threadIdx.x == 0){
+            localPoolNextRay = atomicAdd(&globalPoolNextRay, (unsigned long long)BLOCK_DIM * 6);
+            localPoolRayCount = BLOCK_DIM * 6;
         }
         __syncthreads();
 
-        int myRayIndex = localPoolNextRay + threadIdx.x;
+        unsigned long long myRayIndex = localPoolNextRay + threadIdx.x;
         if (myRayIndex >= globalPoolRayCount)
             return;
-
 
         int index = myRayIndex / const_params.ns_aa;
         int x = index % width + xStart;
         int y = index / width + yStart;
 
-        bIndex[threadIdx.x] = y * const_params.screenW + x;
+        bIndex = y * const_params.screenW + x;
 
         curandState s;
         curand_init((unsigned int)myRayIndex * (xStart * TILE_DIM + yStart + 1), 0, 0, &s);
 
         spec = tracePixelPT(&s, x, y, false);
 
-        // __syncthreads();
+        __syncthreads();
+        if(threadIdx.x == 0){
+            localPoolNextRay += BLOCK_DIM;
+            localPoolRayCount -= BLOCK_DIM;
+        }
+
 
         // if(threadIdx.x == 0 || (threadIdx.x > 0 && bIndex[threadIdx.x - 1] != bIndex[threadIdx.x])){
             
@@ -329,9 +334,9 @@ traceScenePT(int xStart, int yStart, int width, int height)
         //     atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec[threadIdx.x].z);
         // }
 
-        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x]], spec.x);
-        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 1], spec.y);
-        atomicAdd(&const_params.frameBuffer[3 * bIndex[threadIdx.x] + 2], spec.z);
+        atomicAdd(&const_params.frameBuffer[3 * bIndex], spec.x);
+        atomicAdd(&const_params.frameBuffer[3 * bIndex + 1], spec.y);
+        atomicAdd(&const_params.frameBuffer[3 * bIndex + 2], spec.z);
 
         
     }

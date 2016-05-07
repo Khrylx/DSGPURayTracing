@@ -18,6 +18,89 @@ __device__ inline bool bboxIntersect(const GPUBBox *bbox, GPURay& r, float* divR
     return t0 <= t1;
 }
 
+// Woop triangle intersection test
+__device__ inline bool triangleIntersectWoop(int primIndex, GPURay& r) {
+
+    float4* woopPositions = const_params.woopPositions + 3 * primIndex;
+    float4 v0 = woopPositions[0];
+    float4 v1 = woopPositions[1];
+
+    float Oz = v0.w - r.o[0]*v0.x - r.o[1]*v0.y - r.o[2]*v0.z;
+    float invDz = 1.0f / (r.d[0]*v0.x + r.d[1]*v0.y + r.d[2]*v0.z);
+    float t = Oz * invDz;
+
+    if (t <= r.min_t)
+        return false;
+
+    float Ox = v1.w + r.o[0]*v1.x + r.o[1]*v1.y + r.o[2]*v1.z;
+    float Dx = r.d[0]*v1.x + r.d[1]*v1.y + r.d[2]*v1.z;
+    float u = Ox + t*Dx;
+
+    if (u < 0.0f) return false;
+
+    float4 v2 = woopPositions[2];
+    float Oy = v2.w + r.o[0]*v2.x + r.o[1]*v2.y + r.o[2]*v2.z;
+    float Dy = r.d[0]*v2.x + r.d[1]*v2.y + r.d[2]*v2.z;
+    float v = Oy + t*Dy;
+
+    if(v < 0.0f || u + v > 1.0f)
+        return false;
+
+    return true;
+}
+
+
+__device__ inline bool triangleIntersectWoop(int primIndex, GPURay& r, GPUIntersection *isect) {
+
+
+    float3* normals = const_params.normals + 3 * primIndex;
+    float4* woopPositions = const_params.woopPositions + 3 * primIndex;
+    float4 v0 = woopPositions[0];
+    float4 v1 = woopPositions[1];
+
+    float Oz = v0.w - r.o[0]*v0.x - r.o[1]*v0.y - r.o[2]*v0.z;
+    float invDz = 1.0f / (r.d[0]*v0.x + r.d[1]*v0.y + r.d[2]*v0.z);
+    float t = Oz * invDz;
+
+    if (t <= r.min_t || t >= isect->t)
+        return false;
+
+    float Ox = v1.w + r.o[0]*v1.x + r.o[1]*v1.y + r.o[2]*v1.z;
+    float Dx = r.d[0]*v1.x + r.d[1]*v1.y + r.d[2]*v1.z;
+    float u = Ox + t*Dx;
+
+    if (u < 0.0f) return false;
+
+    float4 v2 = woopPositions[2];
+    float Oy = v2.w + r.o[0]*v2.x + r.o[1]*v2.y + r.o[2]*v2.z;
+    float Dy = r.d[0]*v2.x + r.d[1]*v2.y + r.d[2]*v2.z;
+    float v = Oy + t*Dy;
+
+    if(v < 0.0f || u + v > 1.0f)
+        return false;
+
+    isect->bsdfIndex = const_params.bsdfIndexes[primIndex];
+    isect->t = t;
+    isect->pIndex = primIndex;
+
+    float3 n1 = normals[0];
+    float3 n2 = normals[1];
+    float3 n3 = normals[2];
+
+    isect->n[0] = (1 - u - v) * n1.x + u * n2.x + v * n3.x;
+    isect->n[1] = (1 - u - v) * n1.y + u * n2.y + v * n3.y;
+    isect->n[2] = (1 - u - v) * n1.z + u * n2.z + v * n3.z;
+
+    if (VectorDot3D(r.d, isect->n) > 0)
+    {
+        negVector3D(isect->n, isect->n);
+    }
+
+    return true;
+}
+
+
+
 // primitive and normals are shift pointers to the primitive and normal we selected
 __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 
@@ -63,7 +146,7 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r) {
 __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersection *isect) {
 
     float* primitive = const_params.positions + 9 * primIndex;
-    float* normals = const_params.normals + 9 * primIndex;
+    float3* normals = const_params.normals + 3 * primIndex;
 
     float* v1 = primitive;
     float* e1 = primitive + 3;
@@ -103,14 +186,14 @@ __device__ inline bool triangleIntersect(int primIndex, GPURay& r, GPUIntersecti
     isect->t = t;
     isect->pIndex = primIndex;
 
-    float *n1 = normals;
-    float *n2 = normals + 3;
-    float *n3 = normals + 6;
+    float3 n1 = normals[0];
+    float3 n2 = normals[1];
+    float3 n3 = normals[2];
 
-    for (int i = 0; i < 3; ++i)
-    {
-        isect->n[i] = (1 - u - v) * n1[i] + u * n2[i] + v * n3[i];
-    }
+    isect->n[0] = (1 - u - v) * n1.x + u * n2.x + v * n3.x;
+    isect->n[1] = (1 - u - v) * n1.y + u * n2.y + v * n3.y;
+    isect->n[2] = (1 - u - v) * n1.z + u * n2.z + v * n3.z;
+    
     if (VectorDot3D(r.d, isect->n) > 0)
     {
         negVector3D(isect->n, isect->n);
@@ -187,7 +270,7 @@ __device__ inline bool intersect(int primIndex, GPURay& r) {
         return sphereIntersect(primIndex, r);
     } else {
         // triangle
-        return triangleIntersect(primIndex, r);
+        return triangleIntersectWoop(primIndex, r);
     }
 }
 
@@ -197,7 +280,7 @@ __device__ inline bool intersect(int primIndex, GPURay& r, GPUIntersection *isec
         return sphereIntersect(primIndex, r, isect);
     } else {
         // triangle
-        return triangleIntersect(primIndex, r, isect);
+        return triangleIntersectWoop(primIndex, r, isect);
     }
 }
 
