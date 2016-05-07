@@ -64,7 +64,10 @@ Rendering time is calculated using FPS for 256 samples per pixel.</p>
 <h2>
 <a id="parallel-bvh-building" class="anchor" href="#parallel-bvh-building" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel BVH Building</h2>
 
-<p><img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/GPU%20BVH%20build%20table.png?raw=true" alt="">
+<p>The table illustrates the GPU acceleration of parallel BVH tree building. As we can see from the table, the acceleration of GPU increases as the number of primitives increases.
+<img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/GPU%20BVH%20build%20table.png?raw=true" alt=""></p>
+
+<p>In this chart, Y axis denotes Nlog(N) where N is the number of primitives. X axis is the parallel BVH building time. As is shown in the chart, the parallel BVH tree building is a Nlog(N) algorithm.
 <img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/GPU%20BVH%20build%20chart.png?raw=true" alt=""></p>
 
       <footer class="site-footer">
