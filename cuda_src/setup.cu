@@ -24,6 +24,7 @@
 #include <cuda_runtime.h>
 // For the CUDA runtime routines (prefixed with "cuda_")
 
+#define PARALLEL_BUILD_BVH
 
 #define TILE_DIM 1
  
@@ -50,7 +51,6 @@ CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
 
 CUDAPathTracer::~CUDAPathTracer()
 {
-    freeBVHNode(BVHRoot);
 
     cudaFree(gpu_types);
     cudaFree(gpu_bsdfIndexes);
@@ -58,9 +58,14 @@ CUDAPathTracer::~CUDAPathTracer()
     cudaFree(gpu_normals);
     cudaFree(frameBuffer);
     cudaFree(BVHPrimMap);
+#ifdef PARALLEL_BUILD_BVH
     // cudaFree(gpu_sortedMortonCodes); free at the end of setup
     cudaFree(gpu_leafNodes);
     cudaFree(gpu_internalNodes);
+#else
+    freeBVHNode(BVHRoot);
+#endif
+
 }
 
 
@@ -134,8 +139,11 @@ void CUDAPathTracer::init()
     loadCamera();
     loadPrimitives();
     loadLights();
+#ifdef PARALLEL_BUILD_BVH
+    buildBVH();
+#else
     loadBVH();
-    //buildBVH();
+#endif
     createFrameBuffer();
     loadParameters();
 
@@ -414,20 +422,34 @@ void CUDAPathTracer::buildBVH()
     Vector3D sceneExtent = sceneBox.extent;
 
     int numObjects = primitives.size();
-    // GPUBVHNode *leafNodes;
-    // GPUBVHNode *internalNodes;
-    // unsigned int *sortedMortonCodes;
-    // int *sortedObjectIDs;
-    printf("cudaMalloc\n");
-    cudaMalloc((void**)&gpu_leafNodes, numObjects * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&gpu_internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
-    cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned int));
-    cudaMalloc((void**)&BVHPrimMap, numObjects * sizeof(int));
 
-    // gpu_sortedMortonCodes = sortedMortonCodes;
-    // BVHPrimMap = sortedObjectIDs;
-    // gpu_leafNodes = leafNodes;
-    // gpu_internalNodes = internalNodes;
+    printf("cudaMalloc\n");
+    cudaError_t err = cudaSuccess;
+
+    err = cudaMalloc((void**)&gpu_leafNodes, numObjects * sizeof(GPUBVHNode));
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate gpu_leafNodes (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaMalloc((void**)&gpu_internalNodes, (numObjects - 1) * sizeof(GPUBVHNode));
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate gpu_internalNodes (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaMalloc((void**)&gpu_sortedMortonCodes, numObjects * sizeof(unsigned int));
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate gpu_sortedMortonCodes (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+    err = cudaMalloc((void**)&BVHPrimMap, numObjects * sizeof(int));
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to allocate BVHPrimMap (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
 
     BVHParameters tmpParams;
     tmpParams.numObjects = numObjects;
@@ -444,7 +466,6 @@ void CUDAPathTracer::buildBVH()
         tmpParams.sceneExtent[i] = sceneExtent[i];
     }
     printf("memcpyToSymbol\n");
-    cudaError_t err = cudaSuccess;
 
     err = cudaMemcpyToSymbol(const_bvhparams, &tmpParams, sizeof(BVHParameters));
 
@@ -554,6 +575,10 @@ void CUDAPathTracer::buildBVH()
         exit(EXIT_FAILURE);
     }
 
+    // printTREE<<<1, 1>>>();
+    // cudaThreadSynchronize();
+    // cudaDeviceSynchronize();
+
     printf("tree collapse\n");
     start = clock();
     numBlocks = (numObjects - 1 + threadsPerBlock - 1) / threadsPerBlock; 
@@ -561,10 +586,6 @@ void CUDAPathTracer::buildBVH()
     cudaThreadSynchronize();
     finish = clock();
     printf("%lf\n", (double)(finish - start) / CLOCKS_PER_SEC);
-
-    // printTREE<<<1, 1>>>();
-    // cudaThreadSynchronize();
-    // cudaDeviceSynchronize();
 
     cudaFree(gpu_sortedMortonCodes);
 
