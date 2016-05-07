@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	pthread_t tid;
 	pthread_create(&tid, NULL, listen_thread, (void*)(argv[1]));
 	
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 10; i++) {
 		workQueue.put_work(i);
 	}
 
@@ -37,12 +37,11 @@ int main(int argc, char *argv[])
 		if (!rt) {
 			break;
 		}
-		printf("main: %d\n", val);
+		printf("master result: %d\n", val);
 		if (k >= 0) {
 			k--;
 			sleep(2);
 		}
-
 	}
 	while (threadCount != 0) {
 		sem_wait(&complete_sem);
@@ -51,8 +50,6 @@ int main(int argc, char *argv[])
 	// output image
 	return 0;
 }
-
-
 
 void *listen_thread(void *vargp) {
 	int listenfd, *connfdp;
@@ -78,15 +75,22 @@ void *process(void *vargp) {
 	int connfd = *((int *)vargp);
 	pthread_detach(pthread_self());
 	free(vargp);
-	// echo(connfd);
+
+	char buf[MAXLINE];
+	rio_t rio;
+	rio_readinitb(&rio, connfd);
+
 	while(1) {
 		bool rt;
 		int val = workQueue.get_work(rt);
 		if (!rt) {
 			break;
 		}
-		printf("thread: %d\n", val);
-		sleep(10);
+		printf("thread(%d) read: %d\n", pthread_self(), val);
+		sprintf(buf, "%d\n", val);
+		rio_writen(connfd, buf, strlen(buf));
+		rio_readlineb(&rio, buf, MAXLINE);
+		printf("thread(%d) result: %s\n", pthread_self(), buf);
 	}
 	close(connfd);
 

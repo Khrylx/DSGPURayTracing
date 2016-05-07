@@ -12,7 +12,7 @@ CFLAGS = -g -std=c++11
 # The original flag is -lpthread!!!
 LDFLAGS = -lpthread
 
-all: master
+all: master worker
 
 csapp.o: csapp.c
 	$(CC) $(CFLAGS) -c csapp.c
@@ -23,8 +23,12 @@ csapp.o: csapp.c
 master.o: master.cpp
 	$(CC) $(CFLAGS) -c master.cpp
 
+worker.o: worker.cpp
+	$(CC) $(CFLAGS) -c worker.cpp
+
 master: csapp.o master.o
 
+worker: csapp.o worker.o
 # Creates a tarball in ../proxylab-handin.tar that you should then
 # hand in to Autolab. DO NOT MODIFY THIS!
 
