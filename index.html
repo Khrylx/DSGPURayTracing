@@ -37,7 +37,7 @@ We made a lot of efforts to improve the efficiency of ray traversal:</p>
 <li>We used while-while structure for node traversal and primitive intersection test.</li>
 <li>We optimized ray-triangle intersection and ray-box intersection.</li>
 <li>We also tried out speculative method, i.e., when finding a leaf, delay the primitive intersection test and keep on traversing nodes until all lanes find a leaf.<br>
-After all these optimizations, over ray tracer is 20x faster than original one. And we are still working on optimizing
+After all these optimizations, our ray tracer is 20x faster than original one. And we are still working on optimizing
 ray-triangle test to decrease memory bandwidth consumed.</li>
 </ul>
 </li>
