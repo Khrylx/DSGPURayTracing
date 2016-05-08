@@ -793,10 +793,15 @@ void Application::startGPURayTracing() {
   pathtracer->frameBuffer.clear();
 
   int clientfd;
-  char *host, *port, buf[MAXLINE], tmpBuf[MAXLINE];
   rio_t rio;
+  char *Host, *Port;
+  Host = new char[host.length() + 1];
+  Port = new char[port.length() + 1];
+  strcpy(Host, host.c_str());
+  strcpy(Port, port.c_str());
 
-  clientfd = open_clientfd(host, port);
+  printf("Prepare to connect to %s:%s\n", Host, Port);
+  clientfd = open_clientfd(Host, Port);
   Rio_readinitb(&rio, clientfd);
   printf("Connected to master\n");
 
@@ -841,6 +846,9 @@ void Application::startGPURayTracing() {
   printf("Work done!\n");
 
   // cuPathTracer->updateHostSampleBuffer();
+  delete []Host;
+  delete []Port;
+
   delete cuPathTracer;
   mode = RENDER_MODE;
 }
