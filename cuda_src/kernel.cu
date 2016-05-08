@@ -5,7 +5,7 @@
 #define MAX_NUM_BSDF 20
 
 #define RUSSIAN_ROULETTE
-//#define SHADOW_RAY
+#define SHADOW_RAY
 
 #define INF_FLOAT 1e20
 #define ESP_N 5e-3
@@ -23,6 +23,7 @@ __constant__  BVHParameters const_bvhparams;
 #include "helper.cu"
 #include "light.cu"
 #include "intersect.cu"
+#include "traversal.cu"
 #include "bsdf.cu"
 
 
@@ -80,7 +81,7 @@ traceRay(curandState* s, GPURay* ray, bool includeLe, bool verbose)
     //     case 3: L_out = make_float3(0.0, 0.0, 1.0); break;
     //     default: break;
     // }
-    return make_float3(1.0, 0.0, 0.0);
+    // if(ray->depth == 1) return make_float3(1.0, 0.0, 0.0);
 
     float hit_p[3];
     addScaledVector3D(ray->o, ray->d, isect.t, hit_p);
