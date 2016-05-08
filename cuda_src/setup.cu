@@ -134,7 +134,6 @@ void CUDAPathTracer::startRayTracing()
     cudaDeviceSynchronize();
     cudaThreadSynchronize();
 
-
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(err));
@@ -177,7 +176,7 @@ void CUDAPathTracer::startRayTracingPT()
 
 }
 
-void CUDAPathTracer::processRequest(Request req)
+void CUDAPathTracer::processRequest(Request &req)
 {
     int xTileNum = TILE_DIM;
     int yTileNum = TILE_DIM;
@@ -202,6 +201,8 @@ void CUDAPathTracer::processRequest(Request req)
         }
 
     cudaError_t err = cudaPeekAtLastError();
+
+    printf("RT done.\n");
 
     if (err != cudaSuccess)
     {
@@ -240,8 +241,8 @@ void CUDAPathTracer::createFrameBuffer()
     screenH = pathTracer->frameBuffer.h;
     screenW = pathTracer->frameBuffer.w;
 
-    err = cudaMalloc((void**)&frameBuffer, 3 * screenW * screenH * sizeof(float));
-    cudaMemset(frameBuffer, 0, 3 * screenW * screenH * sizeof(float));
+    err = cudaMalloc((void**)&frameBuffer, 3 * tileSize * tileSize * sizeof(float));
+    cudaMemset(frameBuffer, 0, 3 * tileSize * tileSize * sizeof(float));
 
     if (err != cudaSuccess)
     {
@@ -872,33 +873,34 @@ void PathTracer::updateBufferFromGPU(float* gpuBuffer) {
     sampleBuffer.toColor(frameBuffer, 0, 0, w, h);
 }
 
-void CUDAPathTracer::updateHostSampleBuffer(Request req) {
-    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * screenW * screenH));
+void CUDAPathTracer::updateHostSampleBuffer(Request& req) {
+    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * tileSize * tileSize));
     cudaError_t err = cudaSuccess;
 
-    err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * screenW * screenH), cudaMemcpyDeviceToHost);
-
+    err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * tileSize * tileSize), cudaMemcpyDeviceToHost);
+    err = cudaMemset(frameBuffer, 0, sizeof(float) * (3 * tileSize * tileSize));
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 
-    pathTracer->updateBufferFromGPU(gpuBuffer);
+    pathTracer->updateBufferFromGPU(gpuBuffer, req);
     free(gpuBuffer);
 }
 
-void PathTracer::updateBufferFromGPU(float* gpuBuffer, Request req) {
-    size_t w = sampleBuffer.w;
+void PathTracer::updateBufferFromGPU(float* gpuBuffer, Request& req) {
+    // size_t w = sampleBuffer.w;
     // size_t h = sampleBuffer.h;
-    for (int x = req.x; x < req.x + req.xRange; ++x)
+    // return;
+    for (int x = 0; x < req.xRange; ++x)
     {
-        for (int y = req.y; y < req.y + req.yRange; ++y)
+        for (int y = 0; y < req.yRange; ++y)
         {
-            int index = 3 * (y * w + x);
+            int index = 3 * (y * tileSize + x);
             Spectrum s(gpuBuffer[index], gpuBuffer[index + 1], gpuBuffer[index + 2]);
             //cout << s.r << "," << s.g << "," << s.b << endl;
-            sampleBuffer.update_pixel(s, x, y);
+            sampleBuffer.update_pixel(s, x + req.x, y + req.y);
         }
     }
     sampleBuffer.toColor(frameBuffer, req.x, req.y, req.x + req.xRange, req.y + req.yRange);

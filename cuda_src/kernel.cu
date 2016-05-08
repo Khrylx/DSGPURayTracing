@@ -299,15 +299,17 @@ traceScenePT(int xStart, int yStart, int width, int height)
             return;
 
         int index = myRayIndex / const_params.ns_aa;
-        int x = index % width + xStart;
-        int y = index / width + yStart;
-
-        bIndex = y * const_params.screenW + x;
+        //int x = index % width + xStart;
+        //int y = index / width + yStart;
+        //bIndex = y * const_params.screenW + x;
+        int x = index % width;
+        int y = index / width;
+        bIndex = y * tileSize + x;
 
         curandState s;
         curand_init((unsigned int)myRayIndex * (xStart * TILE_DIM + yStart + 1), 0, 0, &s);
 
-        spec = tracePixelPT(&s, x, y, false);
+        spec = tracePixelPT(&s, x + xStart, y + yStart, false);
 
         __syncthreads();
         if(threadIdx.x == 0){

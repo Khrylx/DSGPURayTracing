@@ -202,7 +202,7 @@ class PathTracer {
   void transferToGPU();
 
   void updateBufferFromGPU(float* gpuBuffer);
-  void updateBufferFromGPU(float* gpuBuffer, Request req);
+  void updateBufferFromGPU(float* gpuBuffer, Request& req);
 
 
   enum State {

@@ -115,8 +115,8 @@ public:
     ~CUDAPathTracer();
 
     // master code
-    void processRequest(Request req);
-    void updateHostSampleBuffer(Request req);
+    void processRequest(Request& req);
+    void updateHostSampleBuffer(Request& req);
 
     void loadCamera();
 

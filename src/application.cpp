@@ -810,7 +810,7 @@ void Application::startGPURayTracing() {
     }
     // printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     master_process_request(req);
-    // cuPathTracer->updateHostSampleBuffer(req);
+    cuPathTracer->updateHostSampleBuffer(req);
 
     // if (k >= 0) { // simulate some processing time
     //   k--;
@@ -831,7 +831,7 @@ void Application::startGPURayTracing() {
   fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
 
 
-  cuPathTracer->updateHostSampleBuffer();
+  // cuPathTracer->updateHostSampleBuffer();
   delete cuPathTracer;
   mode = RENDER_MODE;
 }
