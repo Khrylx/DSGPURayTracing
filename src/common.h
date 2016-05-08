@@ -1,8 +1,8 @@
-#define DATA_SIZE 256
+#define DATA_SIZE 16
 
-#define scene_width 1000
-#define scene_height 1000
-#define tileSize 16
+#define scene_width 10
+#define scene_height 10
+#define tileSize 4
 
 struct Request
 {

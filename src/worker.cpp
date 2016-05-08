@@ -21,15 +21,38 @@ int main(int argc, char *argv[])
 	Rio_readinitb(&rio, clientfd);
 	printf("Connected to server\n");
 
-	while(rio_readnb(&rio, buf, MAXLINE) > 0) {
-		float *floatBuf = (float*)buf;
-		// printf("client read: %s\n", buf);
-		printf("client read: %f\n", floatBuf[0]);
-		sleep(1);
-		// sprintf(tmpBuf, "processed %s", buf);
-		sprintf(tmpBuf, "processed %f", floatBuf[0]);
+	int sizeRequest = sizeof(struct Request);
+	int sizeResult = sizeof(struct Result);
 
-		rio_writen(clientfd, tmpBuf, MAXLINE);
+	char requestBuf[sizeRequest];
+	char resultBuf[sizeResult];
+	
+	Request req;
+	Result result;
+
+	while(rio_readnb(&rio, requestBuf, sizeRequest) > 0) {
+		memcpy(&req, requestBuf, sizeRequest);
+		int dataSize = req.xRange * req.yRange;
+		int k = 0;
+		printf("worker process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+		// process request
+		for (int y = req.y; y < req.y + req.yRange; y++) {
+			for (int x = req.x; x < req.x + req.xRange; x++) {
+				result.data[k % DATA_SIZE] = y * scene_width + x;
+				k++;
+				if (k % DATA_SIZE == 0 || k == dataSize) {
+					memcpy(resultBuf, &result, sizeResult);
+					rio_writen(clientfd, resultBuf, sizeResult);
+				}
+			}
+		}
+		printf("worker process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+		printf("worker result\n");
+		for (int j = 0; j < DATA_SIZE; j++) {
+			printf("%d ", result.data[j]);
+		}
+		printf("\n");
+		sleep(1);
 	}
 	close(clientfd);
 	return 0;

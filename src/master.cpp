@@ -15,6 +15,8 @@ void generate_work();
 void master_process_request(Request req);
 
 uint32_t output[scene_height][scene_width];
+int sizeRequest = sizeof(struct Request);
+int sizeResult = sizeof(struct Result);
 
 WorkQueue<Request> workQueue;
 std::atomic<int> threadCount;
@@ -34,26 +36,33 @@ int main(int argc, char *argv[])
 	int k = 3; // simulate some processing time
 
 	while(1) {
-		
 		// process work
 		bool rt;
 		Request req = workQueue.get_work(rt);
 		if (!rt) { // work queue is empty
 			break;
 		}
-
+		printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
 		master_process_request(req);
 
 		if (k >= 0) { // simulate some processing time
 			k--;
 			sleep(2);
 		}
+		printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
 	}
 	while (threadCount != 0) {
 		sem_wait(&complete_sem);
 	}
 	// all threads have been exited; all work are done
 	// output image
+	printf("Output image\n");
+	for (int r = 0; r < scene_height; r++) {
+		for (int c = 0; c < scene_width; c++) {
+			printf("%u ", output[r][c]);
+		}
+		printf("\n");
+	}
 	return 0;
 }
 
@@ -74,8 +83,8 @@ void generate_work() {
 }
 
 void master_process_request(Request req) {
-	for (int y = req.y; y < req.yRange; y++) {
-		for (int x = req.x; x < req.xRange; x++) {
+	for (int y = req.y; y < req.y + req.yRange; y++) {
+		for (int x = req.x; x < req.x + req.xRange; x++) {
 			output[y][x] = y * scene_width + x;
 		}
 	}
@@ -106,11 +115,9 @@ void *process(void *vargp) {
 	pthread_detach(pthread_self());
 	free(vargp);
 
-	int sizeRequest = sizeof(struct Request);
-	int sizeResult = sizeof(struct Result);
-
 	char requestBuf[sizeRequest];
 	char resultBuf[sizeResult];
+	Result result;
 
 	rio_t rio;
 	rio_readinitb(&rio, connfd);
@@ -121,7 +128,7 @@ void *process(void *vargp) {
 		if (!rt) { // work queue is empty
 			break;
 		}
-
+		printf("thread process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
 		memcpy(requestBuf, &req, sizeRequest);
 		rio_writen(connfd, requestBuf, sizeRequest);
 
@@ -133,24 +140,44 @@ void *process(void *vargp) {
 		int k = 0;
 
 		// may read many times
-		int r = req.y, c = req.x;
-		for (int i = 0; i < receiveTimes; i++) {
-			rio_readnb(&rio, resultBuf, sizeResult);
-			for (int j = 0; j < DATA_SIZE; j++) {
-				// update output
-				output[r][c] = resultBuf[j];
+		// int r = req.y, c = req.x;
+		// for (int i = 0; i < receiveTimes; i++) {
+		// 	rio_readnb(&rio, resultBuf, sizeResult);
+		// 	memcpy(&result, resultBuf, sizeResult);
+
+		// 	for (int j = 0; j < DATA_SIZE; j++) {
+		// 		// update output
+		// 		output[r][c] = result.data[j];
+		// 		k++;
+		// 		if (k % req.xRange == 0) { // change to next row
+		// 			r++;
+		// 			c = 0;
+		// 		}
+		// 		if (k == dataSize) {
+		// 			break;
+		// 		}
+		// 	}
+		// 	// this will always run to the last time
+		// }
+
+
+		for (int y = req.y; y < req.y + req.yRange; y++) {
+			for (int x = req.x; x < req.x + req.xRange; x++) {
+				if (k % DATA_SIZE == 0) {
+					rio_readnb(&rio, resultBuf, sizeResult);
+					memcpy(&result, resultBuf, sizeResult);
+				}
+				output[y][x] = result.data[k % DATA_SIZE];
 				k++;
-				if (k % req.xRange == 0) { // change to next row
-					r++;
-					c = 0;
-				}
-				if (k == dataSize) {
-					break;
-				}
 			}
-			// this will always run to the last time
 		}
-		
+
+		printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+		printf("thread result\n");
+		for (int i = 0; i < DATA_SIZE; i++) {
+			printf("%d ", result.data[i]);
+		}
+		printf("\n");
 	}
 	close(connfd);
 
