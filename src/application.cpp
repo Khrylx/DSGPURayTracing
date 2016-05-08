@@ -802,8 +802,12 @@ void Application::startGPURayTracing() {
 
   printf("Prepare to connect to %s:%s\n", Host, Port);
   clientfd = open_clientfd(Host, Port);
-  Rio_readinitb(&rio, clientfd);
+  while (clientfd < 0) {
+    sleep(1);
+    clientfd = open_clientfd(Host, Port);
+  }
   printf("Connected to master\n");
+  Rio_readinitb(&rio, clientfd);
 
   // worker main
   // pathtracer->timer.start();
@@ -1007,11 +1011,6 @@ void *process(void *vargp) {
     }
 
     printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
-    printf("thread result\n");
-    for (int i = 0; i < DATA_SIZE; i++) {
-      printf("%d ", result.data[i]);
-    }
-    printf("\n");
   }
   close(connfd);
 
