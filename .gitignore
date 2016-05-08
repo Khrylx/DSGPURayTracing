@@ -3,3 +3,4 @@ build
 exr
 testBuild
 Xcode
+*.o
