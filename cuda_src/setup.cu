@@ -68,7 +68,7 @@ struct BVHParameters
     
 };
 
-//#define PARALLEL_BUILD_BVH
+#define PARALLEL_BUILD_BVH
 #define TILE_DIM 1
 
 #include "kernel.cu"
