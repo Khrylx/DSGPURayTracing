@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <curand_kernel.h>
 
 #define MAX_NUM_LIGHT 20
 #define MAX_NUM_BSDF 20

@@ -24,9 +24,11 @@
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
-//#define PARALLEL_BUILD_BVH
 
-#define TILE_DIM 1
+#include <curand_kernel.h>
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
+
 
 #include "setup.h" 
 
@@ -66,12 +68,14 @@ struct BVHParameters
     
 };
 
+//#define PARALLEL_BUILD_BVH
+#define TILE_DIM 1
 
 #include "kernel.cu"
-
-#include <thrust/sort.h>
-#include <thrust/device_ptr.h>
 #include <map>
+
+
+
 
 /**
  * CUDA Kernel Device code
