@@ -23,10 +23,9 @@
 <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h1>
 
 <p><strong>Recent Update:</strong> After using Woop triangle intersection test, our primary ray traversal performance speed up 1.5x!
-Now we can achieve a throughput of 275+ Mrays/s for scenes with 130K+ triangles. 
-<strong>Forms in the result section is before this update</strong>.</p>
+Now we can achieve a throughput of 275+ Mrays/s for scenes with 130K+ triangles. </p>
 
-<p>We aim to develop a fast Distributed GPU ray tracer that has the following features:  </p>
+<p>We developed a fast distributed GPU ray tracer that has the following features:  </p>
 
 <ol>
 <li>
@@ -68,9 +67,9 @@ Our ray tracer support most functionalities of its CPU counterpart:  </p>
 <h2>
 <a id="ray-tracing" class="anchor" href="#ray-tracing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ray Tracing</h2>
 
-<p>The table illustrates the GPU acceleration of Ray Tracing on a <strong>Single GPU</strong>.
+<p>The table illustrates the GPU acceleration of Ray Tracing on a <strong>Single GTX680 GPU</strong>.
 FPS represents how many times tracer can sample each pixel for an 1000x1000-pixel scene in one second.
-Rendering time is calculated using FPS for 256 samples per pixel.</p>
+Rendering time is calculated using 256 samples per pixel.</p>
 
 <p><img src="https://github.com/Khrylx/DSGPURayTracing/blob/gh-pages/images/GPU%20Ray%20Tracing%20table.png?raw=true" alt=""></p>
 
