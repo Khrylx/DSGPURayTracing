@@ -29,8 +29,9 @@
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 
+// #define PARALLEL_BUILD_BVH
 
-#include "setup.h" 
+#include "setup.h"
 
 struct Parameters
 {
@@ -68,7 +69,6 @@ struct BVHParameters
     
 };
 
-#define PARALLEL_BUILD_BVH
 #define TILE_DIM 1
 
 #include "kernel.cu"
@@ -161,6 +161,40 @@ void CUDAPathTracer::startRayTracingPT()
             int tmp_height = min(screenH - j * height, height);
 
             traceScenePT<<<gridDim, blockDim>>>(i * width, j * height, tmp_width, tmp_height);
+
+            cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(unsigned long long));
+            cudaThreadSynchronize();
+
+        }
+
+    cudaError_t err = cudaPeekAtLastError();
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+}
+
+void CUDAPathTracer::processRequest(Request req)
+{
+    int xTileNum = TILE_DIM;
+    int yTileNum = TILE_DIM;
+    int width = (req.xRange + xTileNum - 1) / xTileNum;
+    int height = (req.yRange + yTileNum - 1) / yTileNum;
+
+    int blockDim = BLOCK_DIM;
+    int gridDim = 256;
+    unsigned long long zero = 0;
+
+    for(int i = 0; i < xTileNum; i++)
+        for(int j = 0; j < yTileNum; j++)
+        {
+            int tmp_width = min(req.xRange - i * width, width);
+            int tmp_height = min(req.yRange - j * height, height);
+
+            traceScenePT<<<gridDim, blockDim>>>(req.x + i * width, req.y + j * height, tmp_width, tmp_height);
 
             cudaMemcpyToSymbol(globalPoolNextRay, &zero, sizeof(unsigned long long));
             cudaThreadSynchronize();
@@ -836,4 +870,36 @@ void PathTracer::updateBufferFromGPU(float* gpuBuffer) {
         }
     }
     sampleBuffer.toColor(frameBuffer, 0, 0, w, h);
+}
+
+void CUDAPathTracer::updateHostSampleBuffer(Request req) {
+    float* gpuBuffer = (float*) malloc(sizeof(float) * (3 * screenW * screenH));
+    cudaError_t err = cudaSuccess;
+
+    err = cudaMemcpy(gpuBuffer, frameBuffer, sizeof(float) * (3 * screenW * screenH), cudaMemcpyDeviceToHost);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed! (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    pathTracer->updateBufferFromGPU(gpuBuffer);
+    free(gpuBuffer);
+}
+
+void PathTracer::updateBufferFromGPU(float* gpuBuffer, Request req) {
+    size_t w = sampleBuffer.w;
+    // size_t h = sampleBuffer.h;
+    for (int x = req.x; x < req.x + req.xRange; ++x)
+    {
+        for (int y = req.y; y < req.y + req.yRange; ++y)
+        {
+            int index = 3 * (y * w + x);
+            Spectrum s(gpuBuffer[index], gpuBuffer[index + 1], gpuBuffer[index + 2]);
+            //cout << s.r << "," << s.g << "," << s.b << endl;
+            sampleBuffer.update_pixel(s, x, y);
+        }
+    }
+    sampleBuffer.toColor(frameBuffer, req.x, req.y, req.x + req.xRange, req.y + req.yRange);
 }

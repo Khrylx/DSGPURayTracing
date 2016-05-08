@@ -39,6 +39,7 @@ set(APPLICATION_SOURCE
     misc/sphere_drawing.cpp
 
     # Application
+    csapp.cpp
     application.cpp
     main.cpp
 )

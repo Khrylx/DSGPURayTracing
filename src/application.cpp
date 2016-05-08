@@ -2,7 +2,7 @@
 #include <fstream>
 #include <string>
 #include <stdio.h>
-
+#include "csapp.h"
 #include "application.h"
 
 #include "dynamic_scene/ambient_light.h"
@@ -25,8 +25,24 @@ using namespace std;
 
 namespace CMU462 {
 
-Application::Application(AppConfig config) {
+// master node code
+// uint32_t output[scene_height][scene_width];
+std::atomic<int> threadCount;
+TaskQueue<Request> workQueue;
+sem_t complete_sem;
+const int sizeRequest = sizeof(struct Request);
+const int sizeResult = sizeof(struct Result);
+ImageBuffer *frameBuffer;
 
+// thread function
+void *listen_thread(void *vargp);
+void *process(void *vargp);
+// void generate_work();
+// void master_process_request(Request req);
+
+
+Application::Application(AppConfig config) {
+  port = config.port;
   pathtracer = new PathTracer (
     config.pathtracer_ns_aa,
     config.pathtracer_max_ray_depth,
@@ -764,6 +780,7 @@ void Application::draw_hud() {
 }
 
 void Application::startGPURayTracing() {
+  frameBuffer = &pathtracer->frameBuffer;
   cuPathTracer = new CUDAPathTracer(pathtracer);
   transferToGPU();
 
@@ -773,10 +790,44 @@ void Application::startGPURayTracing() {
   pathtracer->sampleBuffer.clear();
   pathtracer->frameBuffer.clear();
 
+  threadCount = 0;
+  sem_init(&complete_sem, false, 1);
+
+  pthread_t tid;
+  pthread_create(&tid, NULL, listen_thread, (void*)(port.c_str())); // listening for worker connection
+
+  generate_work();
+  // int k = 3; // simulate some processing time
+  // master main
   pathtracer->timer.start();
-  //cuPathTracer->startRayTracing();
-  cuPathTracer->startRayTracingPT();
+  
+  while(1) {
+    // process work
+    bool rt;
+    Request req = workQueue.get_work(rt);
+    if (!rt) { // work queue is empty
+      break;
+    }
+    // printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    master_process_request(req);
+    // cuPathTracer->updateHostSampleBuffer(req);
+
+    // if (k >= 0) { // simulate some processing time
+    //   k--;
+    //   sleep(2);
+    // }
+    // printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+  }
+  while (threadCount != 0) {
+    sem_wait(&complete_sem);
+  }
+
+
+  // cuPathTracer->startRayTracingPT();
   pathtracer->timer.stop();
+
+
+
   fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
 
 
@@ -850,5 +901,104 @@ void Application::loadCamera(string filename) {
   // cout << cam.c2w << endl;
 
   fclose(pFile);
+}
+
+void Application::generate_work() {
+  int w = pathtracer->frameBuffer.w;
+  int h = pathtracer->frameBuffer.h;
+  int rowNum = (h + tileSize - 1) / tileSize;
+  int colNum = (w + tileSize - 1) / tileSize;
+
+  for (int r = 0; r < rowNum; r++) {
+    for (int c = 0; c < colNum; c++) {
+      Request req;
+      req.x = c * tileSize;
+      req.y = r * tileSize;
+      req.xRange = std::min(tileSize, w - req.x);
+      req.yRange = std::min(tileSize, h - req.y);
+      workQueue.put_work(req);
+    }
+  }
+}
+
+void Application::master_process_request(Request req) {
+  cuPathTracer->processRequest(req);
+  // update framebuffer
+}
+
+void *listen_thread(void *vargp) {
+  int listenfd, *connfdp;
+  socklen_t clientlen;
+  struct sockaddr_storage clientaddr;
+  pthread_t tid;
+
+  listenfd = open_listenfd((char*)vargp);
+
+  while (true) {
+    clientlen = sizeof(struct sockaddr_storage);
+    connfdp = (int*)malloc(sizeof(int));
+    *connfdp = accept(listenfd, (SA*)&clientaddr, &clientlen);
+    pthread_create(&tid, NULL, process, connfdp);
+  }
+
+  return NULL;
+}
+
+void *process(void *vargp) {
+  threadCount++;
+
+  int connfd = *((int *)vargp);
+  pthread_detach(pthread_self());
+  free(vargp);
+
+  char requestBuf[sizeRequest];
+  char resultBuf[sizeResult];
+  Result result;
+
+  rio_t rio;
+  rio_readinitb(&rio, connfd);
+
+  while(1) {
+    bool rt;
+    Request req = workQueue.get_work(rt);
+    if (!rt) { // work queue is empty
+      break;
+    }
+    printf("thread process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    memcpy(requestBuf, &req, sizeRequest);
+    rio_writen(connfd, requestBuf, sizeRequest);
+
+    // worker node process request and return result
+
+    // compute how much result to receive
+    int dataSize = req.xRange * req.yRange;
+    int k = 0;
+    int w = frameBuffer->w;
+    // receive result from worker
+    for (int y = req.y; y < req.y + req.yRange; y++) {
+      for (int x = req.x; x < req.x + req.xRange; x++) {
+        if (k % DATA_SIZE == 0) {
+          rio_readnb(&rio, resultBuf, sizeResult);
+          memcpy(&result, resultBuf, sizeResult);
+        }
+        frameBuffer->data[y * w + x] = result.data[k % DATA_SIZE];
+        k++;
+      }
+    }
+
+    printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    printf("thread result\n");
+    for (int i = 0; i < DATA_SIZE; i++) {
+      printf("%d ", result.data[i]);
+    }
+    printf("\n");
+  }
+  close(connfd);
+
+  threadCount--;
+  if (threadCount == 0) {
+    sem_post(&complete_sem);
+  }
+  return NULL;
 }
 } // namespace CMU462

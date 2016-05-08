@@ -7,6 +7,8 @@
 
 #include <map>
 
+#include "../src/common.h"
+
 using namespace CMU462;
 using namespace StaticScene;
 
@@ -111,6 +113,10 @@ class CUDAPathTracer{
 public:
     CUDAPathTracer(PathTracer* _pathTracer);
     ~CUDAPathTracer();
+
+    // master code
+    void processRequest(Request req);
+    void updateHostSampleBuffer(Request req);
 
     void loadCamera();
 

@@ -21,6 +21,10 @@ using namespace CMU462::StaticScene;
 using CMU462::StaticScene::Scene;
 
 #include "static_scene/environment_light.h"
+
+// master node
+#include "common.h"
+
 using CMU462::StaticScene::EnvironmentLight;
 
 using CMU462::StaticScene::BVHNode;
@@ -198,6 +202,7 @@ class PathTracer {
   void transferToGPU();
 
   void updateBufferFromGPU(float* gpuBuffer);
+  void updateBufferFromGPU(float* gpuBuffer, Request req);
 
 
   enum State {

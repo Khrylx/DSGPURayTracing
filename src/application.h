@@ -36,6 +36,17 @@
 
 #include "../cuda_src/setup.h"
 
+
+// master node
+#include <atomic>
+#include <cstdio>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <cstdlib>
+#include <semaphore.h>
+#include "task_queue.h"
+#include "common.h"
+
 using namespace std;
 
 namespace CMU462 {
@@ -57,6 +68,7 @@ struct AppConfig {
 
   }
 
+  string port;
   size_t pathtracer_ns_aa;
   size_t pathtracer_max_ray_depth;
   size_t pathtracer_ns_area_light;
@@ -70,6 +82,10 @@ struct AppConfig {
 
 class Application : public Renderer {
  public:
+  string port;
+
+  void generate_work();
+  void master_process_request(Request req);
 
   void saveCamera();
 
