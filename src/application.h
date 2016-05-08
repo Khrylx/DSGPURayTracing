@@ -36,6 +36,9 @@
 
 #include "../cuda_src/setup.h"
 
+#ifdef __APPLE__
+#define filesec_t miniz::filesec_t 
+#endif
 
 // master node
 #include <atomic>

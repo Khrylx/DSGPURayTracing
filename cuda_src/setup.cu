@@ -239,6 +239,8 @@ void CUDAPathTracer::createFrameBuffer()
     screenH = pathTracer->frameBuffer.h;
     screenW = pathTracer->frameBuffer.w;
 
+    //printf("size:%d %d\n", screenW, screenH);
+
     err = cudaMalloc((void**)&frameBuffer, 3 * tileSize * tileSize * sizeof(float));
     cudaMemset(frameBuffer, 0, 3 * tileSize * tileSize * sizeof(float));
 
