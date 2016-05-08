@@ -136,31 +136,9 @@ void *process(void *vargp) {
 
 		// compute how much result to receive
 		int dataSize = req.xRange * req.yRange;
-		int receiveTimes = (dataSize + DATA_SIZE - 1) / DATA_SIZE;
 		int k = 0;
 
-		// may read many times
-		// int r = req.y, c = req.x;
-		// for (int i = 0; i < receiveTimes; i++) {
-		// 	rio_readnb(&rio, resultBuf, sizeResult);
-		// 	memcpy(&result, resultBuf, sizeResult);
-
-		// 	for (int j = 0; j < DATA_SIZE; j++) {
-		// 		// update output
-		// 		output[r][c] = result.data[j];
-		// 		k++;
-		// 		if (k % req.xRange == 0) { // change to next row
-		// 			r++;
-		// 			c = 0;
-		// 		}
-		// 		if (k == dataSize) {
-		// 			break;
-		// 		}
-		// 	}
-		// 	// this will always run to the last time
-		// }
-
-
+		// receive result from worker
 		for (int y = req.y; y < req.y + req.yRange; y++) {
 			for (int x = req.x; x < req.x + req.xRange; x++) {
 				if (k % DATA_SIZE == 0) {
