@@ -29,6 +29,7 @@ struct GPUBVHNode
     GPUBBox bbox;
 };
 
+
 struct GPUCamera{
     float widthDivDist;
     float heightDivDist;
