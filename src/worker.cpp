@@ -6,6 +6,7 @@
 #include <semaphore.h>
 #include "csapp.h"
 #include "work_queue.h"
+#include "common.h"
 
 int main(int argc, char *argv[])
 {

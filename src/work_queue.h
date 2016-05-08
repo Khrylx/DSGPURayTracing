@@ -27,7 +27,7 @@ public:
     if (storage.size() == 0) {
       rt = false;
       pthread_mutex_unlock(&queue_lock);
-      return T(0);
+      return T();
     } else {
       rt = true;
       T item = storage.front();
