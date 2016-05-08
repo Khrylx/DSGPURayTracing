@@ -18,13 +18,13 @@ struct GPUBBox
 
 struct GPUBVHNode
 {
-    GPUBVHNode *left;
-    GPUBVHNode *right;
-    GPUBVHNode *parent;
+    GPUBBox bbox;
     int flag;
     int start;
     int range;
-    GPUBBox bbox;
+    GPUBVHNode *left;
+    GPUBVHNode *right;
+    GPUBVHNode *parent;
 };
 
 struct GPUCamera{
