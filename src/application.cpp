@@ -990,11 +990,6 @@ void *process(void *vargp) {
     }
 
     printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
-    printf("thread result\n");
-    for (int i = 0; i < DATA_SIZE; i++) {
-      printf("%d ", result.data[i]);
-    }
-    printf("\n");
   }
   close(connfd);
 
