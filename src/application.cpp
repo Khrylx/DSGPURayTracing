@@ -43,6 +43,7 @@ void *process(void *vargp);
 
 Application::Application(AppConfig config) {
   port = config.port;
+  host = config.host;
   pathtracer = new PathTracer (
     config.pathtracer_ns_aa,
     config.pathtracer_max_ray_depth,
@@ -57,7 +58,7 @@ Application::Application(AppConfig config) {
 
 Application::~Application() {
 
-    delete cuPathTracer;
+  delete cuPathTracer;
   delete pathtracer;
 
 }
@@ -780,6 +781,7 @@ void Application::draw_hud() {
 }
 
 void Application::startGPURayTracing() {
+  // original initialization
   frameBuffer = &pathtracer->frameBuffer;
   cuPathTracer = new CUDAPathTracer(pathtracer);
   transferToGPU();
@@ -790,46 +792,53 @@ void Application::startGPURayTracing() {
   pathtracer->sampleBuffer.clear();
   pathtracer->frameBuffer.clear();
 
-  threadCount = 0;
-  sem_init(&complete_sem, false, 1);
+  int clientfd;
+  char *host, *port, buf[MAXLINE], tmpBuf[MAXLINE];
+  rio_t rio;
 
-  pthread_t tid;
-  pthread_create(&tid, NULL, listen_thread, (void*)(port.c_str())); // listening for worker connection
+  clientfd = open_clientfd(host, port);
+  Rio_readinitb(&rio, clientfd);
+  printf("Connected to master\n");
 
-  generate_work();
-  // int k = 3; // simulate some processing time
-  // master main
-  pathtracer->timer.start();
-  
-  while(1) {
-    // process work
-    bool rt;
-    Request req = workQueue.get_work(rt);
-    if (!rt) { // work queue is empty
-      break;
-    }
-    printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+  // worker main
+  // pathtracer->timer.start();
+  char requestBuf[sizeRequest];
+  char resultBuf[sizeResult];
+
+  Request req;
+  Result result;
+  int w = frameBuffer->w;
+
+  while(rio_readnb(&rio, requestBuf, sizeRequest) > 0) {
+    memcpy(&req, requestBuf, sizeRequest);
+    int dataSize = req.xRange * req.yRange;
+    int k = 0;
+    printf("worker process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    // process request
     master_process_request(req);
     cuPathTracer->updateHostSampleBuffer(req);
 
-    // if (k >= 0) { // simulate some processing time
-    //   k--;
-    //   sleep(2);
-    // }
-    printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    for (int y = req.y; y < req.y + req.yRange; y++) {
+      for (int x = req.x; x < req.x + req.xRange; x++) {
+        result.data[k % DATA_SIZE] = frameBuffer->data[y * w + x];
+        k++;
+        if (k % DATA_SIZE == 0 || k == dataSize) {
+          memcpy(resultBuf, &result, sizeResult);
+          rio_writen(clientfd, resultBuf, sizeResult);
+        }
+      }
+    }
+    printf("worker process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
   }
-  while (threadCount != 0) {
-    sem_wait(&complete_sem);
-  }
-
+  close(clientfd);
 
   // cuPathTracer->startRayTracingPT();
-  pathtracer->timer.stop();
+  // pathtracer->timer.stop();
 
 
 
-  fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
-
+  // fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
+  printf("Work done!\n");
 
   // cuPathTracer->updateHostSampleBuffer();
   delete cuPathTracer;

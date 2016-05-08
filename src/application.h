@@ -66,8 +66,10 @@ struct AppConfig {
     pathtracer_num_threads = 1;
     pathtracer_envmap = NULL;
     port = "";
+    host = "";
   }
 
+  string host;
   string port;
   size_t pathtracer_ns_aa;
   size_t pathtracer_max_ray_depth;
@@ -83,6 +85,7 @@ struct AppConfig {
 class Application : public Renderer {
  public:
   string port;
+  string host;
 
   void generate_work();
   void master_process_request(Request req);
