@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "csapp.h"
 #include "application.h"
+#include <unistd.h>
 
 #include "dynamic_scene/ambient_light.h"
 #include "dynamic_scene/environment_light.h"
@@ -803,7 +804,7 @@ void Application::startGPURayTracing() {
   printf("Prepare to connect to %s:%s\n", Host, Port);
   clientfd = open_clientfd(Host, Port);
   while (clientfd < 0) {
-    sleep(1);
+    usleep(10000);
     clientfd = open_clientfd(Host, Port);
   }
   printf("Connected to master\n");
