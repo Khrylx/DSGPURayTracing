@@ -78,11 +78,10 @@ int main( int argc, char** argv ) {
   bool useCPU = false;
   int screenW = 1000;
   int screenH = 1000;
-
   // get the options
   AppConfig config; int opt;
   string camFileName;
-  while ( (opt = getopt(argc, argv, "s:l:t:m:f:w:h:v c")) != -1 ) {  // for each option...
+  while ( (opt = getopt(argc, argv, "p:s:l:t:m:f:w:h:v c")) != -1 ) {  // for each option...
     switch ( opt ) {
     case 's':
         config.pathtracer_ns_aa = atoi(optarg);

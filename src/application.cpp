@@ -808,7 +808,7 @@ void Application::startGPURayTracing() {
     if (!rt) { // work queue is empty
       break;
     }
-    // printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     master_process_request(req);
     cuPathTracer->updateHostSampleBuffer(req);
 
@@ -816,7 +816,7 @@ void Application::startGPURayTracing() {
     //   k--;
     //   sleep(2);
     // }
-    // printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
   }
   while (threadCount != 0) {
     sem_wait(&complete_sem);
@@ -927,12 +927,15 @@ void Application::master_process_request(Request req) {
 }
 
 void *listen_thread(void *vargp) {
+  printf("Enter listen thread\n");
   int listenfd, *connfdp;
   socklen_t clientlen;
   struct sockaddr_storage clientaddr;
   pthread_t tid;
 
   listenfd = open_listenfd((char*)vargp);
+  
+  printf("Master node listening on port: %s\n", (char*)vargp);
 
   while (true) {
     clientlen = sizeof(struct sockaddr_storage);

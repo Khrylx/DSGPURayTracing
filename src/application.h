@@ -65,7 +65,7 @@ struct AppConfig {
 
     pathtracer_num_threads = 1;
     pathtracer_envmap = NULL;
-
+    port = "";
   }
 
   string port;

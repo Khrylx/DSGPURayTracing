@@ -202,8 +202,6 @@ void CUDAPathTracer::processRequest(Request &req)
 
     cudaError_t err = cudaPeekAtLastError();
 
-    printf("RT done.\n");
-
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n", cudaGetErrorString(err));
