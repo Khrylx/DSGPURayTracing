@@ -188,6 +188,9 @@ void CUDAPathTracer::processRequest(Request &req)
     int gridDim = 256;
     unsigned long long zero = 0;
 
+    float3 offset = make_float3(req.a, req.b, req.c);
+    cudaMemcpy(gpu_camOffset, &offset, sizeof(float3), cudaMemcpyHostToDevice);
+
     for(int i = 0; i < xTileNum; i++)
         for(int j = 0; j < yTileNum; j++)
         {
@@ -825,7 +828,7 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.BVHRoot = BVHRoot;
     tmpParams.woopPositions = gpu_woopPositions;
 
-    cudaMalloc((void**)gpu_camOffset, sizeof(float3));
+    cudaMalloc((void**)&gpu_camOffset, sizeof(float3));
     tmpParams.camOffset = gpu_camOffset;
 
     cout << "primNum:" << primNum << endl;
