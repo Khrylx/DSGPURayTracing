@@ -48,6 +48,7 @@ struct Parameters
     float* positions;
     float* normals;
     float4* woopPositions;
+    float3* camOffset;
 
     float* frameBuffer;
 
@@ -85,7 +86,7 @@ struct BVHParameters
  */
 //using namespace std;
 
-
+float3* gpu_camOffset;
 float4* gpu_woopPositions; 
 
 CUDAPathTracer::CUDAPathTracer(PathTracer* _pathTracer)
@@ -823,6 +824,9 @@ void CUDAPathTracer::loadParameters() {
     tmpParams.BVHPrimMap = BVHPrimMap;
     tmpParams.BVHRoot = BVHRoot;
     tmpParams.woopPositions = gpu_woopPositions;
+
+    cudaMalloc((void**)gpu_camOffset, sizeof(float3));
+    tmpParams.camOffset = gpu_camOffset;
 
     cout << "primNum:" << primNum << endl;
     cudaError_t err = cudaSuccess;
