@@ -841,7 +841,7 @@ void Application::startGPURayTracing() {
       printf("worker process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     }
     close(clientfd);
-  
+    clientfd = -1;
   }
 
   // cuPathTracer->startRayTracingPT();
