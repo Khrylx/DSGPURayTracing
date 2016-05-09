@@ -783,21 +783,22 @@ void Application::draw_hud() {
 }
 
 void Application::startGPURayTracing() {
-  frameBuffer = &pathtracer->frameBuffer;
-  cuPathTracer = new CUDAPathTracer(pathtracer);
-  transferToGPU();
+  if (!RTBegin) {
+    frameBuffer = &pathtracer->frameBuffer;
+    cuPathTracer = new CUDAPathTracer(pathtracer);
+    transferToGPU();
+    pathtracer->sampleBuffer.clear();
+    pathtracer->frameBuffer.clear();
+
+    threadCount = 0;
+    sem_init(&complete_sem, false, 1);
+
+    pthread_t tid;
+    pthread_create(&tid, NULL, listen_thread, (void*)(port.c_str())); // listening for worker connection
+  }
 
   pathtracer->state = PathTracer::RENDERING;
   pathtracer->continueRaytracing = true;
-
-  pathtracer->sampleBuffer.clear();
-  pathtracer->frameBuffer.clear();
-
-  threadCount = 0;
-  sem_init(&complete_sem, false, 1);
-
-  pthread_t tid;
-  pthread_create(&tid, NULL, listen_thread, (void*)(port.c_str())); // listening for worker connection
 
   generate_work();
   // int k = 3; // simulate some processing time
