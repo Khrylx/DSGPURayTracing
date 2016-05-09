@@ -37,6 +37,18 @@
 <p>When rendering an image of a 3D scene, ray tracer calculates each pixel by tracing a ray from the pixel through the camera pinhole into the scene and measure the irradiance along the ray path. Because pixels are independent of each other, we can fully parallelize the <strong>trace-ray</strong> process. We can assign each camera ray to a thread on GPU. If there is no divergence, GPU ray tracing can achieve thousands of speedup over serialized version. But the problem is that when tracing the ray using accelerating structures like Bounding Volume Hierarchy, different rays will traverse through different nodes of the BVH. This will cause serious problem like low SIMD utilization and incoherent memory access. Thus, a naive translated GPU ray tracer won't achieve much speedup (typically 10x). Sophisticated algorithms need to be designed to tackle both of these problems.</p>
 
 <h1>
+<a id="approach" class="anchor" href="#approach" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Approach</h1>
+
+<h2>
+<a id="parallel-ray-tracing-1" class="anchor" href="#parallel-ray-tracing-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel Ray Tracing</h2>
+
+<ol>
+<li>Persistent Thread
+Before optimizing the <strong>trace-ray</strong> function, we first aim to achieve better work distribution by persistent thread. It's a good way to bypass the hardware work distribution and improve performance for heterogenous work.
+The main idea is to launch enough worker threads to occupy the chip, and each thread will continuously fetch work from a global work queue. We will also maintain a local work queue </li>
+</ol>
+
+<h1>
 <a id="results" class="anchor" href="#results" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Results</h1>
 
 <ol>
