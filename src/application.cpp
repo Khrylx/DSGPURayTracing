@@ -836,7 +836,8 @@ void Application::startGPURayTracing() {
 
 
   // cuPathTracer->updateHostSampleBuffer();
-  delete cuPathTracer;
+  
+  // delete cuPathTracer;
   mode = RENDER_MODE;
 }
 
