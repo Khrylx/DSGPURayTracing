@@ -120,6 +120,9 @@ class Application : public Renderer {
 public:
   bool viewerOn = false;
   bool RTBegin = false;
+  float camX = 0.0;
+  float camY = 0.0;
+  float camZ = 0.0;
   
   enum Mode {
     EDIT_MODE,

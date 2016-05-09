@@ -45,9 +45,9 @@ generateRay(GPURay* ray, float x, float y)
     MatrixMulVector3D(const_camera.c2w, dir, ray->d);
     normalize3D(ray->d);
 
-    ray->o[0] += const_params.camOffset.x;
-    ray->o[1] += const_params.camOffset.y;
-    ray->o[2] += const_params.camOffset.z;
+    ray->o[0] += const_params.camOffset->x;
+    ray->o[1] += const_params.camOffset->y;
+    ray->o[2] += const_params.camOffset->z;
 }
 
 __device__ float3

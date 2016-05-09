@@ -812,7 +812,7 @@ void Application::startGPURayTracing() {
     if (!rt) { // work queue is empty
       break;
     }
-    printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    //printf("master process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     master_process_request(req);
     cuPathTracer->updateHostSampleBuffer(req);
 
@@ -820,7 +820,7 @@ void Application::startGPURayTracing() {
     //   k--;
     //   sleep(2);
     // }
-    printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    //printf("master process  Done[ x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
   }
   while (threadCount != 0) {
     sem_wait(&complete_sem);
@@ -830,7 +830,11 @@ void Application::startGPURayTracing() {
   // cuPathTracer->startRayTracingPT();
   pathtracer->timer.stop();
 
-
+  camZ -= 0.01;
+  if (camZ < -1.0)
+  {
+    camZ = 0.0;
+  }
 
   fprintf(stdout, "GPU ray tracing done! (%.4f sec)\n", pathtracer->timer.duration());
 
@@ -917,6 +921,9 @@ void Application::generate_work() {
   for (int r = 0; r < rowNum; r++) {
     for (int c = 0; c < colNum; c++) {
       Request req;
+      req.a = camX;
+      req.b = camY;
+      req.c = camZ;
       req.x = c * tileSize;
       req.y = r * tileSize;
       req.xRange = std::min(tileSize, w - req.x);
@@ -972,7 +979,7 @@ void *process(void *vargp) {
     if (!rt) { // work queue is empty
       break;
     }
-    printf("thread process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    //printf("thread process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     memcpy(requestBuf, &req, sizeRequest);
     rio_writen(connfd, requestBuf, sizeRequest);
 
@@ -994,7 +1001,7 @@ void *process(void *vargp) {
       }
     }
 
-    printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    //printf("thread process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
   }
   close(connfd);
 
