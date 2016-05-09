@@ -6,7 +6,9 @@
 struct Request
 {
 	Request() {};
-	int seq;
+	float a;
+	float b;
+	float c;
 	int x;
 	int y;
 	int xRange;

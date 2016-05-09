@@ -806,41 +806,43 @@ void Application::startGPURayTracing() {
   while (clientfd < 0) {
     usleep(10000);
     clientfd = open_clientfd(Host, Port);
-  }
-  printf("Connected to master\n");
-  Rio_readinitb(&rio, clientfd);
+  
+    // printf("Connected to master\n");
+    Rio_readinitb(&rio, clientfd);
 
-  // worker main
-  // pathtracer->timer.start();
-  char requestBuf[sizeRequest];
-  char resultBuf[sizeResult];
+    // worker main
+    // pathtracer->timer.start();
+    char requestBuf[sizeRequest];
+    char resultBuf[sizeResult];
 
-  Request req;
-  Result result;
-  int w = frameBuffer->w;
+    Request req;
+    Result result;
+    int w = frameBuffer->w;
 
-  while(rio_readnb(&rio, requestBuf, sizeRequest) > 0) {
-    memcpy(&req, requestBuf, sizeRequest);
-    int dataSize = req.xRange * req.yRange;
-    int k = 0;
-    printf("worker process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
-    // process request
-    master_process_request(req);
-    cuPathTracer->updateHostSampleBuffer(req);
+    while(rio_readnb(&rio, requestBuf, sizeRequest) > 0) {
+      memcpy(&req, requestBuf, sizeRequest);
+      int dataSize = req.xRange * req.yRange;
+      int k = 0;
+      printf("worker process START [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+      // process request
+      master_process_request(req);
+      cuPathTracer->updateHostSampleBuffer(req);
 
-    for (int y = req.y; y < req.y + req.yRange; y++) {
-      for (int x = req.x; x < req.x + req.xRange; x++) {
-        result.data[k % DATA_SIZE] = frameBuffer->data[y * w + x];
-        k++;
-        if (k % DATA_SIZE == 0 || k == dataSize) {
-          memcpy(resultBuf, &result, sizeResult);
-          rio_writen(clientfd, resultBuf, sizeResult);
+      for (int y = req.y; y < req.y + req.yRange; y++) {
+        for (int x = req.x; x < req.x + req.xRange; x++) {
+          result.data[k % DATA_SIZE] = frameBuffer->data[y * w + x];
+          k++;
+          if (k % DATA_SIZE == 0 || k == dataSize) {
+            memcpy(resultBuf, &result, sizeResult);
+            rio_writen(clientfd, resultBuf, sizeResult);
+          }
         }
       }
+      printf("worker process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
     }
-    printf("worker process  DONE [x: %d, y: %d, xRange: %d, yRange: %d]\n", req.x, req.y, req.xRange, req.yRange);
+    close(clientfd);
+  
   }
-  close(clientfd);
 
   // cuPathTracer->startRayTracingPT();
   // pathtracer->timer.stop();
