@@ -22,10 +22,22 @@
       <h1>
 <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h1>
 
-<p><strong>Recent Update:</strong> After using Woop triangle intersection test, our primary ray traversal performance speed up 1.5x!
-Now we can achieve a throughput of 275+ Mrays/s for scenes with 130K+ triangles. </p>
+<p>We developed a fast distributed GPU ray tracer that has the following features:<br>
+1. <strong>Very Fast Ray Traversal</strong><br>
+2. <strong>Very Fast Parallel BVH build</strong><br>
+3. <strong>Distributed Ray Tracing across Clusters</strong><br>
+4. <strong>Support most functionalities of its CPU counterpart</strong>  </p>
 
-<p>We developed a fast distributed GPU ray tracer that has the following features:  </p>
+<h1>
+<a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h1>
+
+<h2>
+<a id="parallel-ray-tracing" class="anchor" href="#parallel-ray-tracing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel Ray Tracing</h2>
+
+<p>When rendering an image of a 3D scene, ray tracer calculates each pixel by tracing a ray from the pixel through the camera pinhole into the scene and measure the irradiance along the ray path. Because pixels are independent of each other, we can fully parallelize the <strong>trace-ray</strong> process. We can assign each camera ray to a thread on GPU. If there is no divergence, GPU ray tracing can achieve thousands of speedup over serialized version. But the problem is that when tracing the ray using accelerating structures like Bounding Volume Hierarchy, different rays will traverse through different nodes of the BVH. This will cause serious problem like low SIMD utilization and incoherent memory access. Thus, a naive translated GPU ray tracer won't achieve much speedup (typically 10x). Sophisticated algorithms need to be designed to tackle both of these problems.</p>
+
+<h1>
+<a id="results" class="anchor" href="#results" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Results</h1>
 
 <ol>
 <li>
@@ -60,9 +72,6 @@ Our ray tracer support most functionalities of its CPU counterpart:  </p>
 </ul>
 </li>
 </ol>
-
-<h1>
-<a id="results" class="anchor" href="#results" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Results</h1>
 
 <h2>
 <a id="ray-tracing" class="anchor" href="#ray-tracing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ray Tracing</h2>
