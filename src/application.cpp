@@ -157,6 +157,8 @@ void Application::update_style() {
 
 void Application::render() {
   update_gl_camera();
+  if(RTBegin)
+    startGPURayTracing();
   switch (mode) {
     case EDIT_MODE:
       if (show_coordinates) draw_coordinates();
@@ -489,6 +491,7 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
         switch(key) {
           case 'e': case 'E':
             startGPURayTracing();
+            RTBegin = true;
             //set_up_pathtracer();
             // cuPathTracer = new CUDAPathTracer(pathtracer);
             // transferToGPU();

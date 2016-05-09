@@ -116,7 +116,8 @@ class Application : public Renderer {
     void transferToGPU();
 public:
   bool viewerOn = false;
-
+  bool RTBegin = false;
+  
   enum Mode {
     EDIT_MODE,
     RENDER_MODE,
