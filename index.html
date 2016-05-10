@@ -85,7 +85,7 @@ The main idea is to launch enough worker threads to occupy the chip, and each th
 <p>Now let's go inside the <strong>traverse-ray</strong> function.
 Here is a recursive version:</p>
 
-<pre><code>traverseRay(ray, BVHnode)
+<div class="highlight highlight-source-c++"><pre><span class="pl-en">traverseRay</span>(ray, BVHnode)
   if(node is a leaf)
     for all triangles in node
        do ray-triangle test
@@ -93,13 +93,12 @@ Here is a recursive version:</p>
     if(ray intersect node-&gt;lChild.bbox)
         traverseRay(ray, node-&gt;lChild)
     if(ray intersect node-&gt;rChild.bbox)
-        traverseRay(ray, node-&gt;rChild)
-</code></pre>
+        traverseRay(ray, node-&gt;rChild)</pre></div>
 
 <p>For recursive traversal, suppose only one thread in a warp intersect with current BVH node's left child, then all other threads will remain idle until that thread traverse through the entire subtree of the left child. 
 To improve this, here is a stack-based iterative version:</p>
 
-<pre><code>traverseRay(ray, BVH node)
+<div class="highlight highlight-source-c++"><pre><span class="pl-en">traverseRay</span>(ray, BVH node)
 Stack S
 while(node)
 if(node is a leaf)
@@ -110,8 +109,7 @@ else
         S.push(node-&gt;lChild)
     if(ray intersect node-&gt;rChild.bbox)
         S.push(node-&gt;rChild)
-    node = S.pop()
-</code></pre>
+    node = S.pop()</pre></div>
 
 <p>If we use stack based traversal, other threads will only wait for that one thread to push the left child onto the stack. Thus using a stack based traversal will reduce the number of divergence significantly. </p>
 </li>
@@ -120,13 +118,12 @@ else
 
 <p>After adding the per-ray stack, there is still divergence in the code. Because some threads in a warp may reach a leaf node and begin doing ray-triangle intersection test, while other threads in the same warp must wait until they finish the test. So the solution is to restructure the code in a while-while way:</p>
 
-<pre><code>traverseRay(ray, BVH node)
-    while(ray not terminated)
-    while(node is not a leaf)
+<div class="highlight highlight-source-c++"><pre><span class="pl-en">traverseRay</span>(ray, BVH node)
+    while(ray <span class="pl-k">not</span> terminated)
+    while(node is <span class="pl-k">not</span> a leaf)
          traverse ray
     while(triangle to be test)
-         do triangle test
-</code></pre>
+         do triangle test</pre></div>
 
 <p>This will make sure that threads in a warp will only begin ray-triangle intersection test when they all reach a leaf.</p>
 
