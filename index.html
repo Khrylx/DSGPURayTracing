@@ -73,12 +73,16 @@ Our ray tracer support most functionalities of its CPU counterpart:</p>
 <a id="parallel-ray-tracing-1" class="anchor" href="#parallel-ray-tracing-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel Ray Tracing</h2>
 
 <ol>
-<li><p><strong>Persistent Thread</strong>
-Before optimizing the <strong>trace-ray</strong> function, we first aim to achieve better work distribution by persistent thread. It's a good way to bypass the hardware work distribution and improve performance for heterogenous work.
-The main idea is to launch enough worker threads to occupy the chip, and each thread will continuously fetch work from a global work queue. We will also maintain a local work queue to reduce contention for the global queue.</p></li>
 <li>
-<p><strong>Per-ray Stack</strong>
-Now let's go inside the <strong>traverse-ray</strong> function.
+<p><strong>Persistent Thread</strong></p>
+
+<p>Before optimizing the <strong>trace-ray</strong> function, we first aim to achieve better work distribution by persistent thread. It's a good way to bypass the hardware work distribution and improve performance for heterogenous work.
+The main idea is to launch enough worker threads to occupy the chip, and each thread will continuously fetch work from a global work queue. We will also maintain a local work queue to reduce contention for the global queue.</p>
+</li>
+<li>
+<p><strong>Per-ray Stack</strong></p>
+
+<p>Now let's go inside the <strong>traverse-ray</strong> function.
 Here is a recursive version:</p>
 
 <p>traverseRay(ray, BVHnode)
@@ -110,8 +114,9 @@ else
 <p>If we use stack based traversal, other threads will only wait for that one thread to push the left child onto the stack. Thus using a stack based traversal will reduce the number of divergence significantly. </p>
 </li>
 <li>
-<p><strong>while-while structure and speculative method</strong> 
-After adding the per-ray stack, there is still divergence in the code. Because some threads in a warp may reach a leaf node and begin doing ray-triangle intersection test, while other threads in the same warp must wait until they finish the test. So the solution is to restructure the code in a while-while way:</p>
+<p><strong>while-while structure and speculative method</strong> </p>
+
+<p>After adding the per-ray stack, there is still divergence in the code. Because some threads in a warp may reach a leaf node and begin doing ray-triangle intersection test, while other threads in the same warp must wait until they finish the test. So the solution is to restructure the code in a while-while way:</p>
 
 <p>traverseRay(ray, BVH node)
     while(ray not terminated)
@@ -124,24 +129,36 @@ After adding the per-ray stack, there is still divergence in the code. Because s
 
 <p>If a thread reach a leaf node before other threads, it will remain idle until all threads in the warp reach a leaf. Why not let the thread buffer the leaf and keep on traversing? This is called speculative method. Using this method, we can achieve almost full SIMD utilization for the first <strong>while</strong> loop. </p>
 </li>
-<li><p><strong>Unit triangle intersection test</strong>
-Ray-triangle intersection test is very computation intersive and limit the performance of the ray tracer. Thus, we adopt unit triangle intersection test for its less computation in the test. It's based on the idea of transforming the ray into a unit-triangle space. It do require precomputation of the triangle-specific transformation. But the cost is well amortized because each triangle is tested against thousands of rays.</p></li>
+<li>
+<p><strong>Unit triangle intersection test</strong></p>
+
+<p>Ray-triangle intersection test is very computation intersive and limit the performance of the ray tracer. Thus, we adopt unit triangle intersection test for its less computation in the test. It's based on the idea of transforming the ray into a unit-triangle space. It do require precomputation of the triangle-specific transformation. But the cost is well amortized because each triangle is tested against thousands of rays.</p>
+</li>
 </ol>
 
 <h2>
 <a id="parallel-tree-construction-1" class="anchor" href="#parallel-tree-construction-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Parallel Tree Construction</h2>
 
 <ol>
-<li><p><strong>Algorithm</strong>
-We need a new tree construction algorithm to gain more parallelism compared to traditional top-down method. We exploit method proposed in <a href="http://dl.acm.org/citation.cfm?id=2383801">[6]</a><a href="https://devblogs.nvidia.com/parallelforall/thinking-parallel-part-iii-tree-construction-gpu/">[7]</a>.
+<li>
+<p><strong>Algorithm</strong></p>
+
+<p>We need a new tree construction algorithm to gain more parallelism compared to traditional top-down method. We exploit method proposed in <a href="http://dl.acm.org/citation.cfm?id=2383801">[6]</a><a href="https://devblogs.nvidia.com/parallelforall/thinking-parallel-part-iii-tree-construction-gpu/">[7]</a>.
 First we arrange all primitives in linear sequence following z-order curve traversal order. Z-order curve has two properties. It fills up the space and near objects in traversal order are also near in space. By first normalizing x, y, z positions into range [0, 1] and interleaving binary representations of three dimensions, we gain a code called Morton code for each primitive. Visiting primitives in increasing order of their Morton code is equivalent to traversing primitives following a z-order curve.
 We sort all primitives according to their Morton codes and construct a Binary Radix Tree based on that. A node represents a range of primitives in sorted order. We split a node at the point where last primitive in left range and first primitive in right range have shortest common prefix. In this way, an internal node is at either the beginning or the end of the range it belongs to. Now we know one end and we can use binary search to efficiently find the other end.
-The above property holds for all nodes in the tree and thus we can directly locate the children of an internal node. In this way, we can bulid the tree in fully parallel. For N primitives, the tree has N leaf nodes and N - 1 internal nodes. By storing leaves and internal nodes to two arrays, the relationship between nodes and positions of nodes are determined.</p></li>
-<li><p><strong>Reduce Memory Bandwidth Consumption</strong>
-The algorithm requires uniqueness of Morton code. However, due to close positions of primitives in space and normalization, it is highly likely to have duplicate Morton codes for multiple primitives. To deduplicate Morton codes, we decided to use 64 bits for coding. Highest 32 bits store the computed Morton code while the lowest 32 bits store the original index of primitive.
-We use Cuda thrust sort_by_key function to sort primitives with their Morton codes. Both primitives and Morton codes will be sorted in this way. However, the sorting consumes a lot of time and diminishes the benefit of parallel tree construction. We suspected that 64 bits codes cost too much memory and the sorting algorithm is memory bandwidth bounded. To solve this problem, we only store the 32 bits Morton code and concatenate it with primitive index to generate 64-bit code on the fly when needed. In this way, the Cuda thrust sort_by_key function only needs to sort array of 32-bit element and gains a 2x speedup.</p></li>
-<li><p><strong>Tree Collapse to Reduce Divergence in Tree Traversal</strong>
-The tree we build has only one primitive in each leaf node. It increases divergence in tree traversal process. To reduce divergence, we decide to collapse all nodes with fewer or equal to 4 primitives to a leaf. As all internal nodes are stored in an array, the tree collapse process is also fully parallelized.</p></li>
+The above property holds for all nodes in the tree and thus we can directly locate the children of an internal node. In this way, we can bulid the tree in fully parallel. For N primitives, the tree has N leaf nodes and N - 1 internal nodes. By storing leaves and internal nodes to two arrays, the relationship between nodes and positions of nodes are determined.</p>
+</li>
+<li>
+<p><strong>Reduce Memory Bandwidth Consumption</strong></p>
+
+<p>The algorithm requires uniqueness of Morton code. However, due to close positions of primitives in space and normalization, it is highly likely to have duplicate Morton codes for multiple primitives. To deduplicate Morton codes, we decided to use 64 bits for coding. Highest 32 bits store the computed Morton code while the lowest 32 bits store the original index of primitive.
+We use Cuda thrust sort_by_key function to sort primitives with their Morton codes. Both primitives and Morton codes will be sorted in this way. However, the sorting consumes a lot of time and diminishes the benefit of parallel tree construction. We suspected that 64 bits codes cost too much memory and the sorting algorithm is memory bandwidth bounded. To solve this problem, we only store the 32 bits Morton code and concatenate it with primitive index to generate 64-bit code on the fly when needed. In this way, the Cuda thrust sort_by_key function only needs to sort array of 32-bit element and gains a 2x speedup.</p>
+</li>
+<li>
+<p><strong>Tree Collapse to Reduce Divergence in Tree Traversal</strong></p>
+
+<p>The tree we build has only one primitive in each leaf node. It increases divergence in tree traversal process. To reduce divergence, we decide to collapse all nodes with fewer or equal to 4 primitives to a leaf. As all internal nodes are stored in an array, the tree collapse process is also fully parallelized.</p>
+</li>
 </ol>
 
 <h2>
