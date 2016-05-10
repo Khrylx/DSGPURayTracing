@@ -85,7 +85,7 @@ The main idea is to launch enough worker threads to occupy the chip, and each th
 <p>Now let's go inside the <strong>traverse-ray</strong> function.
 Here is a recursive version:</p>
 
-<p>traverseRay(ray, BVHnode)
+<pre><code>traverseRay(ray, BVHnode)
   if(node is a leaf)
     for all triangles in node
        do ray-triangle test
@@ -93,12 +93,13 @@ Here is a recursive version:</p>
     if(ray intersect node-&gt;lChild.bbox)
         traverseRay(ray, node-&gt;lChild)
     if(ray intersect node-&gt;rChild.bbox)
-        traverseRay(ray, node-&gt;rChild)</p>
+        traverseRay(ray, node-&gt;rChild)
+</code></pre>
 
 <p>For recursive traversal, suppose only one thread in a warp intersect with current BVH node's left child, then all other threads will remain idle until that thread traverse through the entire subtree of the left child. 
 To improve this, here is a stack-based iterative version:</p>
 
-<p>traverseRay(ray, BVH node)
+<pre><code>traverseRay(ray, BVH node)
 Stack S
 while(node)
 if(node is a leaf)
@@ -109,7 +110,8 @@ else
         S.push(node-&gt;lChild)
     if(ray intersect node-&gt;rChild.bbox)
         S.push(node-&gt;rChild)
-    node = S.pop()</p>
+    node = S.pop()
+</code></pre>
 
 <p>If we use stack based traversal, other threads will only wait for that one thread to push the left child onto the stack. Thus using a stack based traversal will reduce the number of divergence significantly. </p>
 </li>
@@ -118,12 +120,13 @@ else
 
 <p>After adding the per-ray stack, there is still divergence in the code. Because some threads in a warp may reach a leaf node and begin doing ray-triangle intersection test, while other threads in the same warp must wait until they finish the test. So the solution is to restructure the code in a while-while way:</p>
 
-<p>traverseRay(ray, BVH node)
+<pre><code>traverseRay(ray, BVH node)
     while(ray not terminated)
     while(node is not a leaf)
          traverse ray
     while(triangle to be test)
-         do triangle test</p>
+         do triangle test
+</code></pre>
 
 <p>This will make sure that threads in a warp will only begin ray-triangle intersection test when they all reach a leaf.</p>
 
@@ -166,12 +169,11 @@ The above property holds for all nodes in the tree and thus we can directly loca
 <h2>
 <a id="distributed-ray-tracing-1" class="anchor" href="#distributed-ray-tracing-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Distributed Ray Tracing</h2>
 
-<pre><code>We build a server-client framework. Master node uses its own computing power to do Ray Tracing and it is also responsible for listening connections from worker nodes and distribute work to worker nodes. Our assumption is that each worker node has access to the scene file and camera info and thus the master node only needs to send positions of start and end pixel as a request to worker nodes. In this way, the communication among nodes is effectively decreased.
+<p>We build a server-client framework. Master node uses its own computing power to do Ray Tracing and it is also responsible for listening connections from worker nodes and distribute work to worker nodes. Our assumption is that each worker node has access to the scene file and camera info and thus the master node only needs to send positions of start and end pixel as a request to worker nodes. In this way, the communication among nodes is effectively decreased.</p>
 
-Master node separates the scene into multiple tiles and puts tiles in a thread-safe work queue. Whenever a worker connects to master, a thread is created for the worker node. The thread has only one work to do. It repeatedly fetches work from work queue, sends it to worker node and receives result until the work queue is empty.
+<p>Master node separates the scene into multiple tiles and puts tiles in a thread-safe work queue. Whenever a worker connects to master, a thread is created for the worker node. The thread has only one work to do. It repeatedly fetches work from work queue, sends it to worker node and receives result until the work queue is empty.</p>
 
-In our implementation, each time master renders a tile itself, it loads the data form GPU to host memory and updates display frame buffer and then starts rendering the next tile. This sequential part is one reason that leads to non-linear speedup across clusters in Results section. Cuda supports binding a buffer directly to device and in this way, we can effectively decrease time of this sequential part to achieve better scalability.
-</code></pre>
+<p>In our implementation, each time master renders a tile itself, it loads the data form GPU to host memory and updates display frame buffer and then starts rendering the next tile. This sequential part is one reason that leads to non-linear speedup across clusters in Results section. Cuda supports binding a buffer directly to device and in this way, we can effectively decrease time of this sequential part to achieve better scalability.</p>
 
 <h1>
 <a id="results" class="anchor" href="#results" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Results</h1>
