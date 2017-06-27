@@ -1,3 +1,5 @@
+A GPU-based ray tracer using CUDA
+
 #Final Report
 http://khrylx.github.io/DSGPURayTracing
 
